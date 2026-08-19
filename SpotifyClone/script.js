@@ -419,7 +419,7 @@ d="M14 3.23v17.54a1 1 0 0 1-1.64.77L7.82 18H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3.8
 d="M16 8l6 6m0-6l-6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
 `;
 
-volumeIcon.addEventListener("input", () => {
+volumeIcon.addEventListener("click", () => {
 
     if (audioElement.volume > 0) {
 
