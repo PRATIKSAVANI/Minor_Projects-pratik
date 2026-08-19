@@ -140,8 +140,8 @@ nav ul{
 }
 
 #myProgressBar{
-    width: 60%;
-    height: 6px;
+    width: 900px;
+    height: 8px;
     cursor: pointer;
     accent-color: #1DB954;
 }
@@ -151,6 +151,7 @@ nav ul{
     align-items: center;
     gap: 35px;
     margin-top: 18px;
+    margin-right: 150px;
 }
 
 .icons svg{
@@ -236,4 +237,59 @@ nav ul{
     color: #fff;
     margin-left: 10px;
     font-size: 18px;
+}
+
+.volumeControl{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    margin-right:50px;
+}
+
+#volumeIcon{
+    cursor:pointer;
+    transition:.3s;
+
+}
+
+#volumeIcon:hover{
+    transform:scale(1.15);
+}
+
+#volumeBar{
+    width:35px;
+    height:6px;
+    accent-color:#1DB954;
+    cursor:pointer;
+}
+
+#timestemp{
+    color:white;
+    font-size:16px;
+    margin-top:10px;
+}
+
+#currentTime,
+#totalDuration{
+    min-width: 35px; 
+    font-size: 15px;
+    color: #fff;
+}
+
+.progressContainer{
+    width: 60%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.songItem.active{
+
+    background:gray;
+    color: black;
+
+    transform: scale(1.01);
+
+    box-shadow: 0 0 15px rgba(170, 187, 176, 0.5);
+
 }
