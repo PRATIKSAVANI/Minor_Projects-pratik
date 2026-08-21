@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Application</title>
+    <style>
+        body{
+            display: flex;
+            align-items: center;
+            justify-content:center;
+            height: 100vh;
+            margin: 0;
+            position: relative;    
+            overflow: hidden;     
+            transition: background 1s ease-in-out
+            }
+            body.sunny { background: linear-gradient(135deg, #f7971e, #ffd200); }
+            body.rainy  { background: linear-gradient(135deg, #4b79a1, #283e51); }
+            body.cloudy { background: linear-gradient(135deg, #bdc3c7, #2c3e50); }
+            body.snowy  { background: linear-gradient(135deg, #e0eafc, #cfdef3); }
+            body.night  { background: linear-gradient(135deg, #0f0c29, #302b63); }
+                
+                
+            .Weather 
+            {
+             border: 1px solid black;
+             border-radius: 15px;
+             padding: 15px;
+             background-color:lightslategray;
+             width: 500px;
+            }
+
+            h2
+            {
+             color: #90EE90;
+             letter-spacing: 3px;
+             text-transform: uppercase;
+             margin-left: 25px;
+            }
+             
+            button
+            {
+             color: black;
+             border-radius: 15px;
+             margin-right:25px;
+             border-style:groove;
+             width: 80px;
+           }
+        input{
+            border: 3px solid white; 
+            border-radius: 5px; 
+            border-style:groove;
+            box-shadow: 0 0 5px black;
+            width: 250px;
+            margin-left: 25px;
+            
+        }
+        p
+        {
+            text-align: center;
+            color: black;
+            font-weight: bold;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="Weather" id="weatherapp">
+
+        <h2>☁️Weather Application</h2>
+
+        <input type="text" id="weatherinput" placeholder="Enter The Location">
+        <button onclick="getWeather()"> Search </button>
+
+        <p>Weather Details</p> <!-- static heading -->
+        <p id="result"></p>
+    </div>
+
+
+    <script>
+
+        async function getWeather() {
+            const city = document.getElementById("weatherinput").value.trim();
+
+            let url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=f15bf6c5c2d186aabc7dab48ef2dfd65&units=metric`
+
+            try {
+                let response = await fetch(url);
+                let data = await response.json();
+
+                if (data.cod === 200) {
+                    setBackground(data.weather[0].main);
+                    document.getElementById("result").innerHTML = `
+                        🌡️ Temp: ${Math.round(data.main.temp)}°C <br>
+                        💧 Humidity: ${data.main.humidity}% <br>
+                        💨 Wind: ${data.wind.speed} m/s <br>
+                        ☁️ ${data.weather[0].description}
+                    `;
+                }         else {
+                    document.getElementById("result").innerHTML = "City not found!";
+                }
+            } catch (error) {
+              console.log("Error: ", error);
+            }
+        }
+
+        function setBackground(condition) {
+            document.body.className = "";
+            const c = condition.toLowerCase();
+            if (c.includes("clear"))      document.body.classList.add("sunny");
+            else if (c.includes("rain"))  document.body.classList.add("rainy");
+            else if (c.includes("cloud")) document.body.classList.add("cloudy");
+            else if (c.includes("snow"))  document.body.classList.add("snowy");
+
+        }
+    </script>
+
+
+</body>
+</html>
