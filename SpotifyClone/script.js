@@ -16,69 +16,14 @@ let songs = [
         coverPath: "covers/Sorath.jpg",
     },
     {
-        songName: "Dil Meri Na Sune",
-        filePath: "songs/Dil Meri Na Sune.mp3",
-        coverPath: "covers/Dil Meri Na Sune.jpg",
+        songName: "Tere Sang Ishq Hua",
+        filePath: "songs/Tere Sang Ishq Hua.mp3",
+        coverPath: "covers/Tere Sang Ishq Hua.jpg",
     },
     {
-        songName: "Gair Sa Hua Khud Se Bhi",
-        filePath: "songs/Gair Sa Hua Khud Se Bhi.mp3",
-        coverPath: "covers/Gair Sa Hua Khud Se Bhi.jpg",
-    },
-    {
-        songName: "Jiya",
-        filePath: "songs/Jiya.mp3",
-        coverPath: "covers/Jiya.jpg",
-    },
-    {
-        songName: "Kyu Dikhe Muje Tu Sir Hane Mere",
-        filePath: "songs/Kyu Dikhe Muje Tu Sir Hane Mere.mp3",
-        coverPath: "covers/Kyu Dikhe Muje Tu Sir Hane Mere.jpg",
-    },
-    {
-        songName: "Malang Sajna",
-        filePath: "songs/Malang Sajna.mp3",
-        coverPath: "covers/Malang Sajna.jpg",
-    },
-    {
-        songName: "Morya Re",
-        filePath: "songs/Morya Re.mp3",
-        coverPath: "covers/Morya Re.jpg",
-    },
-    {
-        songName: "Raataan Lambiyan",
-        filePath: "songs/Raataan Lambiyan.mp3",
-        coverPath: "covers/Raataan Lambiyan.jpg",
-    },
-    {
-        songName: "Paisa Hai Toh",
-        filePath: "songs/Paisa Hai Toh.mp3",
-        coverPath: "covers/Paisa Hai Toh.jpg",
-    },
-    {
-        songName: "Qaafirana",
-        filePath: "songs/Qaafirana.mp3",
-        coverPath: "covers/Qaafirana.jpg",
-    },
-    {
-        songName: "Neki Ki Raah",
-        filePath: "songs/Neki Ki Raah.mp3",
-        coverPath: "covers/Neki Ki Raah.jpg",
-    },
-    {
-        songName: "Raghunandan",
-        filePath: "songs/Raghunandan.mp3",
-        coverPath: "covers/Raghunandan.jpg",
-    },
-    {
-        songName: "Sajni",
-        filePath: "songs/Sajni.mp3",
-        coverPath: "covers/Sajni.jpg",
-    },
-    {
-        songName: "Tera Yaar Hoon Main",
-        filePath: "songs/Tera Yaar Hoon Main.mp3",
-        coverPath: "covers/Tera Yaar Hoon Main.jpg",
+        songName: "Tu Hai",
+        filePath: "songs/Tu Hai.mp3",
+        coverPath: "covers/Tu Hai.jpg", 
     },
     {
         songName: "Tere Hawaale",
@@ -86,14 +31,69 @@ let songs = [
         coverPath: "covers/Tere Hawaale.jpg",
     },
     {
-        songName: "Tere Sang Ishq Hua",
-        filePath: "songs/Tere Sang Ishq Hua.mp3",
-        coverPath: "covers/Tere Sang Ishq Huva.jpg",
+        songName: "Tera Yaar Hoon Main",
+        filePath: "songs/Tera Yaar Hoon Main.mp3",
+        coverPath: "covers/Tera Yaar Hoon Main.jpg",
     },
     {
-        songName: "Tu Hai",
-        filePath: "songs/Tu Hai.mp3",
-        coverPath: "covers/Tu Hai.jpg",  
+        songName: "Sajni",
+        filePath: "songs/Sajni.mp3",
+        coverPath: "covers/Sajni.jpg",
+    },
+    {
+        songName: "Raghunandan",
+        filePath: "songs/Raghunandan.mp3",
+        coverPath: "covers/Raghunandan.jpg",
+    },
+    {
+        songName: "Raataan Lambiyan",
+        filePath: "songs/Raataan Lambiyan.mp3",
+        coverPath: "covers/Raataan Lambiyan.jpg",
+    },
+    {
+        songName: "Qaafirana",
+        filePath: "songs/Qaafirana.mp3",
+        coverPath: "covers/Qaafirana.jpg",  
+    },
+    {
+        songName: "Paisa Hai Toh",
+        filePath: "songs/Paisa Hai Toh.mp3",
+        coverPath: "covers/Paisa Hai Toh.jpg",
+    },
+    {
+        songName: "Neki Ki Raah",
+        filePath: "songs/Neki Ki Raah.mp3",
+        coverPath: "covers/Neki Ki Raah.jpg",
+    },
+    {
+        songName: "Morya Re",
+        filePath: "songs/Morya Re.mp3",
+        coverPath: "covers/Morya Re.jpg",
+    },
+    {
+        songName: "Malang Sajna",
+        filePath: "songs/Malang Sajna.mp3",
+        coverPath: "covers/Malang Sajna.jpg",
+    },
+    {
+        songName: "Kyu Dikhe Muje Tu Sir Hane Mere",
+        filePath: "songs/Kyu Dikhe Muje Tu Sir Hane Mere.mp3",
+        coverPath: "covers/Kyu Dikhe Muje Tu Sir Hane Mere.jpg",
+    },
+    {
+        songName: "Jiya",
+        filePath: "songs/Jiya.mp3",
+        coverPath: "covers/Jiya.jpg",
+    },
+    {
+        songName: "Gair Sa Hua Khud Se Bhi",
+        filePath: "songs/Gair Sa Hua Khud Se Bhi.mp3",
+        coverPath: "covers/Gair Sa Hua Khud Se Bhi.jpg", 
+    },
+    {
+        songName: "Dil Meri Na Sune",
+        filePath: "songs/Dil Meri Na Sune.mp3",
+        coverPath: "covers/Dil Meri Na Sune.jpg",
     },
 ];
 
