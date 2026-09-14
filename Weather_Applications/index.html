@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Weather Application</title>
+
+
+    <style>
+
+        /* =========================
+           RESET
+        ========================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        /* =========================
+           BODY
+        ========================= */
+
+        body {
+
+            min-height: 100vh;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            overflow-x: hidden;
+
+            transition:
+                background 1s ease-in-out;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #667eea,
+                    #764ba2
+                );
+
+        }
+
+
+        /* =========================
+           WEATHER BACKGROUNDS
+        ========================= */
+
+        body.sunny {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #f7971e,
+                    #ffd200
+                );
+
+        }
+
+
+        body.rainy {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #4b79a1,
+                    #283e51
+                );
+
+        }
+
+
+        body.cloudy {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #bdc3c7,
+                    #2c3e50
+                );
+
+        }
+
+
+        body.snowy {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #e0eafc,
+                    #cfdef3
+                );
+
+        }
+
+
+        body.night {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0f0c29,
+                    #302b63,
+                    #24243e
+                );
+
+        }
+
+
+        /* =========================
+           MAIN WEATHER CARD
+        ========================= */
+
+        .weather {
+
+            width: 100%;
+
+            max-width: 520px;
+
+            padding: 35px;
+
+            border-radius: 30px;
+
+            text-align: center;
+
+            background:
+                rgba(255, 255, 255, 0.13);
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.25);
+
+            backdrop-filter:
+                blur(20px);
+
+            -webkit-backdrop-filter:
+                blur(20px);
+
+            box-shadow:
+                0 25px 60px
+                rgba(0, 0, 0, 0.35);
+
+        }
+
+
+        /* =========================
+           TITLE
+        ========================= */
+
+        h1 {
+
+            font-size: 38px;
+
+            margin-bottom: 8px;
+
+            color: white;
+
+            font-weight: 800;
+
+            letter-spacing: 1px;
+
+        }
+
+
+        .subtitle {
+
+            color:
+                rgba(255, 255, 255, 0.75);
+
+            font-size: 15px;
+
+            margin-bottom: 30px;
+
+        }
+
+
+        /* =========================
+           SEARCH AREA
+        ========================= */
+
+        .search-box {
+
+            display: flex;
+
+            gap: 10px;
+
+            margin-bottom: 25px;
+
+        }
+
+
+        #weatherinput {
+
+            flex: 1;
+
+            height: 50px;
+
+            padding:
+                0 18px;
+
+            border: none;
+
+            outline: none;
+
+            border-radius: 14px;
+
+            background:
+                rgba(255, 255, 255, 0.9);
+
+            color: #222;
+
+            font-size: 16px;
+
+            box-shadow:
+                0 5px 15px
+                rgba(0, 0, 0, 0.15);
+
+        }
+
+
+        #weatherinput::placeholder {
+
+            color: #777;
+
+        }
+
+
+        #searchBtn {
+
+            width: 100px;
+
+            height: 50px;
+
+            border: none;
+
+            border-radius: 14px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #6366f1,
+                    #8b5cf6
+                );
+
+            color: white;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition:
+                0.25s;
+
+        }
+
+
+        #searchBtn:hover {
+
+            transform:
+                translateY(-3px);
+
+            box-shadow:
+                0 10px 25px
+                rgba(0, 0, 0, 0.25);
+
+        }
+
+
+        #searchBtn:active {
+
+            transform:
+                scale(0.95);
+
+        }
+
+
+        /* =========================
+           RESULT
+        ========================= */
+
+        .result {
+
+            min-height: 260px;
+
+            padding: 25px;
+
+            border-radius: 22px;
+
+            background:
+                rgba(0, 0, 0, 0.15);
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.12);
+
+        }
+
+
+        .location {
+
+            color: white;
+
+            font-size: 25px;
+
+            font-weight: bold;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .temperature {
+
+            font-size: 65px;
+
+            font-weight: 800;
+
+            color: white;
+
+            margin: 5px 0;
+
+        }
+
+
+        .description {
+
+            color:
+                rgba(255, 255, 255, 0.85);
+
+            font-size: 18px;
+
+            text-transform: capitalize;
+
+            margin-bottom: 25px;
+
+        }
+
+
+        /* =========================
+           WEATHER INFO
+        ========================= */
+
+        .weather-info {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 12px;
+
+        }
+
+
+        .info-card {
+
+            padding: 18px;
+
+            border-radius: 16px;
+
+            background:
+                rgba(255, 255, 255, 0.1);
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.12);
+
+        }
+
+
+        .info-icon {
+
+            font-size: 27px;
+
+            margin-bottom: 7px;
+
+        }
+
+
+        .info-title {
+
+            color:
+                rgba(255, 255, 255, 0.65);
+
+            font-size: 13px;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .info-value {
+
+            color: white;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+        }
+
+
+        /* =========================
+           MESSAGE
+        ========================= */
+
+        .message {
+
+            min-height: 200px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            flex-direction: column;
+
+            color:
+                rgba(255, 255, 255, 0.8);
+
+            gap: 12px;
+
+            font-size: 17px;
+
+        }
+
+
+        .message-icon {
+
+            font-size: 55px;
+
+        }
+
+
+        .error {
+
+            color: #fecaca;
+
+            font-weight: bold;
+
+        }
+
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .footer {
+
+            margin-top: 20px;
+
+            color:
+                rgba(255, 255, 255, 0.55);
+
+            font-size: 12px;
+
+        }
+
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            body {
+
+                padding: 15px;
+
+            }
+
+
+            .weather {
+
+                padding: 25px 18px;
+
+                border-radius: 24px;
+
+            }
+
+
+            h1 {
+
+                font-size: 30px;
+
+            }
+
+
+            .subtitle {
+
+                font-size: 13px;
+
+            }
+
+
+            .search-box {
+
+                flex-direction: column;
+
+            }
+
+
+            #searchBtn {
+
+                width: 100%;
+
+            }
+
+
+            .temperature {
+
+                font-size: 52px;
+
+            }
+
+
+            .location {
+
+                font-size: 22px;
+
+            }
+
+
+            .weather-info {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+        }
+
+
+        @media (max-width: 380px) {
+
+            .weather-info {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .temperature {
+
+                font-size: 45px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <div class="weather" id="weatherapp">
+
+
+        <!-- TITLE -->
+
+        <h1>🌤️ Weather App</h1>
+
+        <p class="subtitle">
+            Check real-time weather anywhere in the world
+        </p>
+
+
+        <!-- SEARCH -->
+
+        <div class="search-box">
+
+            <input
+                type="text"
+                id="weatherinput"
+                placeholder="Enter city name..."
+            >
+
+            <button
+                id="searchBtn"
+                onclick="getWeather()"
+            >
+                🔍 Search
+            </button>
+
+        </div>
+
+
+        <!-- RESULT -->
+
+        <div
+            class="result"
+            id="result"
+        >
+
+            <div class="message">
+
+                <div class="message-icon">
+                    🌍
+                </div>
+
+                <p>
+                    Enter a city to check the weather
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <p class="footer">
+            Powered by OpenWeather
+        </p>
+
+
+    </div>
+
+
+
+    <script>
+
+        /* =========================
+           API KEY
+        ========================= */
+
+        const API_KEY =
+            "f15bf6c5c2d186aabc7dab48ef2dfd65";
+
+
+        /* =========================
+           GET WEATHER
+        ========================= */
+
+        async function getWeather() {
+
+
+            const city =
+                document
+                    .getElementById("weatherinput")
+                    .value
+                    .trim();
+
+
+            const result =
+                document.getElementById("result");
+
+
+            if (city === "") {
+
+                result.innerHTML = `
+                    <div class="message error">
+
+                        <div class="message-icon">
+                            ⚠️
+                        </div>
+
+                        <p>
+                            Please enter a city name
+                        </p>
+
+                    </div>
+                `;
+
+                return;
+
+            }
+
+
+            /* LOADING */
+
+            result.innerHTML = `
+                <div class="message">
+
+                    <div class="message-icon">
+                        ⏳
+                    </div>
+
+                    <p>
+                        Loading weather...
+                    </p>
+
+                </div>
+            `;
+
+
+            const url =
+                `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
+
+
+            try {
+
+
+                const response =
+                    await fetch(url);
+
+
+                const data =
+                    await response.json();
+
+
+                /* CITY FOUND */
+
+                if (data.cod === 200) {
+
+
+                    setBackground(
+                        data.weather[0].main
+                    );
+
+
+                    const temperature =
+                        Math.round(
+                            data.main.temp
+                        );
+
+
+                    const feelsLike =
+                        Math.round(
+                            data.main.feels_like
+                        );
+
+
+                    result.innerHTML = `
+
+                        <div class="location">
+
+                            📍 ${data.name}, ${data.sys.country}
+
+                        </div>
+
+
+                        <div class="temperature">
+
+                            ${temperature}°C
+
+                        </div>
+
+
+                        <div class="description">
+
+                            ${data.weather[0].description}
+
+                        </div>
+
+
+                        <div class="weather-info">
+
+
+                            <div class="info-card">
+
+                                <div class="info-icon">
+                                    💧
+                                </div>
+
+                                <div class="info-title">
+                                    Humidity
+                                </div>
+
+                                <div class="info-value">
+                                    ${data.main.humidity}%
+                                </div>
+
+                            </div>
+
+
+                            <div class="info-card">
+
+                                <div class="info-icon">
+                                    💨
+                                </div>
+
+                                <div class="info-title">
+                                    Wind Speed
+                                </div>
+
+                                <div class="info-value">
+                                    ${data.wind.speed} m/s
+                                </div>
+
+                            </div>
+
+
+                            <div class="info-card">
+
+                                <div class="info-icon">
+                                    🌡️
+                                </div>
+
+                                <div class="info-title">
+                                    Feels Like
+                                </div>
+
+                                <div class="info-value">
+                                    ${feelsLike}°C
+                                </div>
+
+                            </div>
+
+
+                            <div class="info-card">
+
+                                <div class="info-icon">
+                                    🌡️
+                                </div>
+
+                                <div class="info-title">
+                                    Pressure
+                                </div>
+
+                                <div class="info-value">
+                                    ${data.main.pressure} hPa
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+                    `;
+
+                }
+
+
+                /* CITY NOT FOUND */
+
+                else {
+
+                    document.body.className = "";
+
+                    result.innerHTML = `
+
+                        <div class="message error">
+
+                            <div class="message-icon">
+                                ❌
+                            </div>
+
+                            <p>
+                                City not found!
+                            </p>
+
+                            <small>
+                                Try another city name.
+                            </small>
+
+                        </div>
+
+                    `;
+
+                }
+
+
+            } catch (error) {
+
+
+                console.log(
+                    "Error:",
+                    error
+                );
+
+
+                result.innerHTML = `
+
+                    <div class="message error">
+
+                        <div class="message-icon">
+                            ⚠️
+                        </div>
+
+                        <p>
+                            Something went wrong!
+                        </p>
+
+                        <small>
+                            Please check your internet connection.
+                        </small>
+
+                    </div>
+
+                `;
+
+            }
+
+        }
+
+
+
+        /* =========================
+           BACKGROUND
+        ========================= */
+
+        function setBackground(condition) {
+
+
+            document.body.className = "";
+
+
+            const c =
+                condition.toLowerCase();
+
+
+            if (
+                c.includes("clear")
+            ) {
+
+                document.body.classList.add(
+                    "sunny"
+                );
+
+            }
+
+
+            else if (
+                c.includes("rain") ||
+                c.includes("drizzle") ||
+                c.includes("thunderstorm")
+            ) {
+
+                document.body.classList.add(
+                    "rainy"
+                );
+
+            }
+
+
+            else if (
+                c.includes("cloud")
+            ) {
+
+                document.body.classList.add(
+                    "cloudy"
+                );
+
+            }
+
+
+            else if (
+                c.includes("snow")
+            ) {
+
+                document.body.classList.add(
+                    "snowy"
+                );
+
+            }
+
+        }
+
+
+
+        /* =========================
+           ENTER KEY SEARCH
+        ========================= */
+
+        document
+            .getElementById("weatherinput")
+            .addEventListener(
+                "keydown",
+                function(event) {
+
+                    if (
+                        event.key === "Enter"
+                    ) {
+
+                        getWeather();
+
+                    }
+
+                }
+            );
+
+    </script>
+
+
+</body>
+
+</html>
