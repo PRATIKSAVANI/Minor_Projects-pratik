@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Patel Auto Garage & Services</title>
+
+    <meta name="description"
+        content="Patel Auto Garage daily records, billing, customers and vehicle service management.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <div>
+                    <h1>Patel Auto Garage</h1>
+                    <span>Daily records, billing and vehicle service</span>
+                </div>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="today-chip" id="todayChip">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    <span id="todayLabel">Today</span>
+                </div>
+
+                <button type="button" id="newDayBtn" class="btn btn-light">
+                    <i class="fa-solid fa-sun"></i>
+                    New Day
+                </button>
+
+                <button type="button" id="exportBtn" class="btn btn-success">
+                    <i class="fa-solid fa-file-csv"></i>
+                    Export Accounting
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <section class="hero">
+            <div>
+                <div class="hero-badge">
+                    <i class="fa-solid fa-circle-check"></i>
+                    Garage Management System
+                </div>
+                <h2>HARSH SAVANI</h2>
+                <p>
+                    Record every vehicle, calculate bills accurately, and keep
+                    previous days safe in LocalStorage until you delete them.
+                </p>
+            </div>
+            <div class="hero-icon">
+                <i class="fa-solid fa-car-side"></i>
+            </div>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card stat-blue">
+                <div class="stat-content">
+                    <span>Today's Vehicles</span>
+                    <strong id="statTodayVehicles">0</strong>
+                    <small>Jobs recorded after New Day</small>
+                </div>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-car"></i>
+                </div>
+            </div>
+
+            <div class="stat-card stat-green">
+                <div class="stat-content">
+                    <span>Today's Income</span>
+                    <strong id="statTodayIncome">₹0</strong>
+                    <small>Amount collected today</small>
+                </div>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
+                </div>
+            </div>
+
+            <div class="stat-card stat-orange">
+                <div class="stat-content">
+                    <span>Today's Billed</span>
+                    <strong id="statTodayBilled">₹0</strong>
+                    <small>Total bill value today</small>
+                </div>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+            </div>
+
+            <div class="stat-card stat-red">
+                <div class="stat-content">
+                    <span>Pending Amount</span>
+                    <strong id="statPendingAmount">₹0</strong>
+                    <small>Outstanding across all records</small>
+                </div>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <span class="section-label">NEW SERVICE ENTRY</span>
+                    <h2>
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        Create New Job Card
+                    </h2>
+                    <p>Add customer, vehicle and service details.</p>
+                </div>
+                <div class="job-status">
+                    <i class="fa-solid fa-circle"></i>
+                    New Job
+                </div>
+            </div>
+
+            <div class="vehicle-section">
+                <div class="field-heading">
+                    <span>
+                        <i class="fa-solid fa-car"></i>
+                        Vehicle Type
+                    </span>
+                    <small>Select vehicle category</small>
+                </div>
+
+                <div class="vehicle-selector">
+                    <button type="button" class="vehicle-option active" data-vehicle="Bike">
+                        <i class="fa-solid fa-motorcycle"></i>
+                        <span>Bike</span>
+                    </button>
+                    <button type="button" class="vehicle-option" data-vehicle="Car">
+                        <i class="fa-solid fa-car"></i>
+                        <span>Car</span>
+                    </button>
+                    <button type="button" class="vehicle-option" data-vehicle="Other">
+                        <i class="fa-solid fa-truck"></i>
+                        <span>Other</span>
+                    </button>
+                </div>
+                <input type="hidden" id="vehicleType" value="Bike">
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="custName">Customer Name <span>*</span></label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-user"></i>
+                        <input id="custName" type="text" maxlength="60" placeholder="Enter customer name" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="custPhone">Mobile Number <span>*</span></label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-phone"></i>
+                        <input id="custPhone" type="tel" inputmode="numeric" maxlength="10"
+                            placeholder="Enter 10-digit mobile" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="vehicleNo">Vehicle Number <span>*</span></label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-id-card"></i>
+                        <input id="vehicleNo" type="text" maxlength="15" placeholder="GJ01AB1234" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="vehicleModel">Vehicle Model</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-car-side"></i>
+                        <input id="vehicleModel" type="text" maxlength="40" placeholder="e.g. Swift, Activa, Creta" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-box">
+                <div class="service-header">
+                    <div>
+                        <span class="section-label">SERVICE &amp; PARTS</span>
+                        <h3>
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                            Add Service / Parts / Labour
+                        </h3>
+                    </div>
+                    <span class="item-count" id="itemCount">0 Items</span>
+                </div>
+
+                <div class="item-input-grid">
+                    <div class="form-group">
+                        <label for="partName">Description</label>
+                        <input id="partName" type="text" maxlength="80" placeholder="e.g. Engine Oil, Brake Service, Labour">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partQty">Quantity</label>
+                        <input id="partQty" type="number" min="1" max="999" step="1" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partPrice">Unit Price</label>
+                        <div class="price-input">
+                            <span>₹</span>
+                            <input id="partPrice" type="number" min="0" max="999999" step="0.01" placeholder="0">
+                        </div>
+                    </div>
+
+                    <button type="button" id="addItemBtn" class="btn btn-primary add-item-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Item
+                    </button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="partsTableBody"></tbody>
+                    </table>
+                    <div id="emptyItems" class="empty-items">
+                        <i class="fa-solid fa-receipt"></i>
+                        <p>No service or parts added yet.</p>
+                        <span>Add your first item above.</span>
+                    </div>
+                </div>
+
+                <div class="bill-total">
+                    <div>
+                        <span>Service Items</span>
+                        <strong id="summaryItemCount">0</strong>
+                    </div>
+                    <div>
+                        <span>Grand Total</span>
+                        <strong id="billTotal">₹0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-section">
+                <div>
+                    <span class="section-label">PAYMENT</span>
+                    <h3>Payment Status</h3>
+                </div>
+
+                <div class="payment-options">
+                    <label class="payment-option active">
+                        <input type="radio" name="paymentStatus" value="Paid (Cash)" checked>
+                        <span class="payment-icon cash">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                        </span>
+                        <span>
+                            <strong>Cash</strong>
+                            <small>Paid in cash</small>
+                        </span>
+                    </label>
+
+                    <label class="payment-option">
+                        <input type="radio" name="paymentStatus" value="Paid (UPI)">
+                        <span class="payment-icon upi">
+                            <i class="fa-solid fa-qrcode"></i>
+                        </span>
+                        <span>
+                            <strong>UPI</strong>
+                            <small>GPay / PhonePe / UPI</small>
+                        </span>
+                    </label>
+
+                    <label class="payment-option">
+                        <input type="radio" name="paymentStatus" value="Pending">
+                        <span class="payment-icon pending">
+                            <i class="fa-solid fa-clock"></i>
+                        </span>
+                        <span>
+                            <strong>Pending</strong>
+                            <small>Customer credit</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="amount-received-row">
+                <div class="form-group">
+                    <label for="amountReceived">Amount Received (₹)</label>
+                    <div class="price-input">
+                        <span>₹</span>
+                        <input id="amountReceived" type="number" min="0" max="999999" step="0.01" placeholder="0">
+                    </div>
+                    <small class="help-text">Leave empty to auto-fill: full amount for Cash/UPI, ₹0 for Pending.</small>
+                </div>
+                <div class="balance-card">
+                    <span>Balance Due</span>
+                    <strong id="balanceDue">₹0</strong>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <button type="button" id="clearFormBtn" class="btn btn-light">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Clear Form
+                </button>
+                <button type="button" id="saveJobBtn" class="btn btn-save">
+                    <i class="fa-solid fa-check"></i>
+                    Save Job Card
+                </button>
+            </div>
+        </section>
+
+        <section class="panel history-panel">
+            <div class="panel-header history-header">
+                <div>
+                    <span class="section-label">GARAGE RECORDS</span>
+                    <h2>
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Service History
+                    </h2>
+                    <p>Search, filter and manage previous service records.</p>
+                </div>
+                <div class="record-count">
+                    <strong id="recordCount">0</strong>
+                    <span>Saved</span>
+                </div>
+            </div>
+
+            <div class="history-filters">
+                <div class="filter-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="searchInput" type="search"
+                        placeholder="Search customer, vehicle number, mobile or model...">
+                </div>
+
+                <select id="periodFilter" class="filter-select">
+                    <option value="all">All Records</option>
+                    <option value="today">Today</option>
+                    <option value="month">This Month</option>
+                </select>
+
+                <input id="dateFilter" type="date" class="filter-input" title="View records for a specific date">
+
+                <button type="button" class="filter-reset" id="resetFiltersBtn">
+                    <i class="fa-solid fa-filter-circle-xmark"></i>
+                    Clear Filters
+                </button>
+            </div>
+
+            <div id="filterSummary" class="filter-result-bar">
+                <span>Showing <strong>0</strong> records</span>
+                <span>Billed: <strong>₹0</strong></span>
+                <span>Collected: <strong>₹0</strong></span>
+                <span>Pending: <strong>₹0</strong></span>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="records-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Vehicle</th>
+                            <th>Customer</th>
+                            <th>Services / Parts</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody"></tbody>
+                </table>
+
+                <div id="emptyRecords" class="empty-records">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <h3>No records found</h3>
+                    <p>Saved job cards will appear here.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="confirmModal" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <h3 id="confirmTitle">Confirm</h3>
+            <p id="confirmMessage"></p>
+            <div class="modal-actions">
+                <button type="button" id="confirmCancel" class="btn btn-light">Cancel</button>
+                <button type="button" id="confirmOk" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printableBill">
+        <div class="invoice">
+            <div class="invoice-header">
+                <div>
+                    <h1>Patel Auto Garage</h1>
+                    <p>Professional Vehicle Service &amp; Repair</p>
+                </div>
+                <div class="invoice-title">
+                    <span>INVOICE</span>
+                </div>
+            </div>
+
+            <div id="printDetails" class="invoice-details"></div>
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="printItemsBody"></tbody>
+            </table>
+
+            <div class="invoice-totals">
+                <div>
+                    <span>Grand Total</span>
+                    <strong id="printTotal">₹0</strong>
+                </div>
+                <div>
+                    <span>Amount Received</span>
+                    <strong id="printReceived">₹0</strong>
+                </div>
+                <div>
+                    <span>Balance Due</span>
+                    <strong id="printBalance">₹0</strong>
+                </div>
+            </div>
+
+            <div class="invoice-footer">
+                <p>Thank you for choosing Patel Auto Garage.</p>
+                <span>Please visit again.</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMessage">Success</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
