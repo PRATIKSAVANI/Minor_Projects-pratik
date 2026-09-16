@@ -5,7 +5,15 @@
 const STORAGE_KEYS = {
   records: "patelAutoGarageData",
   session: "patelAutoGarageDaySession",
+  owner: "patelAutoGarageOwner",
+  loginSession: "patelAutoGarageLoginSession",
+  loginLock: "patelAutoGarageLoginLock",
 };
+
+const AUTH_SALT = "patel-auto-garage-v1";
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_MS = 60 * 1000;
+const REMEMBER_MS = 12 * 60 * 60 * 1000;
 
 let currentItems = [];
 let garageData = [];
@@ -13,33 +21,498 @@ let daySession = { date: "", startedAt: 0 };
 let selectedVehicleType = "Bike";
 let toastTimer;
 let confirmResolver = null;
+let dashboardReady = false;
+let isAuthenticated = false;
+let verifiedSessionToken = "";
+let loginBusy = false;
 
 document.addEventListener("DOMContentLoaded", initializeApp);
 
-function initializeApp() {
-  loadData();
-  ensureDaySession();
-  setupVehicleSelector();
-  setupPaymentOptions();
-  setupButtons();
-  setupKeyboardShortcuts();
-  setupInputGuards();
+async function initializeApp() {
+  setupAuth();
+  if (await restoreLoginSession()) {
+    openDashboard();
+    return;
+  }
+  showLoginScreen(false);
+}
+
+function setupAuth() {
+  document.getElementById("loginForm").addEventListener("submit", handleLoginSubmit);
+  document.getElementById("togglePasswordBtn").addEventListener("click", toggleLoginPassword);
+  document.getElementById("logoutBtn").addEventListener("click", logout);
+  document.getElementById("changePasswordBtn").addEventListener("click", openPasswordModal);
+  document.getElementById("passwordCancel").addEventListener("click", closePasswordModal);
+  document.getElementById("passwordSave").addEventListener("click", saveNewPassword);
+  document.getElementById("passwordModal").addEventListener("click", (event) => {
+    if (event.target.id === "passwordModal") closePasswordModal();
+  });
+}
+
+function ownerAccountExists() {
+  const owner = readJSON(STORAGE_KEYS.owner, null);
+  return Boolean(owner && owner.username && owner.passwordHash);
+}
+
+function getOwnerAccount() {
+  const owner = readJSON(STORAGE_KEYS.owner, null);
+  if (!owner || !owner.username || !owner.passwordHash) return null;
+  return owner;
+}
+
+function getStoredSession() {
+  return (
+    readStorageJSON(sessionStorage, STORAGE_KEYS.loginSession, null) ||
+    readStorageJSON(localStorage, STORAGE_KEYS.loginSession, null)
+  );
+}
+
+function isSessionActive() {
+  if (!isAuthenticated || !verifiedSessionToken) return false;
+  if (!ownerAccountExists()) return false;
+
+  const session = getStoredSession();
+  if (!session || !session.token) return false;
+  if (!timingSafeEqual(session.token, verifiedSessionToken)) return false;
+  if (session.expiresAt && Date.now() > session.expiresAt) return false;
+  return true;
+}
+
+function requireAuth() {
+  if (isSessionActive()) return true;
+
+  const alreadyLocked = document.body.classList.contains("app-locked");
+  clearLoginSession();
+  wipeDashboardState();
+  showLoginScreen(false);
+  if (!alreadyLocked) {
+    showToast("Please sign in to continue.", "error");
+  }
+  return false;
+}
+
+function showLoginScreen(clearForm = true) {
+  isAuthenticated = false;
+  verifiedSessionToken = "";
+  document.body.classList.add("app-locked");
+
+  const loginScreen = document.getElementById("loginScreen");
+  const appShell = document.getElementById("appShell");
+  loginScreen.hidden = false;
+  loginScreen.inert = false;
+  loginScreen.removeAttribute("aria-hidden");
+  appShell.hidden = true;
+  appShell.inert = true;
+  appShell.setAttribute("aria-hidden", "true");
+
+  closePasswordModal();
+  closeConfirm(false);
+  updateLoginMode();
+
+  if (clearForm) {
+    document.getElementById("loginForm").reset();
+  }
+
+  window.setTimeout(() => {
+    document.getElementById("loginUsername").focus();
+  }, 0);
+}
+
+function updateLoginMode() {
+  const isSetup = !ownerAccountExists();
+  const confirmInput = document.getElementById("loginPasswordConfirm");
+
+  document.getElementById("loginSubtitle").textContent = isSetup
+    ? "Create your private owner login. Only this username and password will open the dashboard."
+    : "Sign in to open the garage dashboard";
+  document.getElementById("confirmPasswordGroup").hidden = !isSetup;
+  document.getElementById("rememberRow").hidden = isSetup;
+  document.getElementById("loginSubmitText").textContent = isSetup
+    ? "Create Login & Continue"
+    : "Sign In";
+  document.getElementById("loginPassword").autocomplete = isSetup
+    ? "new-password"
+    : "current-password";
+  confirmInput.disabled = !isSetup;
+  confirmInput.required = isSetup;
+  document.getElementById("loginError").hidden = true;
+  setLoginBusy(false);
+}
+
+function toggleLoginPassword() {
+  const input = document.getElementById("loginPassword");
+  const button = document.getElementById("togglePasswordBtn");
+  const icon = button.querySelector("i");
+  const show = input.type === "password";
+  input.type = show ? "text" : "password";
+  icon.className = show ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+  button.title = show ? "Hide password" : "Show password";
+  button.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  button.setAttribute("aria-pressed", show ? "true" : "false");
+}
+
+function getLoginLock() {
+  const lock = readStorageJSON(sessionStorage, STORAGE_KEYS.loginLock, {
+    attempts: 0,
+    until: 0,
+  });
+  return {
+    attempts: Number(lock.attempts) || 0,
+    until: Number(lock.until) || 0,
+  };
+}
+
+function setLoginLock(attempts, until) {
+  sessionStorage.setItem(
+    STORAGE_KEYS.loginLock,
+    JSON.stringify({ attempts, until }),
+  );
+}
+
+function clearLoginLock() {
+  sessionStorage.removeItem(STORAGE_KEYS.loginLock);
+}
+
+function setLoginBusy(busy) {
+  loginBusy = busy;
+  const button = document.getElementById("loginSubmitBtn");
+  button.disabled = busy;
+  document.getElementById("loginUsername").readOnly = busy;
+  document.getElementById("loginPassword").readOnly = busy;
+  document.getElementById("loginPasswordConfirm").readOnly = busy;
+}
+
+async function handleLoginSubmit(event) {
+  event.preventDefault();
+  if (loginBusy) return;
+
+  const lock = getLoginLock();
+  if (Date.now() < lock.until) {
+    const seconds = Math.ceil((lock.until - Date.now()) / 1000);
+    setLoginError(`Too many failed attempts. Try again in ${seconds} seconds.`);
+    return;
+  }
+
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const confirmPassword = document.getElementById("loginPasswordConfirm").value;
+
+  if (username.length < 3 || username.length > 30) {
+    setLoginError("Username must be between 3 and 30 characters.");
+    return;
+  }
+
+  if (password.length < 6) {
+    setLoginError("Password must be at least 6 characters.");
+    return;
+  }
+
+  setLoginBusy(true);
+
+  try {
+    if (!ownerAccountExists()) {
+      if (!/^[A-Za-z0-9._-]+$/.test(username)) {
+        setLoginError("Username can only contain letters, numbers, dot, underscore and hyphen.");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setLoginError("Passwords do not match.");
+        return;
+      }
+
+      const passwordHash = await hashCredential(username, password);
+      localStorage.setItem(
+        STORAGE_KEYS.owner,
+        JSON.stringify({
+          username,
+          passwordHash,
+          createdAt: Date.now(),
+        }),
+      );
+
+      await createLoginSession(username, passwordHash, false);
+      document.getElementById("loginForm").reset();
+      showToast("Owner login created. Dashboard is now locked to your password.");
+      openDashboard();
+      return;
+    }
+
+    const owner = getOwnerAccount();
+    const passwordHash = await hashCredential(username, password);
+    const usernameOk = username.toLowerCase() === String(owner.username || "").toLowerCase();
+    const passwordOk = timingSafeEqual(passwordHash, owner.passwordHash);
+
+    if (!usernameOk || !passwordOk) {
+      const nextAttempts = lock.attempts + 1;
+      if (nextAttempts >= MAX_LOGIN_ATTEMPTS) {
+        setLoginLock(0, Date.now() + LOCK_MS);
+        setLoginError("Too many failed attempts. Login is locked for 1 minute.");
+        return;
+      }
+      setLoginLock(nextAttempts, 0);
+      setLoginError("Incorrect username or password.");
+      document.getElementById("loginPassword").value = "";
+      document.getElementById("loginPassword").focus();
+      return;
+    }
+
+    clearLoginLock();
+    await createLoginSession(
+      owner.username,
+      owner.passwordHash,
+      document.getElementById("rememberMe").checked,
+    );
+    document.getElementById("loginForm").reset();
+    showToast("Welcome back.");
+    openDashboard();
+  } catch (error) {
+    setLoginError("Could not complete login. Please try again.");
+  } finally {
+    setLoginBusy(false);
+  }
+}
+
+function setLoginError(message) {
+  const error = document.getElementById("loginError");
+  error.textContent = message;
+  error.hidden = false;
+}
+
+async function createLoginSession(username, passwordHash, remember) {
+  const token = await hashText(`${AUTH_SALT}|session|${username}|${passwordHash}`);
+  const payload = {
+    token,
+    username,
+    createdAt: Date.now(),
+    expiresAt: remember ? Date.now() + REMEMBER_MS : 0,
+  };
+  sessionStorage.setItem(STORAGE_KEYS.loginSession, JSON.stringify(payload));
+  if (remember) {
+    localStorage.setItem(STORAGE_KEYS.loginSession, JSON.stringify(payload));
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.loginSession);
+  }
+  verifiedSessionToken = token;
+  isAuthenticated = true;
+}
+
+async function restoreLoginSession() {
+  const session = getStoredSession();
+  const owner = getOwnerAccount();
+
+  if (!session || !session.token || !owner) {
+    clearLoginSession();
+    return false;
+  }
+
+  if (session.expiresAt && Date.now() > session.expiresAt) {
+    clearLoginSession();
+    return false;
+  }
+
+  const expectedToken = await hashText(
+    `${AUTH_SALT}|session|${owner.username}|${owner.passwordHash}`,
+  );
+  const usernameOk =
+    String(session.username || "").toLowerCase() ===
+    String(owner.username || "").toLowerCase();
+
+  if (!usernameOk || !timingSafeEqual(session.token, expectedToken)) {
+    clearLoginSession();
+    return false;
+  }
+
+  sessionStorage.setItem(STORAGE_KEYS.loginSession, JSON.stringify(session));
+  verifiedSessionToken = expectedToken;
+  isAuthenticated = true;
+  return true;
+}
+
+function clearLoginSession() {
+  isAuthenticated = false;
+  verifiedSessionToken = "";
+  sessionStorage.removeItem(STORAGE_KEYS.loginSession);
+  localStorage.removeItem(STORAGE_KEYS.loginSession);
+}
+
+function wipeDashboardState() {
+  garageData = [];
+  currentItems = [];
+  selectedVehicleType = "Bike";
+
+  const recordsBody = document.getElementById("recordsBody");
+  const partsBody = document.getElementById("partsTableBody");
+  const printDetails = document.getElementById("printDetails");
+  const printItems = document.getElementById("printItemsBody");
+
+  if (recordsBody) recordsBody.innerHTML = "";
+  if (partsBody) partsBody.innerHTML = "";
+  if (printDetails) printDetails.innerHTML = "";
+  if (printItems) printItems.innerHTML = "";
+}
+
+function logout() {
+  askConfirm(
+    "Log out?",
+    "The dashboard will lock. Records stay saved, but nobody can use the app without your password.",
+  ).then((ok) => {
+    if (!ok) return;
+    clearLoginSession();
+    wipeDashboardState();
+    showLoginScreen(true);
+    showToast("Logged out.");
+  });
+}
+
+function openDashboard() {
+  if (!isSessionActive()) {
+    showLoginScreen(false);
+    return;
+  }
+
+  document.body.classList.remove("app-locked");
+  const loginScreen = document.getElementById("loginScreen");
+  const appShell = document.getElementById("appShell");
+  loginScreen.hidden = true;
+  loginScreen.inert = true;
+  appShell.hidden = false;
+  appShell.inert = false;
+
+  if (!dashboardReady) {
+    dashboardReady = true;
+    loadData();
+    ensureDaySession();
+    setupVehicleSelector();
+    setupPaymentOptions();
+    setupButtons();
+    setupKeyboardShortcuts();
+    setupInputGuards();
+  } else {
+    loadData();
+  }
+
   renderPartsTable();
   updateBalanceDue();
   refreshRecordsView();
   updateDashboard();
 }
 
+function openPasswordModal() {
+  if (!requireAuth()) return;
+  document.getElementById("currentPassword").value = "";
+  document.getElementById("newPassword").value = "";
+  document.getElementById("newPasswordConfirm").value = "";
+  document.getElementById("passwordModal").hidden = false;
+}
+
+function closePasswordModal() {
+  document.getElementById("passwordModal").hidden = true;
+}
+
+async function saveNewPassword() {
+  if (!requireAuth()) return;
+
+  const owner = getOwnerAccount();
+  const currentPassword = document.getElementById("currentPassword").value;
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmPassword = document.getElementById("newPasswordConfirm").value;
+
+  if (!owner) {
+    showToast("Owner account not found.", "error");
+    return;
+  }
+
+  const currentHash = await hashCredential(owner.username, currentPassword);
+  if (!timingSafeEqual(currentHash, owner.passwordHash)) {
+    showToast("Current password is incorrect.", "error");
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    showToast("New password must be at least 6 characters.", "error");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showToast("New passwords do not match.", "error");
+    return;
+  }
+
+  const passwordHash = await hashCredential(owner.username, newPassword);
+  localStorage.setItem(
+    STORAGE_KEYS.owner,
+    JSON.stringify({
+      ...owner,
+      passwordHash,
+      updatedAt: Date.now(),
+    }),
+  );
+
+  const storedSession = getStoredSession();
+  const remember = Boolean(storedSession && storedSession.expiresAt);
+  await createLoginSession(owner.username, passwordHash, remember);
+  closePasswordModal();
+  showToast("Password updated.");
+}
+
+async function hashCredential(username, password) {
+  return hashText(`${AUTH_SALT}|${String(username).trim().toLowerCase()}|${password}`);
+}
+
+async function hashText(text) {
+  if (window.crypto?.subtle) {
+    const data = new TextEncoder().encode(text);
+    const buffer = await crypto.subtle.digest("SHA-256", data);
+    return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function timingSafeEqual(left, right) {
+  const a = String(left || "");
+  const b = String(right || "");
+  const length = Math.max(a.length, b.length);
+  let mismatch = a.length === b.length ? 0 : 1;
+  for (let i = 0; i < length; i += 1) {
+    mismatch |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  return mismatch === 0;
+}
+
+function readStorageJSON(storage, key, fallback) {
+  try {
+    const raw = storage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch (error) {
+    return fallback;
+  }
+}
+
 function loadData() {
+  if (!requireAuth()) {
+    garageData = [];
+    daySession = { date: "", startedAt: 0 };
+    return;
+  }
   garageData = normalizeRecords(readJSON(STORAGE_KEYS.records, []));
   daySession = readJSON(STORAGE_KEYS.session, { date: "", startedAt: 0 });
 }
 
 function saveRecords() {
+  if (!requireAuth()) return;
   localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(garageData));
 }
 
 function saveSession() {
+  if (!requireAuth()) return;
   localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(daySession));
 }
 
@@ -123,6 +596,7 @@ function ensureDaySession() {
 }
 
 function startNewDay() {
+  if (!requireAuth()) return;
   askConfirm(
     "Start a new day?",
     "Today's dashboard counters will reset to zero. All saved job cards stay in history unless you delete them.",
@@ -179,19 +653,24 @@ function setupInputGuards() {
 function handleItemEnter(event) {
   if (event.key === "Enter") {
     event.preventDefault();
+    if (!requireAuth()) return;
     addPartRow();
   }
 }
 
 function setupKeyboardShortcuts() {
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeConfirm(false);
+      closePasswordModal();
+      return;
+    }
+
+    if (!isSessionActive()) return;
+
     if (event.ctrlKey && event.key.toLowerCase() === "s") {
       event.preventDefault();
       saveJobCard();
-    }
-
-    if (event.key === "Escape") {
-      closeConfirm(false);
     }
   });
 }
@@ -267,6 +746,7 @@ function updateBalanceDue() {
 }
 
 function addPartRow() {
+  if (!requireAuth()) return;
   const name = document.getElementById("partName").value.trim();
   const qty = Number(document.getElementById("partQty").value);
   const price = Number(document.getElementById("partPrice").value);
@@ -304,6 +784,7 @@ function addPartRow() {
 }
 
 function removePartRow(index) {
+  if (!requireAuth()) return;
   if (index < 0 || index >= currentItems.length) return;
   currentItems.splice(index, 1);
   renderPartsTable();
@@ -348,6 +829,7 @@ function renderPartsTable() {
 }
 
 function saveJobCard() {
+  if (!requireAuth()) return;
   const name = document.getElementById("custName").value.trim();
   const phone = document.getElementById("custPhone").value.trim();
   const vehicleNo = document.getElementById("vehicleNo").value.trim().toUpperCase();
@@ -431,6 +913,7 @@ function saveJobCard() {
 }
 
 function clearForm(showMessage) {
+  if (!requireAuth()) return;
   document.getElementById("custName").value = "";
   document.getElementById("custPhone").value = "";
   document.getElementById("vehicleNo").value = "";
@@ -560,6 +1043,7 @@ function getFilteredRecords() {
 }
 
 function refreshRecordsView() {
+  if (!requireAuth()) return;
   renderRecords(getFilteredRecords());
   updateDashboard();
 }
@@ -656,6 +1140,7 @@ function setupRecordActions() {
 }
 
 function deleteRecord(id) {
+  if (!requireAuth()) return;
   const record = garageData.find((item) => item.id === id);
   if (!record) {
     showToast("Record not found.", "error");
@@ -676,6 +1161,7 @@ function deleteRecord(id) {
 }
 
 function sendWhatsApp(id) {
+  if (!requireAuth()) return;
   const record = garageData.find((item) => item.id === id);
   if (!record) {
     showToast("Record not found.", "error");
@@ -720,6 +1206,7 @@ Please visit again.`;
 }
 
 function printInvoice(id) {
+  if (!requireAuth()) return;
   const record = garageData.find((item) => item.id === id);
   if (!record) {
     showToast("Record not found.", "error");
@@ -762,6 +1249,7 @@ function printInvoice(id) {
 }
 
 function exportToCSV() {
+  if (!requireAuth()) return;
   if (garageData.length === 0) {
     showToast("No records available for export.", "error");
     return;

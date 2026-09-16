@@ -17,7 +17,69 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="app-locked">
+    <noscript>
+        JavaScript is required to sign in and use Patel Auto Garage.
+    </noscript>
+
+    <section id="loginScreen" class="login-screen" aria-label="Login">
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <h1>Patel Auto Garage</h1>
+                <p id="loginSubtitle">Sign in to open the garage dashboard</p>
+            </div>
+
+            <form id="loginForm" class="login-form" autocomplete="on" novalidate>
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-user-lock"></i>
+                        <input id="loginUsername" name="username" type="text" maxlength="30" minlength="3"
+                            placeholder="Enter username" autocomplete="username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-key"></i>
+                        <input id="loginPassword" name="password" type="password" maxlength="64" minlength="6"
+                            placeholder="Enter password" autocomplete="current-password" required>
+                        <button type="button" id="togglePasswordBtn" class="password-toggle"
+                            title="Show password" aria-label="Show password" aria-pressed="false">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="confirmPasswordGroup" hidden>
+                    <label for="loginPasswordConfirm">Confirm Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-key"></i>
+                        <input id="loginPasswordConfirm" name="passwordConfirm" type="password" maxlength="64"
+                            placeholder="Re-enter password" autocomplete="new-password" disabled>
+                    </div>
+                </div>
+
+                <label class="remember-row" id="rememberRow">
+                    <input id="rememberMe" type="checkbox">
+                    <span>Keep me signed in on this device</span>
+                </label>
+
+                <p id="loginError" class="login-error" role="alert" aria-live="assertive" hidden></p>
+
+                <button type="submit" id="loginSubmitBtn" class="btn btn-save login-submit">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span id="loginSubmitText">Sign In</span>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <div id="appShell" class="app-shell" hidden inert aria-hidden="true">
 
     <header class="topbar">
         <div class="topbar-inner">
@@ -45,6 +107,16 @@
                 <button type="button" id="exportBtn" class="btn btn-success">
                     <i class="fa-solid fa-file-csv"></i>
                     Export Accounting
+                </button>
+
+                <button type="button" id="changePasswordBtn" class="btn btn-light">
+                    <i class="fa-solid fa-lock"></i>
+                    Password
+                </button>
+
+                <button type="button" id="logoutBtn" class="btn btn-danger">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
                 </button>
             </div>
         </div>
@@ -412,7 +484,32 @@
         </div>
     </div>
 
-    <div id="printableBill">
+    <div id="passwordModal" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+            <h3 id="passwordTitle">Change Password</h3>
+            <p>Update the password used to open this dashboard.</p>
+            <div class="form-group">
+                <label for="currentPassword">Current Password</label>
+                <input id="currentPassword" type="password" maxlength="64" autocomplete="current-password">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label for="newPasswordConfirm">Confirm New Password</label>
+                <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
+                <button type="button" id="passwordSave" class="btn btn-save">Update Password</button>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <div id="printableBill" hidden aria-hidden="true">
         <div class="invoice">
             <div class="invoice-header">
                 <div>
