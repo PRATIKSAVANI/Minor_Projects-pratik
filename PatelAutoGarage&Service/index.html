@@ -5,23 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>PatelAutoGarage&Service</title>
+    <title>PatelAutoGarage&Service - Garage Management System</title>
 
     <meta name="description"
-        content="PatelAutoGarage&Service daily records, billing, customers and vehicle service management.">
+        content="PatelAutoGarage&Service daily records, billing, vehicle service, day history and multi-day garage management.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="app-locked">
     <noscript>
-        JavaScript is required to sign in and use PatelAutoGarage&Service.
+        <div class="noscript-banner">
+            JavaScript is required to sign in and use PatelAutoGarage&Service.
+        </div>
     </noscript>
 
+    <!-- OWNER LOGIN SCREEN -->
     <section id="loginScreen" class="login-screen" aria-label="Login">
         <div class="login-card">
             <div class="login-brand">
@@ -74,450 +77,819 @@
                     <i class="fa-solid fa-right-to-bracket"></i>
                     <span id="loginSubmitText">Sign In</span>
                 </button>
+
+                <div class="login-footer-links" id="loginFooterLinks">
+                    <button type="button" id="resetLoginBtn" class="login-text-link">
+                        <i class="fa-solid fa-key"></i> Forgot Password / Reset Login
+                    </button>
+                </div>
             </form>
         </div>
     </section>
 
+    <!-- MAIN APP SHELL -->
     <div id="appShell" class="app-shell" hidden inert aria-hidden="true">
 
-    <header class="topbar">
-        <div class="topbar-inner">
-            <div class="brand">
-                <div class="brand-icon">
-                    <i class="fa-solid fa-screwdriver-wrench"></i>
-                </div>
-                <div>
-                    <h1>PatelAutoGarage&Service</h1>
-                    <span>Daily records, billing and vehicle service</span>
-                </div>
-            </div>
-
-            <div class="topbar-actions">
-                <div class="today-chip" id="todayChip">
-                    <i class="fa-solid fa-calendar-day"></i>
-                    <span id="todayLabel">Today</span>
-                </div>
-
-                <button type="button" id="themeToggleBtn" class="btn btn-light">
-                    <i class="fa-solid fa-moon"></i>
-                    <span id="themeText">Dark Mode</span>
-                </button>
-
-                <button type="button" id="exportBtn" class="btn btn-success">
-                    <i class="fa-solid fa-file-csv"></i>
-                    Export Accounting
-                </button>
-
-                <button type="button" id="changePasswordBtn" class="btn btn-light">
-                    <i class="fa-solid fa-lock"></i>
-                    Password
-                </button>
-
-                <button type="button" id="logoutBtn" class="btn btn-danger">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    Logout
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="container">
-
-        <section class="hero">
-            <div>
-                <div class="hero-badge">
-                    <i class="fa-solid fa-circle-check"></i>
-                    Garage Management System
-                </div>
-                <h2>HARSH SAVANI</h2>
-                <p>
-                    Record every vehicle, calculate bills accurately, and keep
-                    previous days safe in LocalStorage until you delete them.
-                </p>
-            </div>
-            <div class="hero-icon">
-                <i class="fa-solid fa-car-side"></i>
-            </div>
-        </section>
-
-        <section class="stats-grid">
-            <div class="stat-card stat-blue">
-                <div class="stat-content">
-                    <span>Today's Vehicles</span>
-                    <strong id="statTodayVehicles">0</strong>
-                    <small>Jobs recorded after New Day</small>
-                </div>
-                <div class="stat-icon">
-                    <i class="fa-solid fa-car"></i>
-                </div>
-            </div>
-
-            <div class="stat-card stat-green">
-                <div class="stat-content">
-                    <span>Today's Income</span>
-                    <strong id="statTodayIncome">₹0</strong>
-                    <small>Amount collected today</small>
-                </div>
-                <div class="stat-icon">
-                    <i class="fa-solid fa-indian-rupee-sign"></i>
-                </div>
-            </div>
-
-            <div class="stat-card stat-orange">
-                <div class="stat-content">
-                    <span>Today's Billed</span>
-                    <strong id="statTodayBilled">₹0</strong>
-                    <small>Total bill value today</small>
-                </div>
-                <div class="stat-icon">
-                    <i class="fa-solid fa-receipt"></i>
-                </div>
-            </div>
-
-            <div class="stat-card stat-red">
-                <div class="stat-content">
-                    <span>Pending Amount</span>
-                    <strong id="statPendingAmount">₹0</strong>
-                    <small>Outstanding across all records</small>
-                </div>
-                <div class="stat-icon">
-                    <i class="fa-solid fa-clock"></i>
-                </div>
-            </div>
-        </section>
-
-        <section class="panel">
-            <div class="panel-header">
-                <div>
-                    <span class="section-label">NEW SERVICE ENTRY</span>
-                    <h2>
-                        <i class="fa-solid fa-file-circle-plus"></i>
-                        Create New Job Card
-                    </h2>
-                    <p>Add customer, vehicle and service details.</p>
-                </div>
-                <div class="job-status">
-                    <i class="fa-solid fa-circle"></i>
-                    New Job
-                </div>
-            </div>
-
-            <div class="vehicle-section">
-                <div class="field-heading">
-                    <span>
-                        <i class="fa-solid fa-car"></i>
-                        Vehicle Type
-                    </span>
-                    <small>Select vehicle category</small>
-                </div>
-
-                <div class="vehicle-selector">
-                    <button type="button" class="vehicle-option active" data-vehicle="Bike">
-                        <i class="fa-solid fa-motorcycle"></i>
-                        <span>Bike</span>
-                    </button>
-                    <button type="button" class="vehicle-option" data-vehicle="Car">
-                        <i class="fa-solid fa-car"></i>
-                        <span>Car</span>
-                    </button>
-                    <button type="button" class="vehicle-option" data-vehicle="Other">
-                        <i class="fa-solid fa-truck"></i>
-                        <span>Other</span>
-                    </button>
-                </div>
-                <input type="hidden" id="vehicleType" value="Bike">
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="custName">Customer Name</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-user"></i>
-                        <input id="custName" type="text" maxlength="60" placeholder="Enter customer name" autocomplete="off">
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="custPhone">Mobile Number</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-phone"></i>
-                        <input id="custPhone" type="tel" inputmode="numeric" maxlength="10"
-                            placeholder="Enter 10-digit mobile" autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="vehicleNo">Vehicle Number</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-id-card"></i>
-                        <input id="vehicleNo" type="text" maxlength="15" placeholder="GJ01AB1234" autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="vehicleModel">Vehicle Model</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-car-side"></i>
-                        <input id="vehicleModel" type="text" maxlength="40" placeholder="e.g. Swift, Activa, Creta" autocomplete="off">
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-requirements">
-                <small class="help-text">At least one of the above fields is required (Name, Phone, Vehicle Number, or Model)</small>
-            </div>
-
-            <div class="service-box">
-                <div class="service-header">
                     <div>
-                        <span class="section-label">SERVICE &amp; PARTS</span>
-                        <h3>
-                            <i class="fa-solid fa-screwdriver-wrench"></i>
-                            Add Service / Parts / Labour
-                        </h3>
+                        <h1>PatelAutoGarage&Service</h1>
+                        <span>Multi-Day Garage Management &amp; Billing</span>
                     </div>
-                    <span class="item-count" id="itemCount">0 Items</span>
                 </div>
 
-                <div class="item-input-grid">
-                    <div class="form-group">
-                        <label for="partName">Description</label>
-                        <input id="partName" type="text" maxlength="80" placeholder="e.g. Engine Oil, Brake Service, Labour">
+                <div class="topbar-actions">
+                    <div class="today-chip" id="todayChip" title="Current Real-World Date">
+                        <i class="fa-solid fa-calendar-day"></i>
+                        <span id="todayLabel">Today</span>
                     </div>
 
-                    <div class="form-group">
-                        <label for="partQty">Quantity</label>
-                        <input id="partQty" type="number" min="1" max="999" step="1" value="1">
-                    </div>
+                    <button type="button" id="themeToggleBtn" class="btn btn-light" title="Toggle dark/light theme">
+                        <i class="fa-solid fa-moon"></i>
+                        <span id="themeText">Dark Mode</span>
+                    </button>
 
-                    <div class="form-group">
-                        <label for="partPrice">Unit Price</label>
-                        <div class="price-input">
-                            <span>₹</span>
-                            <input id="partPrice" type="number" min="0" max="999999" step="0.01" placeholder="0">
+                    <div class="dropdown">
+                        <button type="button" id="backupMenuBtn" class="btn btn-light" title="Data Backup &amp; Restore">
+                            <i class="fa-solid fa-database"></i>
+                            <span>Backup &amp; Export</span>
+                            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                        </button>
+                        <div class="dropdown-menu" id="backupDropdownMenu" hidden>
+                            <button type="button" id="exportDayCsvBtn" class="dropdown-item">
+                                <i class="fa-solid fa-file-csv"></i> Export Active Day CSV
+                            </button>
+                            <button type="button" id="exportAllCsvBtn" class="dropdown-item">
+                                <i class="fa-solid fa-file-excel"></i> Export All History CSV
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button type="button" id="downloadBackupBtn" class="dropdown-item">
+                                <i class="fa-solid fa-download"></i> Download Full Backup (JSON)
+                            </button>
+                            <button type="button" id="restoreBackupBtn" class="dropdown-item">
+                                <i class="fa-solid fa-upload"></i> Restore from Backup (JSON)
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="restoreFileInput" accept=".json" style="display: none;">
+
+                    <button type="button" id="changePasswordBtn" class="btn btn-light" title="Change owner password">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Password</span>
+                    </button>
+
+                    <button type="button" id="logoutBtn" class="btn btn-danger" title="Sign out and lock dashboard">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+
+            <!-- HERO SECTION -->
+            <section class="hero">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <i class="fa-solid fa-circle-check"></i>
+                        Permanent Multi-Day Garage History
+                    </div>
+                    <h2>HARSH SAVANI</h2>
+                    <p>
+                        Every day's records are stored permanently in history. Navigate to any past date
+                        to review, add, or edit job cards with independent daily calculations.
+                    </p>
+                </div>
+                <div class="hero-icon">
+                    <i class="fa-solid fa-car-side"></i>
+                </div>
+            </section>
+
+            <!-- WORKING DAY NAVIGATOR TOOLBAR -->
+            <section class="day-navigator-bar" id="dayNavigatorBar" aria-label="Working Day Selector">
+                <div class="day-nav-left">
+                    <div class="nav-control-group">
+                        <button type="button" id="prevDayBtn" class="btn btn-nav" title="Go to Previous Day">
+                            <i class="fa-solid fa-chevron-left"></i>
+                            <span>Previous</span>
+                        </button>
+
+                        <div class="date-picker-wrap">
+                            <i class="fa-regular fa-calendar"></i>
+                            <input type="date" id="activeDatePicker" class="active-date-picker" title="Select Working Date">
+                        </div>
+
+                        <button type="button" id="nextDayBtn" class="btn btn-nav" title="Go to Next Day">
+                            <span>Next</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+
+                        <button type="button" id="jumpTodayBtn" class="btn btn-nav btn-nav-today" title="Jump to Today">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            Today
+                        </button>
+                    </div>
+                </div>
+
+                <div class="day-nav-right">
+                    <div id="activeDateBadge" class="active-date-badge is-today">
+                        <span class="status-dot"></span>
+                        <span id="activeDateText">Active Day: Today, 20 Sep 2026</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HISTORICAL WORKING DAY WARNING BANNER (Shows when activeDate != today) -->
+            <div id="historicalBanner" class="historical-banner" hidden>
+                <div class="historical-banner-content">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Historical Date Mode: <span id="historicalDateLabel">19 Sep 2026</span></strong>
+                        <span>Any new job cards or expenses you add below will be saved specifically for this past date.</span>
+                    </div>
+                </div>
+                <button type="button" id="bannerJumpTodayBtn" class="btn btn-banner-jump">
+                    <i class="fa-solid fa-arrow-turn-up"></i> Return to Today
+                </button>
+            </div>
+
+            <!-- DASHBOARD STATS GRID (Calculated for activeDate) -->
+            <section class="dashboard-section">
+                <div class="section-title-row">
+                    <div>
+                        <span class="section-label">DAILY PERFORMANCE</span>
+                        <h3 id="dashboardStatsHeading">Summary for Today</h3>
+                    </div>
+                    <div class="alltime-mini-badge" title="Total pending balance from all customers across entire history">
+                        <i class="fa-solid fa-vault"></i>
+                        <span>All-Time Market Pending: <strong id="statAllTimePending">₹0</strong></span>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card stat-blue">
+                        <div class="stat-content">
+                            <span>Vehicles Serviced</span>
+                            <strong id="statDayVehicles">0</strong>
+                            <small id="statDayVehiclesLabel">Jobs recorded for selected date</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-car"></i>
                         </div>
                     </div>
 
-                    <button type="button" id="addItemBtn" class="btn btn-primary add-item-btn">
-                        <i class="fa-solid fa-plus"></i>
-                        Add Item
+                    <div class="stat-card stat-green">
+                        <div class="stat-content">
+                            <span>Income Collected</span>
+                            <strong id="statDayIncome">₹0</strong>
+                            <small id="statDayIncomeLabel">Cash &amp; UPI received</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-indian-rupee-sign"></i>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-orange">
+                        <div class="stat-content">
+                            <span>Total Billed</span>
+                            <strong id="statDayBilled">₹0</strong>
+                            <small id="statDayBilledLabel">Bill value for date</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-purple">
+                        <div class="stat-content">
+                            <span>Daily Expenses</span>
+                            <strong id="statDayExpenses">₹0</strong>
+                            <small id="statDayExpensesLabel">Parts &amp; shop costs</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-arrow-trend-down"></i>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-emerald">
+                        <div class="stat-content">
+                            <span>Net Daily Profit</span>
+                            <strong id="statDayNetProfit">₹0</strong>
+                            <small id="statDayNetProfitLabel">Collected minus Expenses</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-red">
+                        <div class="stat-content">
+                            <span>Pending for Date</span>
+                            <strong id="statDayPending">₹0</strong>
+                            <small id="statDayPendingLabel">Unpaid balance on this date</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CREATE NEW JOB CARD PANEL -->
+            <section class="panel" id="newJobPanel">
+                <div class="panel-header">
+                    <div>
+                        <span class="section-label">SERVICE BILLING &amp; JOB CARD</span>
+                        <h2>
+                            <i class="fa-solid fa-file-circle-plus"></i>
+                            Create Job Card
+                        </h2>
+                        <p>Enter vehicle and customer details. Will be saved to the selected working date.</p>
+                    </div>
+                    <div class="job-card-date-chip">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <span>Job Date: <strong id="jobDateDisplay">2026-09-20</strong></span>
+                    </div>
+                </div>
+
+                <div class="job-meta-row">
+                    <div class="vehicle-section">
+                        <div class="field-heading">
+                            <span>
+                                <i class="fa-solid fa-car"></i>
+                                Vehicle Type
+                            </span>
+                            <small>Category</small>
+                        </div>
+
+                        <div class="vehicle-selector">
+                            <button type="button" class="vehicle-option active" data-vehicle="Bike">
+                                <i class="fa-solid fa-motorcycle"></i>
+                                <span>Bike</span>
+                            </button>
+                            <button type="button" class="vehicle-option" data-vehicle="Car">
+                                <i class="fa-solid fa-car"></i>
+                                <span>Car</span>
+                            </button>
+                            <button type="button" class="vehicle-option" data-vehicle="Other">
+                                <i class="fa-solid fa-truck"></i>
+                                <span>Other</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="vehicleType" value="Bike">
+                    </div>
+
+                    <div class="form-group job-date-picker-group">
+                        <label for="formJobDate">Record Date</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-calendar-day"></i>
+                            <input type="date" id="formJobDate" title="Change date for this specific record">
+                        </div>
+                        <small class="help-text">Defaults to active working date</small>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="custName">Customer Name</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-user"></i>
+                            <input id="custName" type="text" maxlength="60" placeholder="Enter customer name" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="custPhone">Mobile Number</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-phone"></i>
+                            <input id="custPhone" type="tel" inputmode="numeric" maxlength="10"
+                                placeholder="10-digit mobile" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicleNo">Vehicle Number</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-id-card"></i>
+                            <input id="vehicleNo" type="text" maxlength="15" placeholder="GJ01AB1234" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicleModel">Vehicle Model</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-car-side"></i>
+                            <input id="vehicleModel" type="text" maxlength="40" placeholder="e.g. Swift, Activa, Splendor" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-requirements">
+                    <small class="help-text"><i class="fa-solid fa-info-circle"></i> At least one identifier is required (Name, Phone, Vehicle Number, or Model)</small>
+                </div>
+
+                <!-- SERVICE & PARTS TABLE -->
+                <div class="service-box">
+                    <div class="service-header">
+                        <div>
+                            <span class="section-label">SERVICES &amp; PARTS</span>
+                            <h3>
+                                <i class="fa-solid fa-screwdriver-wrench"></i>
+                                Add Service / Spare Parts / Labour
+                            </h3>
+                        </div>
+                        <span class="item-count" id="itemCount">0 Items</span>
+                    </div>
+
+                    <div class="item-input-grid">
+                        <div class="form-group">
+                            <label for="partName">Description</label>
+                            <input id="partName" type="text" maxlength="80" placeholder="e.g. Engine Oil, Brake Shoe, Labour Charge">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="partQty">Qty</label>
+                            <input id="partQty" type="number" min="1" max="999" step="1" value="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="partPrice">Unit Price (₹)</label>
+                            <div class="price-input">
+                                <span>₹</span>
+                                <input id="partPrice" type="number" min="0" max="999999" step="0.01" placeholder="0">
+                            </div>
+                        </div>
+
+                        <button type="button" id="addItemBtn" class="btn btn-primary add-item-btn">
+                            <i class="fa-solid fa-plus"></i>
+                            Add Item
+                        </button>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="partsTableBody"></tbody>
+                        </table>
+                        <div id="emptyItems" class="empty-items">
+                            <i class="fa-solid fa-receipt"></i>
+                            <p>No service or parts added yet.</p>
+                            <span>Add items above to calculate bill total.</span>
+                        </div>
+                    </div>
+
+                    <div class="bill-total">
+                        <div>
+                            <span>Service Items</span>
+                            <strong id="summaryItemCount">0</strong>
+                        </div>
+                        <div>
+                            <span>Grand Total</span>
+                            <strong id="billTotal">₹0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAYMENT SECTION -->
+                <div class="payment-section">
+                    <div>
+                        <span class="section-label">PAYMENT METHOD</span>
+                        <h3>Payment Status</h3>
+                    </div>
+
+                    <div class="payment-options">
+                        <label class="payment-option active">
+                            <input type="radio" name="paymentStatus" value="Paid (Cash)" checked>
+                            <span class="payment-icon cash">
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                            </span>
+                            <span>
+                                <strong>Cash</strong>
+                                <small>Paid in cash</small>
+                            </span>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentStatus" value="Paid (UPI)">
+                            <span class="payment-icon upi">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </span>
+                            <span>
+                                <strong>UPI</strong>
+                                <small>GPay / PhonePe / Paytm</small>
+                            </span>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentStatus" value="Pending">
+                            <span class="payment-icon pending">
+                                <i class="fa-solid fa-clock"></i>
+                            </span>
+                            <span>
+                                <strong>Pending</strong>
+                                <small>Customer Credit</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="amount-received-row">
+                    <div class="form-group">
+                        <label for="amountReceived">Amount Received (₹)</label>
+                        <div class="price-input">
+                            <span>₹</span>
+                            <input id="amountReceived" type="number" min="0" max="999999" step="0.01" placeholder="0">
+                        </div>
+                        <small class="help-text">Leave empty to auto-fill: full amount for Cash/UPI, ₹0 for Pending.</small>
+                    </div>
+                    <div class="balance-card">
+                        <span>Balance Due</span>
+                        <strong id="balanceDue">₹0</strong>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <button type="button" id="clearFormBtn" class="btn btn-light">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        Clear Form
+                    </button>
+                    <button type="button" id="saveJobBtn" class="btn btn-save">
+                        <i class="fa-solid fa-check"></i>
+                        Save Job Card
+                    </button>
+                </div>
+            </section>
+
+            <!-- DAILY EXPENSES PANEL (For the activeDate) -->
+            <section class="panel expense-panel">
+                <div class="panel-header expense-header">
+                    <div>
+                        <span class="section-label">SHOP &amp; SPARE PARTS OUTFLOW</span>
+                        <h2>
+                            <i class="fa-solid fa-wallet"></i>
+                            Daily Garage Expenses
+                        </h2>
+                        <p>Track spare parts purchases, shop utilities, labour or tea expenses for <strong id="expenseDateLabel">Today</strong>.</p>
+                    </div>
+                    <div class="expense-total-badge">
+                        <span>Day Expenses:</span>
+                        <strong id="expenseSectionTotal">₹0</strong>
+                    </div>
+                </div>
+
+                <div class="expense-body">
+                    <form id="expenseForm" class="expense-input-grid" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="expenseDesc">Expense Description</label>
+                            <input type="text" id="expenseDesc" placeholder="e.g. Engine Oil bulk stock, Shop electricity, Chai/Tea" maxlength="80">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expenseCategory">Category</label>
+                            <select id="expenseCategory">
+                                <option value="Parts / Stock">Parts / Stock</option>
+                                <option value="Tools / Equipment">Tools / Equipment</option>
+                                <option value="Shop Utilities">Shop Utilities / Rent</option>
+                                <option value="Staff / Labour">Staff / Labour</option>
+                                <option value="Tea / Food">Tea / Food / Misc</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expenseAmount">Amount (₹)</label>
+                            <div class="price-input">
+                                <span>₹</span>
+                                <input type="number" id="expenseAmount" min="1" max="999999" step="0.01" placeholder="0">
+                            </div>
+                        </div>
+
+                        <button type="button" id="addExpenseBtn" class="btn btn-primary add-expense-btn">
+                            <i class="fa-solid fa-plus"></i> Add Expense
+                        </button>
+                    </form>
+
+                    <div class="table-wrapper expense-table-wrap">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="expensesTableBody"></tbody>
+                        </table>
+                        <div id="emptyExpenses" class="empty-items">
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                            <p>No expenses recorded for this date.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SERVICE HISTORY & RECORDS PANEL -->
+            <section class="panel history-panel" id="serviceHistorySection">
+                <div class="panel-header history-header">
+                    <div>
+                        <span class="section-label">RECORDS &amp; CUSTOMER BILLS</span>
+                        <h2>
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            Service Records
+                        </h2>
+                        <p>View, edit, search, and manage vehicle service history.</p>
+                    </div>
+                    <div class="record-count">
+                        <strong id="recordCount">0</strong>
+                        <span>Records</span>
+                    </div>
+                </div>
+
+                <div class="history-filters">
+                    <div class="filter-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input id="searchInput" type="search"
+                            placeholder="Search customer, vehicle number, mobile, or model...">
+                    </div>
+
+                    <div class="view-scope-toggle">
+                        <button type="button" class="scope-btn active" id="scopeDateBtn" data-scope="date">
+                            <i class="fa-solid fa-calendar-day"></i>
+                            <span>Selected Date</span>
+                        </button>
+                        <button type="button" class="scope-btn" id="scopeAllBtn" data-scope="all">
+                            <i class="fa-solid fa-database"></i>
+                            <span>All Records</span>
+                        </button>
+                    </div>
+
+                    <select id="statusFilter" class="filter-select">
+                        <option value="all">All Payment Status</option>
+                        <option value="paid">Fully Paid</option>
+                        <option value="pending">Has Pending Balance</option>
+                    </select>
+
+                    <button type="button" class="filter-reset" id="resetFiltersBtn" title="Reset all search filters">
+                        <i class="fa-solid fa-filter-circle-xmark"></i>
+                        Reset
                     </button>
                 </div>
 
+                <div id="filterSummary" class="filter-result-bar">
+                    <span>Showing <strong>0</strong> records</span>
+                    <span>Billed: <strong>₹0</strong></span>
+                    <span>Collected: <strong>₹0</strong></span>
+                    <span>Pending: <strong>₹0</strong></span>
+                </div>
+
                 <div class="table-wrapper">
-                    <table class="items-table">
+                    <table class="records-table">
                         <thead>
                             <tr>
-                                <th>Description</th>
-                                <th>Qty</th>
-                                <th>Unit Price</th>
-                                <th>Total</th>
-                                <th></th>
+                                <th>Date &amp; Time</th>
+                                <th>Vehicle</th>
+                                <th>Customer</th>
+                                <th>Services / Parts</th>
+                                <th>Total &amp; Paid</th>
+                                <th>Status</th>
+                                <th style="text-align: center;">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="partsTableBody"></tbody>
+                        <tbody id="recordsBody"></tbody>
                     </table>
-                    <div id="emptyItems" class="empty-items">
-                        <i class="fa-solid fa-receipt"></i>
-                        <p>No service or parts added yet.</p>
-                        <span>Add your first item above.</span>
+
+                    <div id="emptyRecords" class="empty-records">
+                        <div class="empty-icon">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <h3>No records found</h3>
+                        <p id="emptyRecordsSub">No job cards match your current date or search filters.</p>
                     </div>
                 </div>
+            </section>
 
-                <div class="bill-total">
+            <!-- DATE / DAY HISTORY DIRECTORY SECTION -->
+            <section class="panel day-history-panel" id="dayHistorySection">
+                <div class="panel-header">
                     <div>
-                        <span>Service Items</span>
-                        <strong id="summaryItemCount">0</strong>
+                        <span class="section-label">CALENDAR DIRECTORY &amp; ARCHIVE</span>
+                        <h2>
+                            <i class="fa-solid fa-calendar-days"></i>
+                            Date / Day History Archive
+                        </h2>
+                        <p>Browse all recorded garage days. Click any date to load its full records and calculations.</p>
                     </div>
-                    <div>
-                        <span>Grand Total</span>
-                        <strong id="billTotal">₹0</strong>
+                    <div class="history-stats-pill">
+                        <span id="historyDaysCount">0 Days Recorded</span>
                     </div>
                 </div>
-            </div>
 
-            <div class="payment-section">
-                <div>
-                    <span class="section-label">PAYMENT</span>
-                    <h3>Payment Status</h3>
+                <div class="day-history-grid" id="dayHistoryGrid">
+                    <!-- Dynamic Day History Cards populated by JS -->
                 </div>
 
-                <div class="payment-options">
-                    <label class="payment-option active">
-                        <input type="radio" name="paymentStatus" value="Paid (Cash)" checked>
-                        <span class="payment-icon cash">
-                            <i class="fa-solid fa-money-bill-wave"></i>
-                        </span>
-                        <span>
-                            <strong>Cash</strong>
-                            <small>Paid in cash</small>
-                        </span>
-                    </label>
-
-                    <label class="payment-option">
-                        <input type="radio" name="paymentStatus" value="Paid (UPI)">
-                        <span class="payment-icon upi">
-                            <i class="fa-solid fa-qrcode"></i>
-                        </span>
-                        <span>
-                            <strong>UPI</strong>
-                            <small>GPay / PhonePe / UPI</small>
-                        </span>
-                    </label>
-
-                    <label class="payment-option">
-                        <input type="radio" name="paymentStatus" value="Pending">
-                        <span class="payment-icon pending">
-                            <i class="fa-solid fa-clock"></i>
-                        </span>
-                        <span>
-                            <strong>Pending</strong>
-                            <small>Customer credit</small>
-                        </span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="amount-received-row">
-                <div class="form-group">
-                    <label for="amountReceived">Amount Received (₹)</label>
-                    <div class="price-input">
-                        <span>₹</span>
-                        <input id="amountReceived" type="number" min="0" max="999999" step="0.01" placeholder="0">
-                    </div>
-                    <small class="help-text">Leave empty to auto-fill: full amount for Cash/UPI, ₹0 for Pending.</small>
-                </div>
-                <div class="balance-card">
-                    <span>Balance Due</span>
-                    <strong id="balanceDue">₹0</strong>
-                </div>
-            </div>
-
-            <div class="form-footer">
-                <button type="button" id="clearFormBtn" class="btn btn-light">
-                    <i class="fa-solid fa-rotate-left"></i>
-                    Clear Form
-                </button>
-                <button type="button" id="saveJobBtn" class="btn btn-save">
-                    <i class="fa-solid fa-check"></i>
-                    Save Job Card
-                </button>
-            </div>
-        </section>
-
-        <section class="panel history-panel">
-            <div class="panel-header history-header">
-                <div>
-                    <span class="section-label">GARAGE RECORDS</span>
-                    <h2>
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                        Service History
-                    </h2>
-                    <p>Search, filter and manage previous service records.</p>
-                </div>
-                <div class="record-count">
-                    <strong id="recordCount">0</strong>
-                    <span>Saved</span>
-                </div>
-            </div>
-
-            <div class="history-filters">
-                <div class="filter-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input id="searchInput" type="search"
-                        placeholder="Search customer, vehicle number, mobile or model...">
-                </div>
-
-                <select id="periodFilter" class="filter-select">
-                    <option value="all">All Records</option>
-                    <option value="today">Today</option>
-                    <option value="month">This Month</option>
-                </select>
-
-                <input id="dateFilter" type="date" class="filter-input" title="View records for a specific date">
-
-                <button type="button" class="filter-reset" id="resetFiltersBtn">
-                    <i class="fa-solid fa-filter-circle-xmark"></i>
-                    Clear Filters
-                </button>
-            </div>
-
-            <div id="filterSummary" class="filter-result-bar">
-                <span>Showing <strong>0</strong> records</span>
-                <span>Billed: <strong>₹0</strong></span>
-                <span>Collected: <strong>₹0</strong></span>
-                <span>Pending: <strong>₹0</strong></span>
-            </div>
-
-            <div class="table-wrapper">
-                <table class="records-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Vehicle</th>
-                            <th>Customer</th>
-                            <th>Services / Parts</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recordsBody"></tbody>
-                </table>
-
-                <div id="emptyRecords" class="empty-records">
+                <div id="emptyDayHistory" class="empty-records" style="display: none;">
                     <div class="empty-icon">
-                        <i class="fa-solid fa-folder-open"></i>
+                        <i class="fa-solid fa-calendar-xmark"></i>
                     </div>
-                    <h3>No records found</h3>
-                    <p>Saved job cards will appear here.</p>
+                    <h3>No past days recorded yet</h3>
+                    <p>When you enter vehicle records, every day will appear here permanently.</p>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- EDIT JOB CARD MODAL -->
+        <div id="editJobModal" class="modal" hidden>
+            <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+                <div class="modal-header">
+                    <div>
+                        <span class="section-label">UPDATE RECORD</span>
+                        <h3 id="editModalTitle">Edit Job Card</h3>
+                    </div>
+                    <button type="button" id="editModalCloseBtn" class="modal-close" aria-label="Close modal">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="edit-modal-body">
+                    <input type="hidden" id="editRecordId">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editRecordDate">Record Date</label>
+                            <input type="date" id="editRecordDate">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editVehicleType">Vehicle Type</label>
+                            <select id="editVehicleType">
+                                <option value="Bike">Bike</option>
+                                <option value="Car">Car</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editVehicleNo">Vehicle Number</label>
+                            <input type="text" id="editVehicleNo" maxlength="15">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editVehicleModel">Vehicle Model</label>
+                            <input type="text" id="editVehicleModel" maxlength="40">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editCustName">Customer Name</label>
+                            <input type="text" id="editCustName" maxlength="60">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editCustPhone">Mobile Number</label>
+                            <input type="tel" id="editCustPhone" maxlength="10">
+                        </div>
+                    </div>
+
+                    <!-- Items Editor in Modal -->
+                    <div class="service-box modal-service-box">
+                        <div class="service-header">
+                            <h4>Services &amp; Parts</h4>
+                            <span class="item-count" id="editItemCount">0 Items</span>
+                        </div>
+
+                        <div class="item-input-grid">
+                            <div class="form-group">
+                                <label for="editPartName">Description</label>
+                                <input id="editPartName" type="text" placeholder="Item name">
+                            </div>
+                            <div class="form-group">
+                                <label for="editPartQty">Qty</label>
+                                <input id="editPartQty" type="number" min="1" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="editPartPrice">Unit Price (₹)</label>
+                                <input id="editPartPrice" type="number" min="0" placeholder="0">
+                            </div>
+                            <button type="button" id="editAddItemBtn" class="btn btn-primary add-item-btn">
+                                <i class="fa-solid fa-plus"></i> Add
+                            </button>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="editPartsTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="bill-total">
+                            <div>
+                                <span>Grand Total</span>
+                                <strong id="editBillTotal">₹0</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment in Modal -->
+                    <div class="form-grid edit-payment-grid">
+                        <div class="form-group">
+                            <label for="editPaymentStatus">Payment Status</label>
+                            <select id="editPaymentStatus">
+                                <option value="Paid (Cash)">Paid (Cash)</option>
+                                <option value="Paid (UPI)">Paid (UPI)</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editAmountReceived">Amount Received (₹)</label>
+                            <input type="number" id="editAmountReceived" min="0" step="0.01">
+                        </div>
+
+                        <div class="balance-card">
+                            <span>Balance Due</span>
+                            <strong id="editBalanceDue">₹0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="editModalCancel" class="btn btn-light">Cancel</button>
+                    <button type="button" id="editModalSave" class="btn btn-save">
+                        <i class="fa-solid fa-check"></i> Save Changes
+                    </button>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <div id="confirmModal" class="modal" hidden>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-            <h3 id="confirmTitle">Confirm</h3>
-            <p id="confirmMessage"></p>
-            <div class="modal-actions">
-                <button type="button" id="confirmCancel" class="btn btn-light">Cancel</button>
-                <button type="button" id="confirmOk" class="btn btn-danger">Confirm</button>
+        <!-- CONFIRM DIALOG MODAL -->
+        <div id="confirmModal" class="modal" hidden>
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+                <h3 id="confirmTitle">Confirm</h3>
+                <p id="confirmMessage"></p>
+                <div class="modal-actions">
+                    <button type="button" id="confirmCancel" class="btn btn-light">Cancel</button>
+                    <button type="button" id="confirmOk" class="btn btn-danger">Confirm</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="passwordModal" class="modal" hidden>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
-            <h3 id="passwordTitle">Change Password</h3>
-            <p>Update the password used to open this dashboard.</p>
-            <div class="form-group">
-                <label for="currentPassword">Current Password</label>
-                <input id="currentPassword" type="password" maxlength="64" autocomplete="current-password">
-            </div>
-            <div class="form-group">
-                <label for="newPassword">New Password</label>
-                <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password">
-            </div>
-            <div class="form-group">
-                <label for="newPasswordConfirm">Confirm New Password</label>
-                <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password">
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
-                <button type="button" id="passwordSave" class="btn btn-save">Update Password</button>
+        <!-- CHANGE PASSWORD MODAL -->
+        <div id="passwordModal" class="modal" hidden>
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+                <h3 id="passwordTitle">Change Password</h3>
+                <p>Update the password used to open this dashboard.</p>
+                <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input id="currentPassword" type="password" maxlength="64" autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="newPasswordConfirm">Confirm New Password</label>
+                    <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
+                    <button type="button" id="passwordSave" class="btn btn-save">Update Password</button>
+                </div>
             </div>
         </div>
-    </div>
 
     </div>
 
+    <!-- PRINTABLE INVOICE TEMPLATE -->
     <div id="printableBill" hidden aria-hidden="true">
         <div class="invoice">
             <div class="invoice-header">
                 <div>
                     <h1>PatelAutoGarage&Service</h1>
-                    <p>Professional Vehicle Service &amp; Repair</p>
+                    <p>Professional Vehicle Service, Maintenance &amp; Repair</p>
+                    <small>Owner: Harsh Savani</small>
                 </div>
                 <div class="invoice-title">
                     <span>INVOICE</span>
@@ -555,12 +927,13 @@
 
             <div class="invoice-footer">
                 <p>Thank you for choosing PatelAutoGarage&Service.</p>
-                <span>Please visit again.</span>
+                <span>We appreciate your business. Please visit again!</span>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="toast">
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast" role="status" aria-live="polite">
         <i class="fa-solid fa-circle-check"></i>
         <span id="toastMessage">Success</span>
     </div>
