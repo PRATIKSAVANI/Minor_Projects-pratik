@@ -98,9 +98,9 @@
                     <span id="todayLabel">Today</span>
                 </div>
 
-                <button type="button" id="newDayBtn" class="btn btn-light">
-                    <i class="fa-solid fa-sun"></i>
-                    New Day
+                <button type="button" id="themeToggleBtn" class="btn btn-light">
+                    <i class="fa-solid fa-moon"></i>
+                    <span id="themeText">Dark Mode</span>
                 </button>
 
                 <button type="button" id="exportBtn" class="btn btn-success">
@@ -230,7 +230,7 @@
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="custName">Customer Name <span>*</span></label>
+                    <label for="custName">Customer Name</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-user"></i>
                         <input id="custName" type="text" maxlength="60" placeholder="Enter customer name" autocomplete="off">
@@ -238,7 +238,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="custPhone">Mobile Number <span>*</span></label>
+                    <label for="custPhone">Mobile Number</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-phone"></i>
                         <input id="custPhone" type="tel" inputmode="numeric" maxlength="10"
@@ -247,7 +247,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="vehicleNo">Vehicle Number <span>*</span></label>
+                    <label for="vehicleNo">Vehicle Number</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-id-card"></i>
                         <input id="vehicleNo" type="text" maxlength="15" placeholder="GJ01AB1234" autocomplete="off">
@@ -261,6 +261,10 @@
                         <input id="vehicleModel" type="text" maxlength="40" placeholder="e.g. Swift, Activa, Creta" autocomplete="off">
                     </div>
                 </div>
+            </div>
+
+            <div class="form-requirements">
+                <small class="help-text">At least one of the above fields is required (Name, Phone, Vehicle Number, or Model)</small>
             </div>
 
             <div class="service-box">

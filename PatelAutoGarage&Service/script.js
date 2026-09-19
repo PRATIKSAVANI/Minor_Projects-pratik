@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   owner: "patelAutoGarageOwner",
   loginSession: "patelAutoGarageLoginSession",
   loginLock: "patelAutoGarageLoginLock",
+  theme: "patelAutoGarageTheme",
 };
 
 const AUTH_SALT = "patel-auto-garage-v1";
@@ -25,6 +26,8 @@ let dashboardReady = false;
 let isAuthenticated = false;
 let verifiedSessionToken = "";
 let loginBusy = false;
+let dayCheckInterval = null;
+let lastCheckedDate = "";
 
 document.addEventListener("DOMContentLoaded", initializeApp);
 
@@ -358,6 +361,7 @@ function logout() {
     "The dashboard will lock. Records stay saved, but nobody can use the app without your password.",
   ).then((ok) => {
     if (!ok) return;
+    stopDayCheck();
     clearLoginSession();
     wipeDashboardState();
     showLoginScreen(true);
@@ -388,6 +392,8 @@ function openDashboard() {
     setupButtons();
     setupKeyboardShortcuts();
     setupInputGuards();
+    startDayCheck();
+    initializeTheme();
   } else {
     loadData();
   }
@@ -595,31 +601,14 @@ function ensureDaySession() {
   updateTodayLabel();
 }
 
-function startNewDay() {
-  if (!requireAuth()) return;
-  askConfirm(
-    "Start a new day?",
-    "Today's dashboard counters will reset to zero. All saved job cards stay in history unless you delete them.",
-  ).then((ok) => {
-    if (!ok) return;
 
-    daySession = {
-      date: getLocalDate(),
-      startedAt: Date.now(),
-    };
-    saveSession();
-    updateTodayLabel();
-    updateDashboard();
-    showToast("New day started. Previous records are still saved.");
-  });
-}
 
 function setupButtons() {
   document.getElementById("addItemBtn").addEventListener("click", addPartRow);
   document.getElementById("saveJobBtn").addEventListener("click", saveJobCard);
   document.getElementById("clearFormBtn").addEventListener("click", () => clearForm(true));
   document.getElementById("exportBtn").addEventListener("click", exportToCSV);
-  document.getElementById("newDayBtn").addEventListener("click", startNewDay);
+  document.getElementById("themeToggleBtn").addEventListener("click", toggleTheme);
   document.getElementById("searchInput").addEventListener("input", refreshRecordsView);
   document.getElementById("periodFilter").addEventListener("change", onPeriodChange);
   document.getElementById("dateFilter").addEventListener("change", onDateChange);
@@ -836,32 +825,31 @@ function saveJobCard() {
   const vehicleModel = document.getElementById("vehicleModel").value.trim();
   const paymentStatus = getPaymentStatus();
 
-  if (!name) {
-    showToast("Please enter customer name.", "error");
+  const hasName = name.length > 0;
+  const hasPhone = phone.length > 0;
+  const hasVehicleNo = vehicleNo.length > 0;
+  const hasVehicleModel = vehicleModel.length > 0;
+
+  if (!hasName && !hasPhone && !hasVehicleNo && !hasVehicleModel) {
+    showToast("Please enter at least one of: Customer Name, Mobile Number, Vehicle Number, or Vehicle Model.", "error");
     document.getElementById("custName").focus();
     return;
   }
 
-  if (name.length < 2) {
+  if (hasName && name.length < 2) {
     showToast("Customer name must be at least 2 characters.", "error");
     document.getElementById("custName").focus();
     return;
   }
 
   const cleanPhone = phone.replace(/\D/g, "");
-  if (cleanPhone.length !== 10) {
+  if (hasPhone && cleanPhone.length !== 10) {
     showToast("Please enter a valid 10-digit mobile number.", "error");
     document.getElementById("custPhone").focus();
     return;
   }
 
-  if (!vehicleNo) {
-    showToast("Please enter vehicle number.", "error");
-    document.getElementById("vehicleNo").focus();
-    return;
-  }
-
-  if (vehicleNo.length < 4) {
+  if (hasVehicleNo && vehicleNo.length < 4) {
     showToast("Please enter a valid vehicle number.", "error");
     document.getElementById("vehicleNo").focus();
     return;
@@ -892,11 +880,11 @@ function saveJobCard() {
       hour: "2-digit",
       minute: "2-digit",
     }),
-    name,
-    phone: cleanPhone,
+    name: hasName ? name : "",
+    phone: hasPhone ? cleanPhone : "",
     vehicleType: selectedVehicleType,
-    vehicleNo,
-    vehicleModel,
+    vehicleNo: hasVehicleNo ? vehicleNo : "",
+    vehicleModel: hasVehicleModel ? vehicleModel : "",
     items: currentItems.map((item) => ({ ...item })),
     totalAmount,
     paidAmount,
@@ -1435,4 +1423,64 @@ function getLocalMonth() {
 function startOfLocalDay() {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function startDayCheck() {
+  stopDayCheck();
+  lastCheckedDate = getLocalDate();
+  dayCheckInterval = setInterval(checkForNewDay, 60000);
+}
+
+function stopDayCheck() {
+  if (dayCheckInterval) {
+    clearInterval(dayCheckInterval);
+    dayCheckInterval = null;
+  }
+  lastCheckedDate = "";
+}
+
+function checkForNewDay() {
+  if (!isAuthenticated || !requireAuth()) return;
+
+  const currentDate = getLocalDate();
+  if (currentDate !== lastCheckedDate && currentDate !== daySession.date) {
+    lastCheckedDate = currentDate;
+    daySession = {
+      date: currentDate,
+      startedAt: startOfLocalDay().getTime(),
+    };
+    saveSession();
+    updateTodayLabel();
+    updateDashboard();
+    showToast("New day started automatically. Previous records are still saved.");
+  }
+}
+
+function toggleTheme() {
+  const currentTheme = localStorage.getItem(STORAGE_KEYS.theme) || "light";
+  const newTheme = currentTheme === "light" ? "dark" : "light";
+  localStorage.setItem(STORAGE_KEYS.theme, newTheme);
+  applyTheme(newTheme);
+}
+
+function applyTheme(theme) {
+  const body = document.body;
+  const themeBtn = document.getElementById("themeToggleBtn");
+  const themeText = document.getElementById("themeText");
+  const themeIcon = themeBtn.querySelector("i");
+
+  if (theme === "dark") {
+    body.classList.add("dark-mode");
+    themeText.textContent = "Light Mode";
+    themeIcon.className = "fa-solid fa-sun";
+  } else {
+    body.classList.remove("dark-mode");
+    themeText.textContent = "Dark Mode";
+    themeIcon.className = "fa-solid fa-moon";
+  }
+}
+
+function initializeTheme() {
+  const savedTheme = localStorage.getItem(STORAGE_KEYS.theme) || "light";
+  applyTheme(savedTheme);
 }

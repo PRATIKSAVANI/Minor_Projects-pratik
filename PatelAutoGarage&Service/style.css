@@ -22,6 +22,25 @@
     --shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
 }
 
+.dark-mode {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --success: #22c55e;
+    --success-dark: #16a34a;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --dark: #1e293b;
+    --text: #e2e8f0;
+    --text-primary: #f1f5f9;
+    --text-muted: #94a3b8;
+    --muted: #94a3b8;
+    --border: #334155;
+    --background: #0f172a;
+    --white: #1e293b;
+    --surface: #1e293b;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -37,6 +56,266 @@ body {
     background: var(--background);
     color: var(--text);
     min-height: 100vh;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.login-screen {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+    padding: 20px;
+    z-index: 100;
+}
+
+.login-screen[hidden] {
+    display: none;
+}
+
+.app-locked #appShell {
+    display: none;
+}
+
+.app-locked .login-screen {
+    display: grid;
+}
+
+.app-shell {
+    width: 100%;
+}
+
+.app-shell[hidden] {
+    display: none;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background: white;
+    border-radius: 24px;
+    padding: 40px 35px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-brand {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-brand .brand-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+    font-size: 28px;
+}
+
+.login-brand h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.login-brand p {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.login-form .form-group {
+    margin-bottom: 0;
+}
+
+.login-form label {
+    color: #334155;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.login-form .input-wrap {
+    position: relative;
+}
+
+.login-form .input-wrap i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+    z-index: 1;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 14px 45px 14px 42px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+    height: 48px;
+    box-sizing: border-box;
+}
+
+.login-form input:focus {
+    border-color: #2563eb;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    outline: none;
+}
+
+.login-form input::placeholder {
+    color: #94a3b8;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -1px;
+}
+
+.password-toggle:hover {
+    background: #f1f5f9;
+    color: #2563eb;
+}
+
+.password-toggle:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.remember-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: -8px 0 8px;
+}
+
+.remember-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #2563eb;
+}
+
+.remember-row::after {
+    content: "Remember me for 12 hours";
+    color: #64748b;
+    font-size: 12px;
+}
+
+.login-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    margin: -8px 0 8px;
+}
+
+.login-submit {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+}
+
+.login-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(37, 99, 235, 0.3);
+}
+
+.login-submit:active {
+    transform: translateY(0);
+}
+
+.login-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 480px) {
+    .login-screen {
+        padding: 15px;
+    }
+
+    .login-card {
+        padding: 30px 25px;
+        border-radius: 20px;
+    }
+
+    .login-brand .brand-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+
+    .login-brand h1 {
+        font-size: 18px;
+    }
+
+    .login-brand p {
+        font-size: 12px;
+    }
+
+    .login-form input {
+        padding: 12px 12px 12px 38px;
+        font-size: 13px;
+    }
+
+    .login-submit {
+        padding: 12px 20px;
+        font-size: 13px;
+    }
 }
 
 button,
@@ -61,6 +340,11 @@ select:focus {
     top: 0;
     z-index: 1000;
     box-shadow: 0 5px 25px rgba(15, 23, 42, 0.18);
+    transition: background 0.3s ease;
+}
+
+.dark-mode .topbar {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
 }
 
 .topbar-inner {
@@ -144,6 +428,13 @@ select:focus {
         radial-gradient(circle at 90% 20%, rgba(96, 165, 250, 0.35), transparent 30%),
         linear-gradient(135deg, #111827, #1e3a8a);
     box-shadow: 0 15px 40px rgba(30, 64, 175, 0.15);
+    transition: background 0.3s ease;
+}
+
+.dark-mode .hero {
+    background:
+        radial-gradient(circle at 90% 20%, rgba(59, 130, 246, 0.35), transparent 30%),
+        linear-gradient(135deg, #1e293b, #0f172a);
 }
 
 .hero h2 {
@@ -238,6 +529,12 @@ select:focus {
     border: 1px solid var(--border);
 }
 
+.dark-mode .btn-light {
+    color: #cbd5e1;
+    background: #334155;
+    border-color: var(--border);
+}
+
 .topbar .btn-light {
     color: #e2e8f0;
     background: rgba(255, 255, 255, 0.08);
@@ -246,6 +543,10 @@ select:focus {
 
 .btn-light:hover {
     background: #e2e8f0;
+}
+
+.dark-mode .btn-light:hover {
+    background: #475569;
 }
 
 .topbar .btn-light:hover {
@@ -276,6 +577,12 @@ select:focus {
     min-height: 140px;
     position: relative;
     overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-mode .stat-card {
+    background: var(--surface);
+    border-color: var(--border);
 }
 
 .stat-card::before {
@@ -334,6 +641,12 @@ select:focus {
     box-shadow: var(--shadow);
     margin-bottom: 22px;
     overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-mode .panel {
+    background: var(--surface);
+    border-color: var(--border);
 }
 
 .panel-header {
@@ -413,6 +726,10 @@ select:focus {
     font-size: 11px;
 }
 
+.dark-mode .field-heading small {
+    color: #64748b;
+}
+
 .vehicle-selector {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -431,6 +748,12 @@ select:focus {
     gap: 10px;
     font-weight: 800;
     transition: all 0.2s ease;
+}
+
+.dark-mode .vehicle-option {
+    background: var(--surface);
+    border-color: var(--border);
+    color: #cbd5e1;
 }
 
 .vehicle-option i {
@@ -465,8 +788,8 @@ select:focus {
     font-weight: 800;
 }
 
-.form-group label span {
-    color: #dc2626;
+.dark-mode .form-group label {
+    color: #cbd5e1;
 }
 
 .help-text {
@@ -474,6 +797,10 @@ select:focus {
     margin-top: 6px;
     color: #94a3b8;
     font-size: 11px;
+}
+
+.form-requirements {
+    padding: 0 24px 15px;
 }
 
 .input-wrap {
@@ -498,7 +825,14 @@ select {
     border-radius: 10px;
     padding: 11px 12px;
     font-size: 13px;
-    transition: border 0.2s ease, box-shadow 0.2s ease;
+    transition: border 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+}
+
+.dark-mode input,
+.dark-mode select {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-primary);
 }
 
 .input-wrap input {
@@ -521,6 +855,12 @@ select:focus {
     border: 1px solid var(--border);
     border-radius: 16px;
     background: #f8fafc;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-mode .service-box {
+    background: var(--surface);
+    border-color: var(--border);
 }
 
 .service-header {
@@ -587,6 +927,12 @@ select:focus {
     border-radius: 12px;
     background: white;
     border: 1px solid var(--border);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-mode .table-wrapper {
+    background: var(--surface);
+    border-color: var(--border);
 }
 
 table {
@@ -605,10 +951,19 @@ th {
     letter-spacing: 0.5px;
 }
 
+.dark-mode th {
+    background: #334155;
+    color: #e2e8f0;
+}
+
 td {
     padding: 12px;
     border-top: 1px solid #f1f5f9;
     font-size: 12px;
+}
+
+.dark-mode td {
+    border-top-color: var(--border);
 }
 
 tbody tr {
@@ -857,6 +1212,12 @@ tbody tr:hover {
     height: 42px;
     flex: 1;
     min-width: 220px;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-mode .filter-box {
+    background: var(--surface);
+    border-color: var(--border);
 }
 
 .filter-box i {
@@ -1080,6 +1441,11 @@ tbody tr:hover {
     border-radius: 16px;
     padding: 22px;
     box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    transition: background 0.3s ease;
+}
+
+.dark-mode .modal-card {
+    background: var(--surface);
 }
 
 .modal-card h3 {
@@ -1141,6 +1507,11 @@ tbody tr:hover {
     padding: 35px;
     color: #111827;
     background: white;
+}
+
+.dark-mode .invoice {
+    background: var(--surface);
+    color: var(--text-primary);
 }
 
 .invoice-header {
@@ -1303,7 +1674,7 @@ tbody tr:hover {
 
     .vehicle-section,
     .form-grid,
-    .service-box,
+    .form-requirements,
     .payment-section,
     .amount-received-row,
     .form-footer,
@@ -1318,17 +1689,20 @@ tbody tr:hover {
 
     .form-grid {
         grid-template-columns: 1fr;
-        padding: 15px 18px 20px;
-        margin: 0;
+        padding: 15px 18px 15px;
+    }
+
+    .form-requirements {
+        padding: 0 18px 15px;
     }
 
     .vehicle-section {
         padding: 18px;
-        margin: 0;
     }
 
     .service-box {
         padding: 15px;
+        margin: 0 15px 20px;
     }
 
     .vehicle-option {
@@ -1427,3 +1801,4 @@ tbody tr:hover {
         margin: 12mm;
     }
 }
+
