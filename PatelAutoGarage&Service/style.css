@@ -3189,6 +3189,100 @@ tbody tr:hover {
     letter-spacing: 0.02em;
 }
 
+.btn-cloud-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cloud-badge:hover {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
+}
+
+.login-cloud-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    color: #92400e;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    line-height: 1.4;
+    margin-top: 10px;
+    text-align: left;
+}
+
+.dark-theme .login-cloud-alert {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #fcd34d;
+}
+
+.link-inline-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.snippet-paste-card {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.dark-theme .snippet-paste-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.snippet-paste-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    font-size: 0.92rem;
+    margin-bottom: 4px;
+}
+
+.snippet-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.snippet-textarea {
+    width: 100%;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.82rem;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.snippet-textarea:focus {
+    border-color: var(--primary);
+}
+
+.snippet-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
 .login-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;

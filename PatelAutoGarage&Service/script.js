@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   loginSession: "patelAutoGarageLoginSession",
   loginLock: "patelAutoGarageLoginLock",
   theme: "patelAutoGarageTheme",
+  pendingDeletions: "patelAutoGaragePendingDeletions",
 };
 
 const FIRESTORE_COLLECTIONS = {
@@ -645,8 +646,8 @@ async function restoreLoginSession() {
   const expectedToken = await hashText(
     `${AUTH_SALT}|session|${member.username}|${member.passwordHash}`,
   );
-  const legacyTokenV1 = hashText(`patel-auto-garage-v1|session|${member.username}|${member.passwordHash}`);
-  const legacyTokenV2 = hashText(`patel-auto-garage-v2|session|${member.username}|${member.passwordHash}`);
+  const legacyTokenV1 = await hashText(`patel-auto-garage-v1|session|${member.username}|${member.passwordHash}`);
+  const legacyTokenV2 = await hashText(`patel-auto-garage-v2|session|${member.username}|${member.passwordHash}`);
 
   const tokenOk = timingSafeEqual(session.token, expectedToken) ||
                   timingSafeEqual(session.token, legacyTokenV1) ||
@@ -1121,19 +1122,41 @@ function setupCloudRealtimeListeners() {
   cloudRecordsUnsubscribe = cloudDb
     .collection(FIRESTORE_COLLECTIONS.records)
     .onSnapshot(
-      (snapshot) => {
+      async (snapshot) => {
         let hasChanges = false;
         const cloudRecords = [];
         snapshot.forEach((doc) => {
           cloudRecords.push(doc.data());
         });
 
+        // 1. If cloud is empty and local data exists on initial load, auto-migrate everything to cloud
+        if (isInitialCloudLoad && cloudRecords.length === 0 && garageData.length > 0) {
+          console.log("Local records detected while cloud is empty. Auto-migrating to cloud...");
+          await migrateLocalDataToCloud();
+          isInitialCloudLoad = false;
+          return;
+        }
+
+        // 2. If cloud has records, but local ALSO has records that were not uploaded yet, upload them
+        if (isInitialCloudLoad && garageData.length > 0) {
+          const cloudIdSet = new Set(cloudRecords.map((r) => String(r.id)));
+          const unuploaded = garageData.filter((r) => !cloudIdSet.has(String(r.id)));
+          if (unuploaded.length > 0) {
+            console.log(`Auto-migrating ${unuploaded.length} local records missing from cloud...`);
+            for (const r of unuploaded) {
+              await saveRecordToCloud(r);
+            }
+          }
+        }
+
+        // 3. Form authoritative record map from cloud snapshot
         const recordMap = new Map();
         cloudRecords.forEach((r) => recordMap.set(String(r.id), r));
 
-        // Also keep local records that might not have synced yet
+        // 4. PREVENT ZOMBIE RECORDS: Only retain local records that are explicitly pending offline upload!
+        // Any record previously synced that is missing from cloud snapshot was DELETED by another device.
         garageData.forEach((r) => {
-          if (!recordMap.has(String(r.id))) {
+          if (r._pendingSync && !recordMap.has(String(r.id))) {
             recordMap.set(String(r.id), r);
           }
         });
@@ -1162,10 +1185,6 @@ function setupCloudRealtimeListeners() {
             }
           }
         }
-        if (isInitialCloudLoad && cloudRecords.length === 0 && garageData.length > 0) {
-          console.log("Local records detected while cloud is empty. Auto-migrating to cloud...");
-          migrateLocalDataToCloud();
-        }
         isInitialCloudLoad = false;
       },
       (error) => {
@@ -1179,17 +1198,28 @@ function setupCloudRealtimeListeners() {
   cloudExpensesUnsubscribe = cloudDb
     .collection(FIRESTORE_COLLECTIONS.expenses)
     .onSnapshot(
-      (snapshot) => {
+      async (snapshot) => {
         let hasExpChanges = false;
         const cloudExpenses = [];
         snapshot.forEach((doc) => {
           cloudExpenses.push(doc.data());
         });
 
+        // Initial load: if local has un-uploaded expenses, upload them
+        if (isInitialCloudLoad && garageExpenses.length > 0) {
+          const cloudExpIdSet = new Set(cloudExpenses.map((e) => String(e.id)));
+          const unuploadedExp = garageExpenses.filter((e) => !cloudExpIdSet.has(String(e.id)));
+          for (const e of unuploadedExp) {
+            await saveExpenseToCloud(e);
+          }
+        }
+
         const expMap = new Map();
         cloudExpenses.forEach((e) => expMap.set(String(e.id), e));
+
+        // PREVENT ZOMBIE EXPENSES: Only retain local expenses that are explicitly pending offline upload
         garageExpenses.forEach((e) => {
-          if (!expMap.has(String(e.id))) {
+          if (e._pendingSync && !expMap.has(String(e.id))) {
             expMap.set(String(e.id), e);
           }
         });
@@ -1261,55 +1291,162 @@ function setupCloudRealtimeListeners() {
 }
 
 async function saveRecordToCloud(record) {
-  if (!cloudDb) return;
+  if (!record || !record.id) return;
+  if (!cloudDb) {
+    record._pendingSync = true;
+    saveRecordsLocally();
+    return;
+  }
   try {
     const activeMember = getActiveMember();
     const tag = activeMember ? `${activeMember.fullName || activeMember.username} (${activeMember.role || 'Member'})` : 'Garage Staff';
     if (!record.createdBy) record.createdBy = tag;
     record.lastUpdatedBy = tag;
     record.updatedAt = Date.now();
-    await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(record.id)).set(record);
+
+    const toUpload = { ...record };
+    delete toUpload._pendingSync;
+
+    await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(record.id)).set(toUpload);
+    record._pendingSync = false;
+    saveRecordsLocally();
     lastCloudSyncTime = Date.now();
     updateCloudSyncStats();
   } catch (err) {
-    console.warn("Cloud save record failed (cached locally):", err);
+    console.warn("Cloud save record failed (cached locally as pending):", err);
+    record._pendingSync = true;
+    saveRecordsLocally();
   }
 }
 
 async function deleteRecordFromCloud(recordId) {
-  if (!cloudDb) return;
+  if (!recordId) return;
+  if (!cloudDb) {
+    queuePendingDeletion(FIRESTORE_COLLECTIONS.records, recordId);
+    return;
+  }
   try {
     await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(recordId)).delete();
     lastCloudSyncTime = Date.now();
     updateCloudSyncStats();
   } catch (err) {
-    console.warn("Cloud delete record failed:", err);
+    console.warn("Cloud delete record failed (queued for retry):", err);
+    queuePendingDeletion(FIRESTORE_COLLECTIONS.records, recordId);
   }
 }
 
 async function saveExpenseToCloud(expense) {
-  if (!cloudDb) return;
+  if (!expense || !expense.id) return;
+  if (!cloudDb) {
+    expense._pendingSync = true;
+    saveExpensesLocally();
+    return;
+  }
   try {
     const activeMember = getActiveMember();
     const tag = activeMember ? `${activeMember.fullName || activeMember.username} (${activeMember.role || 'Member'})` : 'Garage Staff';
     if (!expense.recordedBy) expense.recordedBy = tag;
-    await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expense.id)).set(expense);
+    expense.updatedAt = Date.now();
+
+    const toUpload = { ...expense };
+    delete toUpload._pendingSync;
+
+    await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expense.id)).set(toUpload);
+    expense._pendingSync = false;
+    saveExpensesLocally();
     lastCloudSyncTime = Date.now();
     updateCloudSyncStats();
   } catch (err) {
-    console.warn("Cloud save expense failed:", err);
+    console.warn("Cloud save expense failed (cached locally as pending):", err);
+    expense._pendingSync = true;
+    saveExpensesLocally();
   }
 }
 
 async function deleteExpenseFromCloud(expenseId) {
-  if (!cloudDb) return;
+  if (!expenseId) return;
+  if (!cloudDb) {
+    queuePendingDeletion(FIRESTORE_COLLECTIONS.expenses, expenseId);
+    return;
+  }
   try {
     await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expenseId)).delete();
     lastCloudSyncTime = Date.now();
     updateCloudSyncStats();
   } catch (err) {
-    console.warn("Cloud delete expense failed:", err);
+    console.warn("Cloud delete expense failed (queued for retry):", err);
+    queuePendingDeletion(FIRESTORE_COLLECTIONS.expenses, expenseId);
   }
+}
+
+function queuePendingDeletion(collectionName, itemId) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.pendingDeletions);
+    const list = raw ? JSON.parse(raw) : [];
+    list.push({ collection: collectionName, id: String(itemId), timestamp: Date.now() });
+    localStorage.setItem(STORAGE_KEYS.pendingDeletions, JSON.stringify(list));
+  } catch (e) {
+    console.warn("Failed queuing pending deletion:", e);
+  }
+}
+
+async function flushPendingSyncQueue() {
+  if (!cloudDb) return;
+
+  // 1. Process pending deletions
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.pendingDeletions);
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list) && list.length > 0) {
+        const remaining = [];
+        for (const item of list) {
+          try {
+            await cloudDb.collection(item.collection).doc(String(item.id)).delete();
+          } catch (delErr) {
+            remaining.push(item);
+          }
+        }
+        localStorage.setItem(STORAGE_KEYS.pendingDeletions, JSON.stringify(remaining));
+      }
+    }
+  } catch (e) {
+    console.warn("Error flushing pending deletions:", e);
+  }
+
+  // 2. Process pending records
+  let savedRecords = false;
+  for (const r of garageData) {
+    if (r._pendingSync) {
+      try {
+        const toUpload = { ...r };
+        delete toUpload._pendingSync;
+        await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(r.id)).set(toUpload);
+        r._pendingSync = false;
+        savedRecords = true;
+      } catch (e) {
+        console.warn("Error syncing pending record:", e);
+      }
+    }
+  }
+  if (savedRecords) saveRecordsLocally();
+
+  // 3. Process pending expenses
+  let savedExpenses = false;
+  for (const exp of garageExpenses) {
+    if (exp._pendingSync) {
+      try {
+        const toUpload = { ...exp };
+        delete toUpload._pendingSync;
+        await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(exp.id)).set(toUpload);
+        exp._pendingSync = false;
+        savedExpenses = true;
+      } catch (e) {
+        console.warn("Error syncing pending expense:", e);
+      }
+    }
+  }
+  if (savedExpenses) saveExpensesLocally();
 }
 
 async function migrateLocalDataToCloud() {
@@ -1327,12 +1464,18 @@ async function migrateLocalDataToCloud() {
     let uploadedExpenses = 0;
 
     for (const record of garageData) {
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(record.id)).set(record);
+      const toUpload = { ...record };
+      delete toUpload._pendingSync;
+      await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(record.id)).set(toUpload);
+      record._pendingSync = false;
       uploadedRecords++;
     }
 
     for (const expense of garageExpenses) {
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expense.id)).set(expense);
+      const toUpload = { ...expense };
+      delete toUpload._pendingSync;
+      await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expense.id)).set(toUpload);
+      expense._pendingSync = false;
       uploadedExpenses++;
     }
 
@@ -1352,6 +1495,8 @@ async function migrateLocalDataToCloud() {
       }, { merge: true });
     }
 
+    saveRecordsLocally();
+    saveExpensesLocally();
     lastCloudSyncTime = Date.now();
     updateCloudSyncStats();
     updateCloudStatusUI("online", "Cloud Synced");
@@ -1600,6 +1745,8 @@ async function forceCloudSync() {
 
   showToast("Syncing with shared cloud database...", "info");
   try {
+    await flushPendingSyncQueue();
+
     const recSnap = await cloudDb.collection(FIRESTORE_COLLECTIONS.records).get();
     const cloudRecords = [];
     recSnap.forEach((doc) => cloudRecords.push(doc.data()));
@@ -1609,15 +1756,25 @@ async function forceCloudSync() {
     expSnap.forEach((doc) => cloudExpenses.push(doc.data()));
 
     const rMap = new Map();
-    garageData.forEach((r) => rMap.set(String(r.id), r));
     cloudRecords.forEach((r) => rMap.set(String(r.id), r));
+    // Retain only local records that are pending offline sync
+    garageData.forEach((r) => {
+      if (r._pendingSync && !rMap.has(String(r.id))) {
+        rMap.set(String(r.id), r);
+      }
+    });
     garageData = normalizeRecords(
       Array.from(rMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
     );
 
     const eMap = new Map();
-    garageExpenses.forEach((e) => eMap.set(String(e.id), e));
     cloudExpenses.forEach((e) => eMap.set(String(e.id), e));
+    // Retain only local expenses that are pending offline sync
+    garageExpenses.forEach((e) => {
+      if (e._pendingSync && !eMap.has(String(e.id))) {
+        eMap.set(String(e.id), e);
+      }
+    });
     garageExpenses = normalizeExpenses(
       Array.from(eMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
     );
@@ -1643,6 +1800,9 @@ function updateCloudStatusUI(state, text) {
   const label = document.getElementById("cloudStatusLabel");
   const mini = document.getElementById("cloudMiniStatus");
   const pill = document.getElementById("cloudStatusPill");
+  const loginDot = document.getElementById("loginCloudDot");
+  const loginLabel = document.getElementById("loginCloudLabel");
+  const loginAlert = document.getElementById("loginCloudAlert");
 
   if (dot) {
     dot.className = `cloud-status-dot is-${state}`;
@@ -1656,6 +1816,17 @@ function updateCloudStatusUI(state, text) {
   if (pill) {
     pill.textContent = state === "online" ? "Connected & Real-Time" : text;
     pill.className = `cloud-pill is-${state}`;
+  }
+
+  // Login Screen Cloud Indicators
+  if (loginDot) {
+    loginDot.className = `cloud-status-dot is-${state}`;
+  }
+  if (loginLabel) {
+    loginLabel.textContent = state === "online" ? "Cloud Synced" : text;
+  }
+  if (loginAlert) {
+    loginAlert.hidden = state === "online";
   }
 }
 
@@ -1683,6 +1854,16 @@ function setupCloudListeners() {
     syncBtn.addEventListener("click", openCloudModal);
   }
 
+  // Login Screen Cloud Buttons
+  const loginCloudBtn = document.getElementById("loginCloudBtn");
+  if (loginCloudBtn) {
+    loginCloudBtn.addEventListener("click", openCloudModal);
+  }
+  const loginSetupCloudBtn = document.getElementById("loginSetupCloudBtn");
+  if (loginSetupCloudBtn) {
+    loginSetupCloudBtn.addEventListener("click", openCloudModal);
+  }
+
   const closeBtn = document.getElementById("cloudModalCloseBtn");
   const doneBtn = document.getElementById("cloudModalDoneBtn");
   if (closeBtn) closeBtn.addEventListener("click", closeCloudModal);
@@ -1693,6 +1874,56 @@ function setupCloudListeners() {
 
   const migrateBtn = document.getElementById("cloudMigrateBtn");
   if (migrateBtn) migrateBtn.addEventListener("click", migrateLocalDataToCloud);
+
+  // 1-Tap setup link for phone / WhatsApp sharing
+  const copyCloudLinkBtn = document.getElementById("copyCloudShareLinkBtn");
+  if (copyCloudLinkBtn) {
+    copyCloudLinkBtn.addEventListener("click", async () => {
+      let link = window.GarageCloud ? window.GarageCloud.generateShareLink() : null;
+      if (!link) {
+        showToast("Configure cloud database first before creating a share link.", "error");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(link);
+        showToast("📋 1-Tap setup link copied! Send it to your phone or brother via WhatsApp.");
+      } catch (err) {
+        prompt("Copy this 1-tap link to connect other devices:", link);
+      }
+    });
+  }
+
+  // 1-Click Paste Config Snippet
+  const applySnippetBtn = document.getElementById("applySnippetBtn");
+  const snippetInput = document.getElementById("cfgSnippetInput");
+  if (applySnippetBtn && snippetInput) {
+    applySnippetBtn.addEventListener("click", async () => {
+      const raw = snippetInput.value.trim();
+      if (!raw) {
+        showToast("Please paste your Firebase config snippet first.", "error");
+        return;
+      }
+      if (!window.GarageCloud) {
+        showToast("Cloud database module not loaded.", "error");
+        return;
+      }
+      const parsed = window.GarageCloud.parseSnippet(raw);
+      if (!parsed) {
+        showToast("Could not parse config. Ensure apiKey & projectId are present.", "error");
+        return;
+      }
+      window.GarageCloud.saveConfig(parsed);
+      populateCloudConfigForm();
+      showToast("Config parsed & saved! Connecting to Firebase...", "info");
+      const ok = await initCloudSync();
+      if (ok) {
+        showToast("🎉 Connected to shared Firebase Firestore database!");
+        closeCloudModal();
+      } else {
+        showToast("Connection failed. Check your Firebase credentials or rules.", "error");
+      }
+    });
+  }
 
   const toggleConfig = document.getElementById("cloudConfigToggle");
   const configBody = document.getElementById("cloudConfigBody");
@@ -1721,16 +1952,21 @@ function setupCloudListeners() {
         appId: document.getElementById("cfgAppId").value.trim(),
       };
 
-      if (!cfg.projectId && !cfg.apiKey) {
-        showToast("Please enter at least Project ID or API Key.", "error");
+      if (!cfg.projectId || !cfg.apiKey) {
+        showToast("Please enter at least Project ID and API Key.", "error");
         return;
       }
 
       if (window.GarageCloud) {
         window.GarageCloud.saveConfig(cfg);
         showToast("Configuration saved. Connecting...", "info");
-        await initCloudSync();
-        closeCloudModal();
+        const ok = await initCloudSync();
+        if (ok) {
+          showToast("🎉 Connected to shared Firebase Firestore database!");
+          closeCloudModal();
+        } else {
+          showToast("Could not connect. Please check credentials.", "error");
+        }
       }
     });
   }
@@ -1741,11 +1977,26 @@ function setupCloudListeners() {
       if (window.GarageCloud) {
         window.GarageCloud.clearConfig();
         populateCloudConfigForm();
+        if (snippetInput) snippetInput.value = "";
         showToast("Reset to default configuration.");
         await initCloudSync();
       }
     });
   }
+
+  // Network online/offline event listeners
+  window.addEventListener("online", async () => {
+    console.log("Device is online. Re-checking cloud database...");
+    if (!cloudDb && window.GarageCloud && window.GarageCloud.isConfigured()) {
+      await initCloudSync();
+    }
+    await flushPendingSyncQueue();
+  });
+
+  window.addEventListener("offline", () => {
+    console.warn("Device is offline. Local changes will be queued for sync.");
+    updateCloudStatusUI("offline", "Offline (Cached Locally)");
+  });
 }
 
 function openCloudModal() {
@@ -3163,12 +3414,12 @@ async function addDailyExpense() {
   showToast("Expense added and synced to cloud.");
 }
 
-function deleteExpense(expenseId) {
+async function deleteExpense(expenseId) {
   if (!requireAuth()) return;
 
   garageExpenses = garageExpenses.filter((e) => String(e.id) !== String(expenseId));
   saveExpensesLocally();
-  deleteExpenseFromCloud(expenseId);
+  await deleteExpenseFromCloud(expenseId);
 
   renderExpensesList();
   updateDashboard();

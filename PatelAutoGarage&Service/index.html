@@ -34,9 +34,15 @@
                 <h1>PatelAutoGarage&Service</h1>
                 <p id="loginSubtitle">Sign in to open the garage dashboard</p>
                 <div class="login-badge-row">
-                    <span class="badge-shared-cloud" id="loginCloudBadge">
-                        <i class="fa-solid fa-cloud"></i> Shared Family Cloud
-                    </span>
+                    <button type="button" class="badge-shared-cloud btn-cloud-badge" id="loginCloudBtn" title="Click to view or setup Firebase Cloud Sync">
+                        <span class="cloud-status-dot is-offline" id="loginCloudDot"></span>
+                        <i class="fa-solid fa-cloud"></i>
+                        <span id="loginCloudLabel">Cloud Database</span>
+                    </button>
+                </div>
+                <div id="loginCloudAlert" class="login-cloud-alert" hidden>
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Cloud sync not configured on this device. <button type="button" id="loginSetupCloudBtn" class="link-inline-btn">Connect Firebase</button> to sync across all devices.</span>
                 </div>
             </div>
 
@@ -1138,126 +1144,7 @@
             </div>
         </div>
 
-        <!-- CLOUD DATABASE SETUP & REALTIME SYNC MODAL -->
-        <div id="cloudModal" class="modal" hidden>
-            <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="cloudModalTitle">
-                <div class="modal-header">
-                    <div>
-                        <span class="section-label">SHARED CLOUD BACKEND</span>
-                        <h3 id="cloudModalTitle">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>
-                            Cloud Database &amp; Multi-Device Sync
-                        </h3>
-                    </div>
-                    <button type="button" id="cloudModalCloseBtn" class="modal-close" aria-label="Close modal">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
 
-                <div class="cloud-modal-body">
-                    <!-- Status Banner -->
-                    <div class="cloud-status-hero" id="cloudStatusHero">
-                        <div class="cloud-status-icon" id="cloudHeroIcon">
-                            <i class="fa-solid fa-cloud"></i>
-                        </div>
-                        <div class="cloud-status-details">
-                            <div class="cloud-status-headline">
-                                <span class="cloud-pill" id="cloudStatusPill">Connecting...</span>
-                                <h4 id="cloudHeroTitle">Persistent Shared Database</h4>
-                            </div>
-                            <p id="cloudHeroDesc">
-                                All job cards, expenses, payments, and multi-day history are synchronized in real time across all devices (your computer, brother's device, phones).
-                            </p>
-                            <div class="cloud-metrics-row">
-                                <div><span>Synced Records:</span> <strong id="cloudRecordsCount">0</strong></div>
-                                <div><span>Synced Expenses:</span> <strong id="cloudExpensesCount">0</strong></div>
-                                <div><span>Last Sync:</span> <strong id="cloudLastSyncText">Just now</strong></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Sync Actions -->
-                    <div class="cloud-actions-box">
-                        <div class="cloud-action-item">
-                            <div>
-                                <strong>Real-Time Synchronization</strong>
-                                <small>Live listeners are active. When any device adds or updates a record, all other devices receive it automatically.</small>
-                            </div>
-                            <button type="button" id="cloudForceSyncBtn" class="btn btn-primary">
-                                <i class="fa-solid fa-rotate"></i> Sync Cloud Now
-                            </button>
-                        </div>
-
-                        <div class="cloud-action-item">
-                            <div>
-                                <strong>Upload Local Device Records to Cloud</strong>
-                                <small>If you or your brother previously added records while offline or before cloud sync, click here to upload them so both devices have everything.</small>
-                            </div>
-                            <button type="button" id="cloudMigrateBtn" class="btn btn-save">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Local Data to Cloud
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Firebase Configuration Settings -->
-                    <div class="cloud-config-accordion">
-                        <div class="accordion-header" id="cloudConfigToggle">
-                            <h4>
-                                <i class="fa-solid fa-gear"></i>
-                                Firebase Firestore Connection Settings
-                            </h4>
-                            <span id="cloudConfigToggleText">Show Settings <i class="fa-solid fa-chevron-down"></i></span>
-                        </div>
-
-                        <div id="cloudConfigBody" class="accordion-body" hidden>
-                            <p class="config-intro">
-                                Enter your Google Firebase project credentials below. A free Firebase Spark project provides 50,000 free daily reads and 20,000 free writes with permanent real-time multi-device synchronization.
-                            </p>
-
-                            <div class="form-grid cloud-form-grid">
-                                <div class="form-group">
-                                    <label for="cfgApiKey">API Key</label>
-                                    <input type="text" id="cfgApiKey" placeholder="AIzaSy...">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cfgProjectId">Project ID</label>
-                                    <input type="text" id="cfgProjectId" placeholder="e.g. patel-auto-garage">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cfgAuthDomain">Auth Domain</label>
-                                    <input type="text" id="cfgAuthDomain" placeholder="patel-auto-garage.firebaseapp.com">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cfgStorageBucket">Storage Bucket</label>
-                                    <input type="text" id="cfgStorageBucket" placeholder="patel-auto-garage.appspot.com">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cfgMessagingSenderId">Messaging Sender ID</label>
-                                    <input type="text" id="cfgMessagingSenderId" placeholder="1234567890">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cfgAppId">App ID</label>
-                                    <input type="text" id="cfgAppId" placeholder="1:1234567890:web:abcdef">
-                                </div>
-                            </div>
-
-                            <div class="cloud-config-actions">
-                                <button type="button" id="resetCloudConfigBtn" class="btn btn-light">
-                                    <i class="fa-solid fa-rotate-left"></i> Reset to Default
-                                </button>
-                                <button type="button" id="saveCloudConfigBtn" class="btn btn-primary">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save &amp; Connect Cloud
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" id="cloudModalDoneBtn" class="btn btn-light">Close</button>
-                </div>
-            </div>
-        </div>
 
         <!-- FAMILY MEMBERS & MULTI-DEVICE ACCESS MODAL -->
         <div id="familyModal" class="modal" hidden>
@@ -1422,6 +1309,157 @@
             <div class="invoice-footer">
                 <p>Thank you for choosing PatelAutoGarage&Service.</p>
                 <span>We appreciate your business. Please visit again!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLOUD DATABASE SETUP & REALTIME SYNC MODAL -->
+    <div id="cloudModal" class="modal" hidden>
+        <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="cloudModalTitle">
+            <div class="modal-header">
+                <div>
+                    <span class="section-label">SHARED CLOUD BACKEND</span>
+                    <h3 id="cloudModalTitle">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        Cloud Database &amp; Multi-Device Sync
+                    </h3>
+                </div>
+                <button type="button" id="cloudModalCloseBtn" class="modal-close" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="cloud-modal-body">
+                <!-- Status Banner -->
+                <div class="cloud-status-hero" id="cloudStatusHero">
+                    <div class="cloud-status-icon" id="cloudHeroIcon">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
+                    <div class="cloud-status-details">
+                        <div class="cloud-status-headline">
+                            <span class="cloud-pill" id="cloudStatusPill">Connecting...</span>
+                            <h4 id="cloudHeroTitle">Persistent Shared Database</h4>
+                        </div>
+                        <p id="cloudHeroDesc">
+                            All job cards, expenses, payments, and multi-day history are synchronized in real time across all devices (your computer, brother's device, phones).
+                        </p>
+                        <div class="cloud-metrics-row">
+                            <div><span>Synced Records:</span> <strong id="cloudRecordsCount">0</strong></div>
+                            <div><span>Synced Expenses:</span> <strong id="cloudExpensesCount">0</strong></div>
+                            <div><span>Last Sync:</span> <strong id="cloudLastSyncText">Just now</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Sync Actions -->
+                <div class="cloud-actions-box">
+                    <div class="cloud-action-item">
+                        <div>
+                            <strong>Real-Time Synchronization</strong>
+                            <small>Live listeners are active. When any device adds or updates a record, all other devices receive it automatically.</small>
+                        </div>
+                        <button type="button" id="cloudForceSyncBtn" class="btn btn-primary">
+                            <i class="fa-solid fa-rotate"></i> Sync Cloud Now
+                        </button>
+                    </div>
+
+                    <div class="cloud-action-item">
+                        <div>
+                            <strong>Upload Local Device Records to Cloud</strong>
+                            <small>If you or your brother previously added records while offline or before cloud sync, click here to upload them so both devices have everything.</small>
+                        </div>
+                        <button type="button" id="cloudMigrateBtn" class="btn btn-save">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Local Data to Cloud
+                        </button>
+                    </div>
+
+                    <div class="cloud-action-item">
+                        <div>
+                            <strong>1-Tap Setup Link (WhatsApp / Mobile Share)</strong>
+                            <small>Generate a 1-tap link to instantly configure your phone or brother's laptop without typing any credentials.</small>
+                        </div>
+                        <button type="button" id="copyCloudShareLinkBtn" class="btn btn-light">
+                            <i class="fa-solid fa-share-nodes"></i> Copy 1-Tap Link
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Firebase Configuration Settings -->
+                <div class="cloud-config-accordion">
+                    <div class="accordion-header" id="cloudConfigToggle">
+                        <h4>
+                            <i class="fa-solid fa-gear"></i>
+                            Firebase Firestore Connection Settings
+                        </h4>
+                        <span id="cloudConfigToggleText">Show Settings <i class="fa-solid fa-chevron-down"></i></span>
+                    </div>
+
+                    <div id="cloudConfigBody" class="accordion-body" hidden>
+                        <p class="config-intro">
+                            Enter your Google Firebase project credentials below, or paste the snippet from Firebase Console. Multi-device real-time sync with anonymous authentication is enabled.
+                        </p>
+
+                        <!-- 1-Click Paste Config Snippet -->
+                        <div class="snippet-paste-card">
+                            <div class="snippet-paste-title">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <strong>Quick 1-Click Paste Config Snippet</strong>
+                            </div>
+                            <p class="snippet-hint">Copy the <code>const firebaseConfig = { ... }</code> from Firebase Console and paste below:</p>
+                            <textarea id="cfgSnippetInput" class="snippet-textarea" rows="3" placeholder='const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "patel-auto-garage.firebaseapp.com",
+  projectId: "patel-auto-garage",
+  ...
+};'></textarea>
+                            <div class="snippet-actions">
+                                <button type="button" id="applySnippetBtn" class="btn btn-primary btn-sm">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill &amp; Connect Cloud
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-grid cloud-form-grid">
+                            <div class="form-group">
+                                <label for="cfgApiKey">API Key</label>
+                                <input type="text" id="cfgApiKey" placeholder="AIzaSy...">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfgProjectId">Project ID</label>
+                                <input type="text" id="cfgProjectId" placeholder="e.g. patel-auto-garage">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfgAuthDomain">Auth Domain</label>
+                                <input type="text" id="cfgAuthDomain" placeholder="patel-auto-garage.firebaseapp.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfgStorageBucket">Storage Bucket</label>
+                                <input type="text" id="cfgStorageBucket" placeholder="patel-auto-garage.appspot.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfgMessagingSenderId">Messaging Sender ID</label>
+                                <input type="text" id="cfgMessagingSenderId" placeholder="1234567890">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfgAppId">App ID</label>
+                                <input type="text" id="cfgAppId" placeholder="1:1234567890:web:abcdef">
+                            </div>
+                        </div>
+
+                        <div class="cloud-config-actions">
+                            <button type="button" id="resetCloudConfigBtn" class="btn btn-light">
+                                <i class="fa-solid fa-rotate-left"></i> Reset to Default
+                            </button>
+                            <button type="button" id="saveCloudConfigBtn" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk"></i> Save &amp; Connect Cloud
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="cloudModalDoneBtn" class="btn btn-light">Close</button>
             </div>
         </div>
     </div>

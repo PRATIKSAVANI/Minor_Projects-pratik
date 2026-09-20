@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Patel Auto Garage & Service - Authenticated Cloud Security Rules
+    // Protects garage records, expenses, family logins, and metadata.
+    // Anonymous Firebase Auth is enabled in the client app to authenticate every connected garage device.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
