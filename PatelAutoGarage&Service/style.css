@@ -78,15 +78,46 @@
 
 html {
     scroll-behavior: smooth;
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
 }
 
 body {
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--background);
     color: var(--text);
-    min-height: 100vh;
+    min-height: 100%;
+    min-height: 100dvh;
     line-height: 1.5;
     transition: background 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure active inputs, buttons, and form groups remain visible above mobile keyboards and sticky headers */
+input, select, textarea, button, .form-group {
+    scroll-margin-top: 75px;
+    scroll-margin-bottom: 75px;
+}
+
+/* Sleek, responsive custom scrollbars */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.45);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
 }
 
 .noscript-banner {
@@ -104,10 +135,17 @@ body {
 .login-screen {
     position: fixed;
     inset: 0;
-    display: grid;
-    place-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     background: radial-gradient(circle at 50% 20%, #1e3a8a 0%, #0f172a 70%);
-    padding: 20px;
+    padding: 32px 16px;
     z-index: 1000;
 }
 
@@ -120,11 +158,14 @@ body {
 }
 
 .app-locked .login-screen {
-    display: grid;
+    display: flex;
 }
 
 .app-shell {
     width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
 }
 
 .app-shell[hidden] {
@@ -132,13 +173,15 @@ body {
 }
 
 .login-card {
+    margin: auto;
     width: 100%;
-    max-width: 430px;
+    max-width: 440px;
     background: white;
     border-radius: 24px;
-    padding: 40px 35px;
+    padding: 38px 32px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
     animation: slideUp 0.35s ease-out;
+    flex-shrink: 0;
 }
 
 @keyframes slideUp {
@@ -2222,12 +2265,20 @@ tbody tr:hover {
 .modal {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
-    display: grid;
-    place-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     z-index: 2000;
-    padding: 20px;
+    padding: 24px 16px;
     animation: fadeIn 0.2s ease-out;
 }
 
@@ -2236,29 +2287,37 @@ tbody tr:hover {
 }
 
 .modal-card {
-    width: min(440px, 100%);
+    margin: auto;
+    width: min(480px, 100%);
+    max-height: calc(100dvh - 48px);
     background: var(--surface);
     border-radius: var(--radius-lg);
-    padding: 24px;
+    padding: 24px 22px;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border);
     animation: slideUp 0.25s ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
 }
 
 .modal-card-lg {
-    width: min(820px, 100%);
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 26px;
+    width: min(840px, 100%);
+    max-height: calc(100dvh - 48px);
+    padding: 26px 24px;
 }
 
 .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
     border-bottom: 1px solid var(--border);
     padding-bottom: 14px;
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -2277,6 +2336,7 @@ tbody tr:hover {
     font-size: 15px;
     display: grid;
     place-items: center;
+    flex-shrink: 0;
 }
 
 .modal-close:hover {
@@ -2294,9 +2354,14 @@ tbody tr:hover {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 18px;
     border-top: 1px solid var(--border-light);
-    padding-top: 16px;
+    padding-top: 14px;
+    flex-shrink: 0;
+    position: sticky;
+    bottom: -24px;
+    background: var(--surface);
+    z-index: 10;
 }
 
 .modal-service-box {
@@ -2677,29 +2742,44 @@ tbody tr:hover {
 
 @media (max-width: 768px) {
     .container {
-        width: calc(100% - 20px);
-        padding-top: 14px;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 10px;
     }
 
     .topbar-inner {
-        padding: 10px 14px;
+        padding: 10px 12px;
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
     .topbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
         justify-content: stretch;
     }
 
     .topbar-actions .btn,
     .topbar-actions .dropdown,
-    .topbar-actions .today-chip {
-        flex: 1;
+    .topbar-actions .today-chip,
+    .topbar-actions .user-chip {
+        flex: 1 1 calc(50% - 6px);
+        min-height: 38px;
         text-align: center;
+        justify-content: center;
+        font-size: 11px;
     }
 
     .topbar-actions .btn {
         width: 100%;
+    }
+
+    .dropdown-menu {
+        max-width: calc(100vw - 24px);
+        right: 0;
+        left: auto;
     }
 
     .brand h1 {
@@ -2707,24 +2787,60 @@ tbody tr:hover {
     }
 
     .hero {
-        padding: 22px 18px;
+        padding: 20px 16px;
     }
 
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
 
     .stat-card {
-        min-height: 100px;
-        padding: 14px;
+        min-height: 95px;
+        padding: 12px;
     }
 
     .stat-content strong {
-        font-size: 18px;
+        font-size: 17px;
+    }
+
+    .panel {
+        border-radius: var(--radius);
+        margin-bottom: 16px;
+    }
+
+    .panel-header {
+        padding: 14px 16px;
+        gap: 10px;
+    }
+
+    .panel-header h2 {
+        font-size: 16px;
+    }
+
+    .job-meta-row {
+        padding: 14px 16px 0;
+        gap: 12px;
+    }
+
+    .form-grid {
+        padding: 14px 16px;
+        gap: 12px;
+    }
+
+    .form-requirements {
+        padding: 0 16px 12px;
+    }
+
+    .service-box {
+        margin: 0 12px 16px;
+        padding: 14px 12px;
+        border-radius: var(--radius-sm);
     }
 
     .item-input-grid {
         grid-template-columns: 1fr 90px;
+        gap: 10px;
     }
 
     .item-input-grid .form-group:first-child {
@@ -2734,32 +2850,49 @@ tbody tr:hover {
     .add-item-btn {
         grid-column: 1 / -1;
         width: 100%;
+        min-height: 40px;
     }
 
     .payment-section {
+        padding: 16px 14px;
+        gap: 14px;
         flex-direction: column;
         align-items: stretch;
     }
 
     .payment-options {
         flex-direction: column;
+        gap: 8px;
     }
 
     .amount-received-row {
         grid-template-columns: 1fr;
+        gap: 10px;
     }
 
     .form-footer {
+        padding: 14px 16px;
         flex-direction: column-reverse;
+        gap: 10px;
     }
 
     .form-footer .btn {
         width: 100%;
+        min-height: 44px;
+    }
+
+    .history-panel .table-wrapper {
+        margin: 0 12px 16px;
+    }
+
+    .filter-result-bar {
+        margin: 0 12px 12px;
     }
 
     .history-filters {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
     .filter-box, .view-scope-toggle, .filter-select, .filter-reset {
@@ -2777,16 +2910,21 @@ tbody tr:hover {
 
     .performance-navigator {
         border-radius: var(--radius);
+        margin-bottom: 16px;
     }
 
     .scope-tabs-bar {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
+        padding: 10px 14px;
     }
 
     .scope-tabs {
         width: 100%;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
         flex-wrap: nowrap;
         justify-content: flex-start;
         padding-bottom: 6px;
@@ -2797,22 +2935,29 @@ tbody tr:hover {
         flex-shrink: 0;
     }
 
+    .scope-controls-container {
+        padding: 12px 14px;
+    }
+
     .scope-controls {
         flex-direction: column;
         align-items: stretch;
+        gap: 12px;
     }
 
     .month-selector-group, .year-selector-group {
         width: 100%;
+        flex-wrap: wrap;
     }
 
     .month-dropdown, .year-dropdown {
-        flex: 1;
+        flex: 1 1 140px;
     }
 
     .custom-range-inputs {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
     .custom-date-field {
@@ -2821,8 +2966,11 @@ tbody tr:hover {
 
     .custom-quick-presets {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
         flex-wrap: nowrap;
         padding-bottom: 4px;
+        width: 100%;
     }
 
     .cloud-form-grid {
@@ -2832,6 +2980,7 @@ tbody tr:hover {
     .cloud-action-item {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
     .cloud-action-item .btn {
@@ -2839,11 +2988,16 @@ tbody tr:hover {
     }
 
     .nav-control-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
         justify-content: space-between;
     }
 
     .nav-control-group .btn-nav {
-        flex: 1;
+        flex: 1 1 auto;
+        min-height: 38px;
     }
 
     .active-date-picker {
@@ -2851,7 +3005,8 @@ tbody tr:hover {
     }
 
     .date-picker-wrap {
-        flex: 2;
+        flex: 2 1 160px;
+        width: 100%;
     }
 
     .active-date-badge {
@@ -2862,6 +3017,7 @@ tbody tr:hover {
     .historical-banner {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
     .btn-banner-jump {
@@ -2871,25 +3027,141 @@ tbody tr:hover {
     .edit-payment-grid {
         grid-template-columns: 1fr !important;
     }
+
+    /* Modal Mobile Enhancements */
+    .modal {
+        padding: 16px 10px;
+    }
+
+    .modal-card,
+    .modal-card-lg {
+        padding: 20px 16px;
+        max-height: calc(100dvh - 24px);
+        border-radius: var(--radius);
+        width: 100%;
+    }
+
+    .modal-actions {
+        position: sticky;
+        bottom: -20px;
+        background: var(--surface);
+        z-index: 10;
+        margin-top: 14px;
+        padding-top: 12px;
+    }
 }
 
 @media (max-width: 480px) {
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: 8px;
     }
 
     .form-grid {
         grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .vehicle-selector {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .item-input-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .expense-input-grid {
+        grid-template-columns: 1fr;
+        padding: 12px 14px;
     }
 
     .bill-total {
         flex-direction: column;
-        align-items: flex-end;
+        align-items: stretch;
         gap: 8px;
+        text-align: right;
     }
 
     .day-history-grid {
         grid-template-columns: 1fr;
+    }
+
+    .topbar-actions .btn,
+    .topbar-actions .dropdown,
+    .topbar-actions .today-chip,
+    .topbar-actions .user-chip {
+        flex: 1 1 100%;
+    }
+
+    /* Login Screen Mobile Optimizations */
+    .login-screen {
+        padding: 16px 12px;
+    }
+
+    .login-card {
+        padding: 24px 18px;
+        border-radius: 20px;
+    }
+
+    .login-brand {
+        margin-bottom: 18px;
+    }
+
+    .login-brand .brand-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 22px;
+        margin: 0 auto 12px;
+        border-radius: 14px;
+    }
+
+    .login-brand h1 {
+        font-size: 18px;
+        letter-spacing: -0.3px;
+    }
+
+    .login-brand p {
+        font-size: 12px;
+    }
+
+    .login-tabs {
+        margin: 14px 0 12px 0;
+    }
+
+    .login-tab {
+        padding: 8px 10px;
+        font-size: 0.82rem;
+    }
+
+    .login-form {
+        gap: 14px;
+    }
+
+    .login-form input {
+        height: 44px;
+        font-size: 13px;
+    }
+
+    .login-footer-links {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .login-text-link {
+        justify-content: center;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .modal-actions .btn {
+        width: 100%;
+        min-height: 42px;
     }
 }
 
@@ -3145,11 +3417,15 @@ tbody tr:hover {
 .family-members-table-wrap {
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    width: 100%;
 }
 
 .family-table {
     width: 100%;
+    min-width: 520px;
     border-collapse: collapse;
     font-size: 0.88rem;
 }

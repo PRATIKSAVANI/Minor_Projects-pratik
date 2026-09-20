@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", initializeApp);
 
 async function initializeApp() {
   try {
+    setupMobileKeyboardAndScroll();
     setupAuthListeners();
     setupFamilyListeners();
     setupCloudListeners();
@@ -97,6 +98,41 @@ async function initializeApp() {
   } catch (err) {
     console.error("App startup initialization error:", err);
     showLoginScreen(false);
+  }
+}
+
+function setupMobileKeyboardAndScroll() {
+  // Ensure focused input, select, or textarea is visible above virtual keyboard
+  document.addEventListener("focusin", (e) => {
+    const target = e.target;
+    if (!target || !target.matches || !target.matches("input, select, textarea")) return;
+
+    // Small delay to allow the mobile soft keyboard to finish opening and viewport to adjust
+    setTimeout(() => {
+      try {
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "nearest"
+        });
+      } catch (err) {
+        target.scrollIntoView(false);
+      }
+    }, 280);
+  });
+
+  // Modern visualViewport support for dynamic layout changes
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.matches && activeEl.matches("input, select, textarea")) {
+        try {
+          activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } catch (err) {
+          activeEl.scrollIntoView(false);
+        }
+      }
+    });
   }
 }
 
