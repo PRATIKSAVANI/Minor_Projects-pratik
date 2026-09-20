@@ -24,7 +24,7 @@
         </div>
     </noscript>
 
-    <!-- OWNER LOGIN SCREEN -->
+    <!-- OWNER & FAMILY LOGIN SCREEN -->
     <section id="loginScreen" class="login-screen" aria-label="Login">
         <div class="login-card">
             <div class="login-brand">
@@ -33,9 +33,45 @@
                 </div>
                 <h1>PatelAutoGarage&Service</h1>
                 <p id="loginSubtitle">Sign in to open the garage dashboard</p>
+                <div class="login-badge-row">
+                    <span class="badge-shared-cloud" id="loginCloudBadge">
+                        <i class="fa-solid fa-cloud"></i> Shared Family Cloud
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tab Buttons: Sign In / Join Family -->
+            <div class="login-tabs" id="loginTabs" hidden>
+                <button type="button" id="tabSignInBtn" class="login-tab is-active">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                </button>
+                <button type="button" id="tabJoinFamilyBtn" class="login-tab">
+                    <i class="fa-solid fa-user-plus"></i> Join Family
+                </button>
             </div>
 
             <form id="loginForm" class="login-form" autocomplete="on" novalidate>
+                <div class="form-group" id="joinNameGroup" hidden>
+                    <label for="loginFullName">Your Full Name</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-id-card"></i>
+                        <input id="loginFullName" name="fullName" type="text" maxlength="40"
+                            placeholder="e.g. Harsh Savani (Brother)">
+                    </div>
+                </div>
+
+                <div class="form-group" id="joinRoleGroup" hidden>
+                    <label for="loginRole">Your Family Role</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-users"></i>
+                        <select id="loginRole" name="role" class="login-select">
+                            <option value="Brother / Partner">Brother / Partner</option>
+                            <option value="Owner">Garage Owner</option>
+                            <option value="Service Manager">Service Manager</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="loginUsername">Username</label>
                     <div class="input-wrap">
@@ -67,8 +103,19 @@
                     </div>
                 </div>
 
+                <div class="form-group" id="familyPasskeyGroup" hidden>
+                    <label for="loginFamilyPasskey" id="familyPasskeyLabel">Garage Family Passkey (6-digit PIN)</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <input id="loginFamilyPasskey" name="familyPasskey" type="password" maxlength="10"
+                            placeholder="Enter 6-digit family passkey">
+                    </div>
+                    <small class="field-hint" id="familyPasskeyHint">Ask the garage owner for the family passkey PIN.</small>
+                </div>
+
                 <label class="remember-row" id="rememberRow">
                     <input id="rememberMe" type="checkbox">
+                    <span>Remember this device</span>
                 </label>
 
                 <p id="loginError" class="login-error" role="alert" aria-live="assertive" hidden></p>
@@ -79,6 +126,9 @@
                 </button>
 
                 <div class="login-footer-links" id="loginFooterLinks">
+                    <button type="button" id="switchLoginModeBtn" class="login-text-link">
+                        <i class="fa-solid fa-users"></i> Join Family Device with Passkey
+                    </button>
                     <button type="button" id="resetLoginBtn" class="login-text-link">
                         <i class="fa-solid fa-key"></i> Forgot Password / Reset Login
                     </button>
@@ -106,6 +156,25 @@
                     <div class="today-chip" id="todayChip" title="Current Real-World Date">
                         <i class="fa-solid fa-calendar-day"></i>
                         <span id="todayLabel">Today</span>
+                    </div>
+
+                    <button type="button" id="cloudSyncBtn" class="btn btn-cloud-status" title="Cloud Database & Realtime Sync Status">
+                        <span class="cloud-status-dot is-offline" id="cloudStatusDot"></span>
+                        <i class="fa-solid fa-cloud"></i>
+                        <span id="cloudStatusLabel">Cloud Database</span>
+                    </button>
+
+                    <button type="button" id="manageFamilyBtn" class="btn btn-light" title="Authorized Family Members &amp; Share Link">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Family (<span id="topbarFamilyCount">1</span>)</span>
+                    </button>
+
+                    <div class="user-chip" id="topbarUserChip" title="Signed in family member">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <div class="user-chip-meta">
+                            <strong id="topbarMemberName">Owner</strong>
+                            <small id="topbarMemberRole">Admin</small>
+                        </div>
                     </div>
 
                     <button type="button" id="themeToggleBtn" class="btn btn-light" title="Toggle dark/light theme">
@@ -170,47 +239,237 @@
                 </div>
             </section>
 
-            <!-- WORKING DAY NAVIGATOR TOOLBAR -->
-            <section class="day-navigator-bar" id="dayNavigatorBar" aria-label="Working Day Selector">
-                <div class="day-nav-left">
-                    <div class="nav-control-group">
-                        <button type="button" id="prevDayBtn" class="btn btn-nav" title="Go to Previous Day">
-                            <i class="fa-solid fa-chevron-left"></i>
-                            <span>Previous</span>
+            <!-- MULTI-SCOPE & PERFORMANCE RANGE NAVIGATOR -->
+            <section class="performance-navigator" id="performanceNavigator" aria-label="Performance Range Selector">
+                <!-- Scope Tabs -->
+                <div class="scope-tabs-bar">
+                    <div class="scope-tabs" role="tablist">
+                        <button type="button" class="scope-tab active" data-scope="day" id="scopeTabDay">
+                            <i class="fa-solid fa-calendar-day"></i>
+                            <span>Daily</span>
                         </button>
-
-                        <div class="date-picker-wrap">
-                            <i class="fa-regular fa-calendar"></i>
-                            <input type="date" id="activeDatePicker" class="active-date-picker" title="Select Working Date">
-                        </div>
-
-                        <button type="button" id="nextDayBtn" class="btn btn-nav" title="Go to Next Day">
-                            <span>Next</span>
-                            <i class="fa-solid fa-chevron-right"></i>
+                        <button type="button" class="scope-tab" data-scope="week" id="scopeTabWeek">
+                            <i class="fa-solid fa-calendar-week"></i>
+                            <span>Weekly</span>
                         </button>
-
-                        <button type="button" id="jumpTodayBtn" class="btn btn-nav btn-nav-today" title="Jump to Today">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                            Today
+                        <button type="button" class="scope-tab" data-scope="month" id="scopeTabMonth">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>Monthly</span>
                         </button>
+                        <button type="button" class="scope-tab" data-scope="year" id="scopeTabYear">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>Yearly</span>
+                        </button>
+                        <button type="button" class="scope-tab" data-scope="custom" id="scopeTabCustom">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Custom Range</span>
+                        </button>
+                        <button type="button" class="scope-tab" data-scope="all" id="scopeTabAll">
+                            <i class="fa-solid fa-database"></i>
+                            <span>All-Time History</span>
+                        </button>
+                    </div>
+
+                    <!-- Cloud Sync Indicator Quick Badge in Bar -->
+                    <div class="cloud-sync-mini-badge" id="cloudSyncMiniBadge" title="Live Shared Database Status">
+                        <i class="fa-solid fa-circle-nodes"></i>
+                        <span id="cloudMiniStatus">Shared Cloud: Connecting...</span>
                     </div>
                 </div>
 
-                <div class="day-nav-right">
-                    <div id="activeDateBadge" class="active-date-badge is-today">
-                        <span class="status-dot"></span>
-                        <span id="activeDateText">Active Day: Today, 20 Sep 2026</span>
+                <!-- Scope Sub-Controls Container -->
+                <div class="scope-controls-container">
+                    <!-- 1. Daily Controls -->
+                    <div class="scope-controls active" id="scopeControlsDay">
+                        <div class="nav-control-group">
+                            <button type="button" id="prevDayBtn" class="btn btn-nav" title="Go to Previous Day">
+                                <i class="fa-solid fa-chevron-left"></i>
+                                <span>Previous</span>
+                            </button>
+
+                            <div class="date-picker-wrap">
+                                <i class="fa-regular fa-calendar"></i>
+                                <input type="date" id="activeDatePicker" class="active-date-picker" title="Select Working Date">
+                            </div>
+
+                            <button type="button" id="nextDayBtn" class="btn btn-nav" title="Go to Next Day">
+                                <span>Next</span>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+
+                            <button type="button" id="jumpTodayBtn" class="btn btn-nav btn-nav-today" title="Jump to Today">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                Today
+                            </button>
+                        </div>
+
+                        <div id="activeDateBadge" class="active-date-badge is-today">
+                            <span class="status-dot"></span>
+                            <span id="activeDateText">Active Day: Today, 20 Sep 2026</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Weekly Controls -->
+                    <div class="scope-controls" id="scopeControlsWeek" hidden>
+                        <div class="nav-control-group">
+                            <button type="button" id="prevWeekBtn" class="btn btn-nav" title="Go to Previous Week">
+                                <i class="fa-solid fa-chevron-left"></i>
+                                <span>Previous Week</span>
+                            </button>
+
+                            <div class="week-display-wrap">
+                                <i class="fa-solid fa-calendar-week"></i>
+                                <span id="weekDisplayLabel">14 Sep 2026 – 20 Sep 2026</span>
+                            </div>
+
+                            <button type="button" id="nextWeekBtn" class="btn btn-nav" title="Go to Next Week">
+                                <span>Next Week</span>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+
+                            <button type="button" id="jumpThisWeekBtn" class="btn btn-nav btn-nav-today" title="Jump to This Week">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                This Week
+                            </button>
+                        </div>
+
+                        <div class="active-date-badge is-today" id="weekBadge">
+                            <span class="status-dot"></span>
+                            <span id="weekBadgeText">Current Week</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Monthly Controls -->
+                    <div class="scope-controls" id="scopeControlsMonth" hidden>
+                        <div class="nav-control-group">
+                            <button type="button" id="prevMonthBtn" class="btn btn-nav" title="Go to Previous Month">
+                                <i class="fa-solid fa-chevron-left"></i>
+                                <span>Previous</span>
+                            </button>
+
+                            <div class="month-selector-group">
+                                <select id="monthSelect" class="month-dropdown" title="Select Month">
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8" selected>September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                                <select id="monthYearSelect" class="year-dropdown" title="Select Year">
+                                    <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026" selected>2026</option>
+                                    <option value="2027">2027</option>
+                                    <option value="2028">2028</option>
+                                </select>
+                            </div>
+
+                            <button type="button" id="nextMonthBtn" class="btn btn-nav" title="Go to Next Month">
+                                <span>Next</span>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+
+                            <button type="button" id="jumpThisMonthBtn" class="btn btn-nav btn-nav-today" title="Jump to Current Month">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                This Month
+                            </button>
+                        </div>
+
+                        <div class="active-date-badge is-today" id="monthBadge">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span id="monthBadgeText">Month: Sep 2026</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Yearly Controls -->
+                    <div class="scope-controls" id="scopeControlsYear" hidden>
+                        <div class="nav-control-group">
+                            <button type="button" id="prevYearBtn" class="btn btn-nav" title="Go to Previous Year">
+                                <i class="fa-solid fa-chevron-left"></i>
+                                <span>Previous Year</span>
+                            </button>
+
+                            <div class="year-selector-group">
+                                <select id="yearSelect" class="year-dropdown" title="Select Calendar Year">
+                                    <option value="2024">Year 2024</option>
+                                    <option value="2025">Year 2025</option>
+                                    <option value="2026" selected>Year 2026</option>
+                                    <option value="2027">Year 2027</option>
+                                    <option value="2028">Year 2028</option>
+                                </select>
+                            </div>
+
+                            <button type="button" id="nextYearBtn" class="btn btn-nav" title="Go to Next Year">
+                                <span>Next Year</span>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+
+                            <button type="button" id="jumpThisYearBtn" class="btn btn-nav btn-nav-today" title="Jump to Current Year">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                Current Year
+                            </button>
+                        </div>
+
+                        <div class="active-date-badge is-today" id="yearBadge">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span id="yearBadgeText">Year: 2026</span>
+                        </div>
+                    </div>
+
+                    <!-- 5. Custom Range Controls -->
+                    <div class="scope-controls" id="scopeControlsCustom" hidden>
+                        <div class="custom-range-inputs">
+                            <div class="custom-date-field">
+                                <label for="customStartDate">From:</label>
+                                <input type="date" id="customStartDate" class="active-date-picker">
+                            </div>
+                            <div class="custom-date-field">
+                                <label for="customEndDate">To:</label>
+                                <input type="date" id="customEndDate" class="active-date-picker">
+                            </div>
+                            <button type="button" id="applyCustomRangeBtn" class="btn btn-primary">
+                                <i class="fa-solid fa-filter"></i> Apply Range
+                            </button>
+                        </div>
+
+                        <div class="custom-quick-presets">
+                            <button type="button" class="preset-btn" data-preset="7days">Last 7 Days</button>
+                            <button type="button" class="preset-btn" data-preset="30days">Last 30 Days</button>
+                            <button type="button" class="preset-btn" data-preset="thisMonth">This Month</button>
+                            <button type="button" class="preset-btn" data-preset="lastMonth">Last Month</button>
+                            <button type="button" class="preset-btn" data-preset="last90days">Last 90 Days</button>
+                        </div>
+                    </div>
+
+                    <!-- 6. All-Time History Controls -->
+                    <div class="scope-controls" id="scopeControlsAll" hidden>
+                        <div class="alltime-info-row">
+                            <div class="alltime-info-pill">
+                                <i class="fa-solid fa-database"></i>
+                                <span>Complete Garage History from First Recorded Date to Latest</span>
+                            </div>
+                            <div class="alltime-date-range">
+                                <span>Recorded Span: <strong id="allTimeSpanText">All Dates</strong></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- HISTORICAL WORKING DAY WARNING BANNER (Shows when activeDate != today) -->
+            <!-- HISTORICAL WORKING DAY WARNING BANNER (Shows when activeDate != today and scope == 'day') -->
             <div id="historicalBanner" class="historical-banner" hidden>
                 <div class="historical-banner-content">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <div>
                         <strong>Historical Date Mode: <span id="historicalDateLabel">19 Sep 2026</span></strong>
-                        <span>Any new job cards or expenses you add below will be saved specifically for this past date.</span>
+                        <span>Any new job cards or expenses you add below will be saved specifically for this past date in the shared database.</span>
                     </div>
                 </div>
                 <button type="button" id="bannerJumpTodayBtn" class="btn btn-banner-jump">
@@ -218,11 +477,11 @@
                 </button>
             </div>
 
-            <!-- DASHBOARD STATS GRID (Calculated for activeDate) -->
+            <!-- DASHBOARD STATS GRID -->
             <section class="dashboard-section">
                 <div class="section-title-row">
                     <div>
-                        <span class="section-label">DAILY PERFORMANCE</span>
+                        <span class="section-label" id="dashboardScopeLabel">DAILY PERFORMANCE</span>
                         <h3 id="dashboardStatsHeading">Summary for Today</h3>
                     </div>
                     <div class="alltime-mini-badge" title="Total pending balance from all customers across entire history">
@@ -627,12 +886,12 @@
 
                     <div class="view-scope-toggle">
                         <button type="button" class="scope-btn active" id="scopeDateBtn" data-scope="date">
-                            <i class="fa-solid fa-calendar-day"></i>
-                            <span>Selected Date</span>
+                            <i class="fa-solid fa-filter"></i>
+                            <span id="scopeDateBtnText">Active Period (Today)</span>
                         </button>
                         <button type="button" class="scope-btn" id="scopeAllBtn" data-scope="all">
                             <i class="fa-solid fa-database"></i>
-                            <span>All Records</span>
+                            <span>All-Time Records</span>
                         </button>
                     </div>
 
@@ -880,6 +1139,242 @@
             </div>
         </div>
 
+        <!-- CLOUD DATABASE SETUP & REALTIME SYNC MODAL -->
+        <div id="cloudModal" class="modal" hidden>
+            <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="cloudModalTitle">
+                <div class="modal-header">
+                    <div>
+                        <span class="section-label">SHARED CLOUD BACKEND</span>
+                        <h3 id="cloudModalTitle">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            Cloud Database &amp; Multi-Device Sync
+                        </h3>
+                    </div>
+                    <button type="button" id="cloudModalCloseBtn" class="modal-close" aria-label="Close modal">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="cloud-modal-body">
+                    <!-- Status Banner -->
+                    <div class="cloud-status-hero" id="cloudStatusHero">
+                        <div class="cloud-status-icon" id="cloudHeroIcon">
+                            <i class="fa-solid fa-cloud"></i>
+                        </div>
+                        <div class="cloud-status-details">
+                            <div class="cloud-status-headline">
+                                <span class="cloud-pill" id="cloudStatusPill">Connecting...</span>
+                                <h4 id="cloudHeroTitle">Persistent Shared Database</h4>
+                            </div>
+                            <p id="cloudHeroDesc">
+                                All job cards, expenses, payments, and multi-day history are synchronized in real time across all devices (your computer, brother's device, phones).
+                            </p>
+                            <div class="cloud-metrics-row">
+                                <div><span>Synced Records:</span> <strong id="cloudRecordsCount">0</strong></div>
+                                <div><span>Synced Expenses:</span> <strong id="cloudExpensesCount">0</strong></div>
+                                <div><span>Last Sync:</span> <strong id="cloudLastSyncText">Just now</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Sync Actions -->
+                    <div class="cloud-actions-box">
+                        <div class="cloud-action-item">
+                            <div>
+                                <strong>Real-Time Synchronization</strong>
+                                <small>Live listeners are active. When any device adds or updates a record, all other devices receive it automatically.</small>
+                            </div>
+                            <button type="button" id="cloudForceSyncBtn" class="btn btn-primary">
+                                <i class="fa-solid fa-rotate"></i> Sync Cloud Now
+                            </button>
+                        </div>
+
+                        <div class="cloud-action-item">
+                            <div>
+                                <strong>Upload Local Device Records to Cloud</strong>
+                                <small>If you or your brother previously added records while offline or before cloud sync, click here to upload them so both devices have everything.</small>
+                            </div>
+                            <button type="button" id="cloudMigrateBtn" class="btn btn-save">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Local Data to Cloud
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Firebase Configuration Settings -->
+                    <div class="cloud-config-accordion">
+                        <div class="accordion-header" id="cloudConfigToggle">
+                            <h4>
+                                <i class="fa-solid fa-gear"></i>
+                                Firebase Firestore Connection Settings
+                            </h4>
+                            <span id="cloudConfigToggleText">Show Settings <i class="fa-solid fa-chevron-down"></i></span>
+                        </div>
+
+                        <div id="cloudConfigBody" class="accordion-body" hidden>
+                            <p class="config-intro">
+                                Enter your Google Firebase project credentials below. A free Firebase Spark project provides 50,000 free daily reads and 20,000 free writes with permanent real-time multi-device synchronization.
+                            </p>
+
+                            <div class="form-grid cloud-form-grid">
+                                <div class="form-group">
+                                    <label for="cfgApiKey">API Key</label>
+                                    <input type="text" id="cfgApiKey" placeholder="AIzaSy...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgProjectId">Project ID</label>
+                                    <input type="text" id="cfgProjectId" placeholder="e.g. patel-auto-garage">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgAuthDomain">Auth Domain</label>
+                                    <input type="text" id="cfgAuthDomain" placeholder="patel-auto-garage.firebaseapp.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgStorageBucket">Storage Bucket</label>
+                                    <input type="text" id="cfgStorageBucket" placeholder="patel-auto-garage.appspot.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgMessagingSenderId">Messaging Sender ID</label>
+                                    <input type="text" id="cfgMessagingSenderId" placeholder="1234567890">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgAppId">App ID</label>
+                                    <input type="text" id="cfgAppId" placeholder="1:1234567890:web:abcdef">
+                                </div>
+                            </div>
+
+                            <div class="cloud-config-actions">
+                                <button type="button" id="resetCloudConfigBtn" class="btn btn-light">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset to Default
+                                </button>
+                                <button type="button" id="saveCloudConfigBtn" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save &amp; Connect Cloud
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cloudModalDoneBtn" class="btn btn-light">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAMILY MEMBERS & MULTI-DEVICE ACCESS MODAL -->
+        <div id="familyModal" class="modal" hidden>
+            <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="familyModalTitle">
+                <div class="modal-header">
+                    <div>
+                        <span class="section-label">AUTHORIZED FAMILY ACCESS</span>
+                        <h3 id="familyModalTitle">
+                            <i class="fa-solid fa-users"></i>
+                            Garage Family Members &amp; Multi-Device Access
+                        </h3>
+                    </div>
+                    <button type="button" id="familyModalCloseBtn" class="modal-close" aria-label="Close modal">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="family-modal-body">
+                    <!-- Quick share to Brother banner -->
+                    <div class="family-share-box">
+                        <div class="family-share-info">
+                            <div class="family-share-icon">
+                                <i class="fa-solid fa-share-nodes"></i>
+                            </div>
+                            <div>
+                                <h4>Connect Brother's Device in 1 Click</h4>
+                                <p>Send this link to your brother via WhatsApp. When opened on his phone or laptop, it connects automatically to the same live database.</p>
+                            </div>
+                        </div>
+                        <button type="button" id="copyFamilyShareLinkBtn" class="btn btn-save">
+                            <i class="fa-solid fa-link"></i> Copy 1-Tap Link for Brother
+                        </button>
+                    </div>
+
+                    <!-- Security Passkey Card -->
+                    <div class="family-passkey-card">
+                        <div class="passkey-details">
+                            <div>
+                                <label for="familyPasskeyInput"><strong>Garage Family Security Passkey (PIN)</strong></label>
+                                <p class="passkey-hint">Share this PIN with your brother or family members so they can join from their own phone or laptop.</p>
+                            </div>
+                            <div class="passkey-display-group">
+                                <input type="text" id="familyPasskeyInput" class="passkey-code" maxlength="8" readonly value="123456">
+                                <button type="button" id="editFamilyPasskeyBtn" class="btn btn-light btn-sm">
+                                    <i class="fa-solid fa-pen-to-square"></i> Change PIN
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Members List -->
+                    <div class="family-members-section">
+                        <div class="section-header-row">
+                            <h4>Authorized Family Members (<span id="familyMemberCount">1</span>)</h4>
+                            <button type="button" id="toggleAddMemberFormBtn" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-user-plus"></i> Add Family Member
+                            </button>
+                        </div>
+
+                        <!-- Add Member Inline Form -->
+                        <form id="addFamilyMemberForm" class="add-member-form" hidden>
+                            <h5>Authorize New Family Member</h5>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="newMemberName">Full Name</label>
+                                    <input type="text" id="newMemberName" placeholder="e.g. Harsh Savani" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newMemberUsername">Username</label>
+                                    <input type="text" id="newMemberUsername" placeholder="e.g. harsh" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newMemberRole">Role</label>
+                                    <select id="newMemberRole">
+                                        <option value="Brother / Partner">Brother / Partner</option>
+                                        <option value="Owner">Owner</option>
+                                        <option value="Service Manager">Service Manager</option>
+                                        <option value="Technician / Staff">Technician / Staff</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newMemberPassword">Password (min 6 chars)</label>
+                                    <input type="password" id="newMemberPassword" placeholder="Set member password" required>
+                                </div>
+                            </div>
+                            <div class="form-actions-inline">
+                                <button type="button" id="cancelAddMemberBtn" class="btn btn-light btn-sm">Cancel</button>
+                                <button type="submit" class="btn btn-save btn-sm">Save &amp; Authorize Member</button>
+                            </div>
+                        </form>
+
+                        <div class="family-members-table-wrap">
+                            <table class="family-table">
+                                <thead>
+                                    <tr>
+                                        <th>Member Name</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="familyMembersTbody">
+                                    <!-- Rendered via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="familyModalCloseFooterBtn" class="btn btn-light">Close</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- PRINTABLE INVOICE TEMPLATE -->
@@ -938,6 +1433,11 @@
         <span id="toastMessage">Success</span>
     </div>
 
+    <!-- Firebase App & Firestore SDKs (Compat via CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
 </body>
 

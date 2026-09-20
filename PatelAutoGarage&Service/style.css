@@ -577,6 +577,60 @@ button {
     color: white;
 }
 
+.btn-cloud-status {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 8px 14px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.btn-cloud-status:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.cloud-status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.cloud-status-dot.is-online {
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+}
+
+.cloud-status-dot.is-connecting {
+    background: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+    animation: pulse 1.2s infinite;
+}
+
+.cloud-status-dot.is-offline {
+    background: #94a3b8;
+}
+
+.cloud-status-dot.is-error {
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+}
+
 .btn-danger {
     color: white;
     background: var(--danger);
@@ -665,22 +719,99 @@ button {
 }
 
 /* =========================================
-   WORKING DAY NAVIGATOR TOOLBAR
+   MULTI-SCOPE & PERFORMANCE RANGE NAVIGATOR
 ========================================= */
 
-.day-navigator-bar {
+.performance-navigator {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.scope-tabs-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 12px 18px;
-    margin-bottom: 16px;
+    background: var(--background);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.scope-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.scope-tab {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.scope-tab:hover {
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.scope-tab.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+
+.cloud-sync-mini-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--primary-light);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.cloud-sync-mini-badge i {
+    font-size: 12px;
+}
+
+.scope-controls-container {
+    padding: 14px 18px;
+}
+
+.scope-controls {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.scope-controls[hidden] {
+    display: none !important;
 }
 
 .nav-control-group {
@@ -782,6 +913,123 @@ button {
 .active-date-badge.is-historical .status-dot {
     background: #d97706;
     box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
+}
+
+.week-display-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.week-display-wrap i {
+    color: var(--primary);
+}
+
+.month-selector-group, .year-selector-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.month-dropdown, .year-dropdown {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    width: auto !important;
+}
+
+.month-dropdown:focus, .year-dropdown:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.custom-range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.custom-date-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.custom-date-field label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.custom-quick-presets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 6px 11px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.preset-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.alltime-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.alltime-info-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.alltime-info-pill i {
+    color: var(--primary);
+}
+
+.alltime-date-range {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.alltime-date-range strong {
+    color: var(--primary);
 }
 
 /* Historical mode warning banner */
@@ -2061,6 +2309,202 @@ tbody tr:hover {
 }
 
 /* =========================================
+   CLOUD DATABASE MODAL STYLING
+========================================= */
+
+.cloud-status-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 20px;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(79, 70, 229, 0.05));
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    margin-bottom: 20px;
+}
+
+.cloud-status-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white;
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    flex-shrink: 0;
+}
+
+.cloud-status-details {
+    flex: 1;
+}
+
+.cloud-status-headline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.cloud-pill {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.cloud-pill.is-online {
+    background: var(--success-light);
+    color: var(--success-dark);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.cloud-pill.is-connecting {
+    background: var(--warning-light);
+    color: var(--warning-dark);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.cloud-pill.is-offline {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+}
+
+.cloud-status-headline h4 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.cloud-status-details p {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.cloud-metrics-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(37, 99, 235, 0.12);
+}
+
+.cloud-metrics-row span {
+    color: var(--text-muted);
+}
+
+.cloud-metrics-row strong {
+    color: var(--primary);
+    margin-left: 4px;
+}
+
+.cloud-actions-box {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.cloud-action-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    flex-wrap: wrap;
+}
+
+.cloud-action-item strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.cloud-action-item small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: 2px;
+    max-width: 480px;
+}
+
+.cloud-config-accordion {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--surface);
+}
+
+.accordion-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    background: var(--background);
+    transition: background 0.2s ease;
+}
+
+.accordion-header:hover {
+    background: var(--primary-light);
+}
+
+.accordion-header h4 {
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+}
+
+.accordion-header h4 i {
+    color: var(--primary);
+}
+
+.accordion-header span {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.accordion-body {
+    padding: 18px;
+    border-top: 1px solid var(--border);
+}
+
+.config-intro {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.cloud-form-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    padding: 0 !important;
+    margin-bottom: 16px;
+}
+
+.cloud-config-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* =========================================
    TOAST NOTIFICATION
 ========================================= */
 
@@ -2331,9 +2775,67 @@ tbody tr:hover {
         justify-content: center;
     }
 
-    .day-navigator-bar {
+    .performance-navigator {
+        border-radius: var(--radius);
+    }
+
+    .scope-tabs-bar {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .scope-tabs {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        padding-bottom: 6px;
+    }
+
+    .scope-tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .scope-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .month-selector-group, .year-selector-group {
+        width: 100%;
+    }
+
+    .month-dropdown, .year-dropdown {
+        flex: 1;
+    }
+
+    .custom-range-inputs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .custom-date-field {
+        width: 100%;
+    }
+
+    .custom-quick-presets {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+    }
+
+    .cloud-form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .cloud-action-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cloud-action-item .btn {
+        width: 100%;
     }
 
     .nav-control-group {
@@ -2388,6 +2890,330 @@ tbody tr:hover {
 
     .day-history-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================
+   FAMILY ACCESS & CLOUD SHARING STYLES
+========================================= */
+
+.login-badge-row {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.badge-shared-cloud {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-light);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    padding: 4px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+}
+
+.login-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 5px;
+    border-radius: 14px;
+    margin: 20px 0 16px 0;
+}
+
+.login-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.login-tab.is-active {
+    background: #ffffff;
+    color: var(--primary);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.login-select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.login-select:focus {
+    border-color: var(--primary);
+}
+
+.field-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* TOPBAR USER CHIP */
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-elevated);
+    border: 1.5px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-sm);
+}
+
+.user-chip i {
+    font-size: 1.35rem;
+    color: var(--primary);
+}
+
+.user-chip-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.user-chip-meta strong {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.user-chip-meta small {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* FAMILY MANAGEMENT MODAL */
+.family-modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.family-share-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%);
+    border: 1.5px dashed var(--primary);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+}
+
+.family-share-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.family-share-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: var(--primary);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.family-share-info h4 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 3px;
+}
+
+.family-share-info p {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.family-passkey-card {
+    background: var(--surface-elevated);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+}
+
+.passkey-details {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.passkey-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.passkey-display-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.passkey-code {
+    font-family: monospace;
+    font-size: 1.25rem;
+    font-weight: 900;
+    letter-spacing: 0.25em;
+    text-align: center;
+    padding: 8px 14px;
+    width: 140px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--background);
+    color: var(--primary);
+}
+
+.family-members-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.section-header-row h4 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.add-member-form {
+    background: var(--surface-elevated);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.add-member-form h5 {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.form-actions-inline {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.family-members-table-wrap {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.family-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.family-table th {
+    background: var(--surface-elevated);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.family-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text);
+}
+
+.family-table tr:last-child td {
+    border-bottom: none;
+}
+
+.member-badge-role {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.member-badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.member-badge-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+}
+
+@media (max-width: 768px) {
+    .family-share-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .passkey-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .user-chip-meta {
+        display: none;
     }
 }
 
