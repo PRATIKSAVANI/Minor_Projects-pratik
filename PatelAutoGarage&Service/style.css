@@ -3214,6 +3214,11 @@ tbody tr:hover {
     text-align: left;
 }
 
+.login-cloud-alert[hidden],
+[hidden] {
+    display: none !important;
+}
+
 .dark-theme .login-cloud-alert {
     background: rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.3);

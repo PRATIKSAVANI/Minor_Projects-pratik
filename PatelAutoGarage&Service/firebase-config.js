@@ -9,12 +9,13 @@
 // enter your Firebase project credentials directly here.
 // You can also paste your configuration inside the app UI under Cloud Settings.
 const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "patel-auto-garage",
-  storageBucket: "patel-auto-garage.appspot.com",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyDT4IfMfp6gS36h0Y7bVt_BIY-vhW6eqts",
+  authDomain: "patel-auto-garage-90427.firebaseapp.com",
+  projectId: "patel-auto-garage-90427",
+  storageBucket: "patel-auto-garage-90427.firebasestorage.app",
+  messagingSenderId: "25532106701",
+  appId: "1:25532106701:web:0475c1048c6de07a5de684",
+  measurementId: "G-YQ9TNRCFC3",
 };
 
 const CLOUD_STORAGE_KEYS = {

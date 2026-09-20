@@ -1827,6 +1827,7 @@ function updateCloudStatusUI(state, text) {
   }
   if (loginAlert) {
     loginAlert.hidden = state === "online";
+    loginAlert.style.display = state === "online" ? "none" : "flex";
   }
 }
 
