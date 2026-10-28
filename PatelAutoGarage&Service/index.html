@@ -715,14 +715,56 @@
                         </div>
                     </div>
 
-                    <div class="bill-total">
-                        <div>
-                            <span>Service Items</span>
-                            <strong id="summaryItemCount">0</strong>
+                    <div class="billing-summary-card">
+                        <div class="billing-summary-header">
+                            <div class="summary-metric">
+                                <span class="summary-metric-label"><i class="fa-solid fa-screwdriver-wrench"></i> Items Added</span>
+                                <strong id="summaryItemCount" class="summary-metric-value">0</strong>
+                            </div>
+                            <div class="summary-metric">
+                                <span class="summary-metric-label">Subtotal</span>
+                                <strong id="billSubtotal" class="summary-metric-value">₹0</strong>
+                            </div>
                         </div>
-                        <div>
-                            <span>Grand Total</span>
-                            <strong id="billTotal">₹0</strong>
+
+                        <!-- DISCOUNT SECTION -->
+                        <div class="discount-box">
+                            <div class="discount-header-row">
+                                <label for="discountAmount" class="discount-label">
+                                    <i class="fa-solid fa-tag"></i>
+                                    <span>Discount / છૂટ (₹)</span>
+                                </label>
+                                <div id="discountBadge" class="discount-applied-badge" style="display: none;">
+                                    <span>Discount:</span>
+                                    <strong id="billDiscountDisplay">-₹0</strong>
+                                </div>
+                            </div>
+                            <div class="discount-input-row">
+                                <div class="price-input discount-input-wrapper">
+                                    <span>₹</span>
+                                    <input id="discountAmount" type="number" min="0" max="999999" step="any" placeholder="0" value="0" autocomplete="off">
+                                    <button type="button" id="clearDiscountBtn" class="clear-discount-btn" title="Clear Discount" style="display: none;">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div class="quick-discount-chips">
+                                    <button type="button" class="quick-disc-btn" data-discount-add="50">+₹50</button>
+                                    <button type="button" class="quick-disc-btn" data-discount-add="100">+₹100</button>
+                                    <button type="button" class="quick-disc-btn" data-discount-add="200">+₹200</button>
+                                    <button type="button" class="quick-disc-btn" data-discount-add="500">+₹500</button>
+                                    <button type="button" class="quick-disc-btn quick-disc-reset" data-discount-set="0">Reset</button>
+                                </div>
+                            </div>
+                            <small class="discount-hint">Example: 1000 ના બિલ પર 300 ઓછા કરવા માટે અહીં 300 લખો (Final bill ₹700 થશે).</small>
+                        </div>
+
+                        <!-- FINAL GRAND TOTAL -->
+                        <div class="bill-grand-total-row">
+                            <div class="grand-total-info">
+                                <span class="grand-total-label">Final Payable Amount</span>
+                                <small class="grand-total-subtext">Net amount customer pays</small>
+                            </div>
+                            <strong id="billTotal" class="grand-total-value">₹0</strong>
                         </div>
                     </div>
                 </div>
@@ -945,34 +987,7 @@
                 </div>
             </section>
 
-            <!-- DATE / DAY HISTORY DIRECTORY SECTION -->
-            <section class="panel day-history-panel" id="dayHistorySection">
-                <div class="panel-header">
-                    <div>
-                        <span class="section-label">CALENDAR DIRECTORY &amp; ARCHIVE</span>
-                        <h2>
-                            <i class="fa-solid fa-calendar-days"></i>
-                            Date / Day History Archive
-                        </h2>
-                        <p>Browse all recorded garage days. Click any date to load its full records and calculations.</p>
-                    </div>
-                    <div class="history-stats-pill">
-                        <span id="historyDaysCount">0 Days Recorded</span>
-                    </div>
-                </div>
 
-                <div class="day-history-grid" id="dayHistoryGrid">
-                    <!-- Dynamic Day History Cards populated by JS -->
-                </div>
-
-                <div id="emptyDayHistory" class="empty-records" style="display: none;">
-                    <div class="empty-icon">
-                        <i class="fa-solid fa-calendar-xmark"></i>
-                    </div>
-                    <h3>No past days recorded yet</h3>
-                    <p>When you enter vehicle records, every day will appear here permanently.</p>
-                </div>
-            </section>
 
         </main>
 
@@ -1068,9 +1083,28 @@
                             </table>
                         </div>
 
-                        <div class="bill-total">
-                            <div>
-                                <span>Grand Total</span>
+                        <div class="modal-billing-summary">
+                            <div class="modal-summary-row">
+                                <span>Subtotal</span>
+                                <strong id="editBillSubtotal">₹0</strong>
+                            </div>
+
+                            <div class="modal-discount-row">
+                                <label for="editDiscountAmount">
+                                    <i class="fa-solid fa-tag"></i>
+                                    Discount / છૂટ (₹)
+                                </label>
+                                <div class="price-input modal-discount-input">
+                                    <span>₹</span>
+                                    <input id="editDiscountAmount" type="number" min="0" max="999999" step="any" placeholder="0" value="0">
+                                </div>
+                            </div>
+
+                            <div class="modal-final-total-row">
+                                <div>
+                                    <span class="modal-final-label">Final Payable Total</span>
+                                    <small>(After discount)</small>
+                                </div>
                                 <strong id="editBillTotal">₹0</strong>
                             </div>
                         </div>
@@ -1292,7 +1326,15 @@
             </table>
 
             <div class="invoice-totals">
-                <div>
+                <div id="printSubtotalRow" style="display: none;">
+                    <span>Subtotal</span>
+                    <strong id="printSubtotal">₹0</strong>
+                </div>
+                <div id="printDiscountRow" style="display: none; color: #b45309;">
+                    <span>Discount (છૂટ)</span>
+                    <strong id="printDiscount">-₹0</strong>
+                </div>
+                <div class="print-grand-total">
                     <span>Grand Total</span>
                     <strong id="printTotal">₹0</strong>
                 </div>

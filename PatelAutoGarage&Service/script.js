@@ -2079,10 +2079,19 @@ function normalizeRecords(records) {
         })
       : [];
 
-    const totalAmount = roundMoney(
+    const subtotal = roundMoney(
       items.reduce((sum, item) => sum + item.total, 0) ||
+        Number(record.subtotal) ||
         Number(record.totalAmount) ||
         0,
+    );
+    const discountAmount = roundMoney(
+      Math.min(Math.max(Number(record.discountAmount) || 0, 0), subtotal),
+    );
+    const totalAmount = roundMoney(
+      record.totalAmount != null
+        ? Number(record.totalAmount)
+        : Math.max(subtotal - discountAmount, 0),
     );
 
     const status = record.paymentStatus || "Paid (Cash)";
@@ -2112,6 +2121,8 @@ function normalizeRecords(records) {
       vehicleNo: String(record.vehicleNo || record.bikeNo || "").trim().toUpperCase(),
       vehicleModel: String(record.vehicleModel || record.bikeModel || "").trim(),
       items,
+      subtotal,
+      discountAmount,
       totalAmount,
       paidAmount,
       pendingAmount,
@@ -2849,7 +2860,8 @@ function renderRecords(data) {
         </div>
       </td>
       <td class="amount-cell">
-        ${money(record.totalAmount)}
+        <strong>${money(record.totalAmount)}</strong>
+        ${(record.discountAmount || 0) > 0 ? `<div class="record-discount-tag" title="Discount: ${money(record.discountAmount)}"><i class="fa-solid fa-tag"></i> -${money(record.discountAmount)} Off</div>` : ""}
         <small>Paid ${money(record.paidAmount)}</small>
         ${isPending ? `<small style="color:var(--danger);font-weight:700;">Due ${money(record.pendingAmount)}</small>` : ""}
       </td>
@@ -2915,8 +2927,95 @@ function updateFilterSummary(data) {
 // NEW JOB CARD ENTRY
 // =========================================
 
-function getGrandTotal() {
+function getSubtotal() {
   return roundMoney(currentItems.reduce((sum, item) => sum + item.total, 0));
+}
+
+function getDiscountAmount() {
+  const input = document.getElementById("discountAmount");
+  if (!input) return 0;
+  const raw = input.value.trim();
+  if (!raw) return 0;
+  const disc = Number(raw);
+  if (!Number.isFinite(disc) || disc <= 0) return 0;
+  const subtotal = getSubtotal();
+  return roundMoney(Math.min(disc, subtotal));
+}
+
+function getGrandTotal() {
+  const subtotal = getSubtotal();
+  const discount = getDiscountAmount();
+  return roundMoney(Math.max(subtotal - discount, 0));
+}
+
+function updateDiscountAndTotals() {
+  const subtotal = getSubtotal();
+  const discInput = document.getElementById("discountAmount");
+  let disc = Number(discInput?.value || 0);
+
+  if (disc < 0) {
+    disc = 0;
+    if (discInput) discInput.value = 0;
+  } else if (subtotal > 0 && disc > subtotal) {
+    disc = subtotal;
+    if (discInput) discInput.value = subtotal;
+    showToast(`Discount cannot exceed Subtotal of ${money(subtotal)}. Adjusted to full amount.`, "warning");
+  }
+
+  const discount = getDiscountAmount();
+  const grandTotal = getGrandTotal();
+
+  const subtotalEl = document.getElementById("billSubtotal");
+  if (subtotalEl) subtotalEl.textContent = money(subtotal);
+
+  const billTotalEl = document.getElementById("billTotal");
+  if (billTotalEl) billTotalEl.textContent = money(grandTotal);
+
+  const badgeEl = document.getElementById("discountBadge");
+  const badgeVal = document.getElementById("billDiscountDisplay");
+  const clearBtn = document.getElementById("clearDiscountBtn");
+
+  if (discount > 0) {
+    if (badgeEl) badgeEl.style.display = "inline-flex";
+    if (badgeVal) badgeVal.textContent = `-${money(discount)}`;
+    if (clearBtn) clearBtn.style.display = "inline-flex";
+  } else {
+    if (badgeEl) badgeEl.style.display = "none";
+    if (clearBtn) clearBtn.style.display = "none";
+  }
+
+  updateBalanceDue();
+}
+
+function setupDiscountListeners() {
+  const discInput = document.getElementById("discountAmount");
+  discInput?.addEventListener("input", updateDiscountAndTotals);
+  discInput?.addEventListener("change", updateDiscountAndTotals);
+
+  document.getElementById("clearDiscountBtn")?.addEventListener("click", () => {
+    if (discInput) discInput.value = "0";
+    updateDiscountAndTotals();
+  });
+
+  document.querySelectorAll("[data-discount-add]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const addVal = Number(btn.dataset.discountAdd) || 0;
+      const current = Number(discInput?.value || 0);
+      const subtotal = getSubtotal();
+      let nextVal = current + addVal;
+      if (subtotal > 0 && nextVal > subtotal) nextVal = subtotal;
+      if (discInput) discInput.value = nextVal;
+      updateDiscountAndTotals();
+    });
+  });
+
+  document.querySelectorAll("[data-discount-set]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const setVal = Number(btn.dataset.discountSet) || 0;
+      if (discInput) discInput.value = setVal;
+      updateDiscountAndTotals();
+    });
+  });
 }
 
 function getPaymentStatus() {
@@ -3023,8 +3122,29 @@ function renderPartsTable() {
     tbody.appendChild(row);
   });
 
-  const total = getGrandTotal();
-  document.getElementById("billTotal").textContent = money(total);
+  const subtotal = getSubtotal();
+  const discount = getDiscountAmount();
+  const grandTotal = getGrandTotal();
+
+  const subtotalEl = document.getElementById("billSubtotal");
+  if (subtotalEl) subtotalEl.textContent = money(subtotal);
+
+  const billTotalEl = document.getElementById("billTotal");
+  if (billTotalEl) billTotalEl.textContent = money(grandTotal);
+
+  const badgeEl = document.getElementById("discountBadge");
+  const badgeVal = document.getElementById("billDiscountDisplay");
+  const clearBtn = document.getElementById("clearDiscountBtn");
+
+  if (discount > 0) {
+    if (badgeEl) badgeEl.style.display = "inline-flex";
+    if (badgeVal) badgeVal.textContent = `-${money(discount)}`;
+    if (clearBtn) clearBtn.style.display = "inline-flex";
+  } else {
+    if (badgeEl) badgeEl.style.display = "none";
+    if (clearBtn) clearBtn.style.display = "none";
+  }
+
   document.getElementById("summaryItemCount").textContent = currentItems.length;
   document.getElementById("itemCount").textContent =
     `${currentItems.length} ${currentItems.length === 1 ? "Item" : "Items"}`;
@@ -3074,11 +3194,13 @@ async function saveJobCard() {
     return;
   }
 
+  const subtotal = getSubtotal();
+  const discountAmount = getDiscountAmount();
   const totalAmount = getGrandTotal();
   const paidAmount = getAmountReceived();
 
   if (paidAmount > totalAmount) {
-    showToast("Amount received cannot be greater than the bill total.", "error");
+    showToast("Amount received cannot be greater than the final bill total.", "error");
     document.getElementById("amountReceived").focus();
     return;
   }
@@ -3099,6 +3221,8 @@ async function saveJobCard() {
     vehicleNo: hasVehicleNo ? vehicleNo : "",
     vehicleModel: hasVehicleModel ? vehicleModel : "",
     items: currentItems.map((item) => ({ ...item })),
+    subtotal,
+    discountAmount,
     totalAmount,
     paidAmount,
     pendingAmount,
@@ -3138,6 +3262,13 @@ function clearForm(showMessage) {
   document.getElementById("partPrice").value = "";
   document.getElementById("amountReceived").value = "";
   document.getElementById("formJobDate").value = activeDate;
+
+  const discInput = document.getElementById("discountAmount");
+  if (discInput) discInput.value = "0";
+  const badgeEl = document.getElementById("discountBadge");
+  if (badgeEl) badgeEl.style.display = "none";
+  const clearBtn = document.getElementById("clearDiscountBtn");
+  if (clearBtn) clearBtn.style.display = "none";
 
   currentItems = [];
   selectedVehicleType = "Bike";
@@ -3186,6 +3317,11 @@ function openEditModal(recordId) {
   document.getElementById("editPaymentStatus").value = record.paymentStatus || "Paid (Cash)";
   document.getElementById("editAmountReceived").value = record.paidAmount != null ? record.paidAmount : "";
 
+  const editDiscInput = document.getElementById("editDiscountAmount");
+  if (editDiscInput) {
+    editDiscInput.value = record.discountAmount != null ? record.discountAmount : 0;
+  }
+
   editModalItems = Array.isArray(record.items)
     ? record.items.map((it) => ({ ...it }))
     : [];
@@ -3221,7 +3357,15 @@ function renderEditModalPartsTable() {
     tbody.appendChild(row);
   });
 
-  const total = roundMoney(editModalItems.reduce((sum, it) => sum + it.total, 0));
+  const subtotal = roundMoney(editModalItems.reduce((sum, it) => sum + it.total, 0));
+  const editDiscInput = document.getElementById("editDiscountAmount");
+  let discount = Number(editDiscInput?.value || 0);
+  if (discount < 0) discount = 0;
+  if (subtotal > 0 && discount > subtotal) discount = subtotal;
+
+  const total = roundMoney(Math.max(subtotal - discount, 0));
+  const subtotalEl = document.getElementById("editBillSubtotal");
+  if (subtotalEl) subtotalEl.textContent = money(subtotal);
   document.getElementById("editBillTotal").textContent = money(total);
   document.getElementById("editItemCount").textContent = `${editModalItems.length} Items`;
 
@@ -3270,7 +3414,22 @@ function addEditModalPart() {
 }
 
 function updateEditBalanceDue() {
-  const total = roundMoney(editModalItems.reduce((sum, it) => sum + it.total, 0));
+  const subtotal = roundMoney(editModalItems.reduce((sum, it) => sum + it.total, 0));
+  const editDiscInput = document.getElementById("editDiscountAmount");
+  let discount = Number(editDiscInput?.value || 0);
+  if (discount < 0) {
+    discount = 0;
+    if (editDiscInput) editDiscInput.value = 0;
+  } else if (subtotal > 0 && discount > subtotal) {
+    discount = subtotal;
+    if (editDiscInput) editDiscInput.value = subtotal;
+  }
+
+  const total = roundMoney(Math.max(subtotal - discount, 0));
+  const subtotalEl = document.getElementById("editBillSubtotal");
+  if (subtotalEl) subtotalEl.textContent = money(subtotal);
+  document.getElementById("editBillTotal").textContent = money(total);
+
   const receivedInput = document.getElementById("editAmountReceived");
   const rawReceived = receivedInput.value.trim();
   const status = document.getElementById("editPaymentStatus").value;
@@ -3304,7 +3463,14 @@ async function saveEditedJobCard() {
     return;
   }
 
-  const totalAmount = roundMoney(editModalItems.reduce((sum, it) => sum + it.total, 0));
+  const subtotal = roundMoney(editModalItems.reduce((sum, it) => sum + it.total, 0));
+  const editDiscInput = document.getElementById("editDiscountAmount");
+  let discountAmount = Number(editDiscInput?.value || 0);
+  if (discountAmount < 0) discountAmount = 0;
+  if (subtotal > 0 && discountAmount > subtotal) discountAmount = subtotal;
+  discountAmount = roundMoney(discountAmount);
+
+  const totalAmount = roundMoney(Math.max(subtotal - discountAmount, 0));
   const rawReceived = document.getElementById("editAmountReceived").value.trim();
   const paidAmount = rawReceived === "" ? (paymentStatus === "Pending" ? 0 : totalAmount) : clampMoney(Number(rawReceived), totalAmount);
   const pendingAmount = roundMoney(Math.max(totalAmount - paidAmount, 0));
@@ -3318,6 +3484,8 @@ async function saveEditedJobCard() {
     name: custName,
     phone: custPhone,
     items: editModalItems.map((it) => ({ ...it })),
+    subtotal,
+    discountAmount,
     totalAmount,
     paidAmount,
     pendingAmount,
@@ -3468,99 +3636,11 @@ function renderExpensesList() {
 }
 
 // =========================================
-// DATE / DAY HISTORY ARCHIVE
+// DATE / DAY HISTORY ARCHIVE (Removed per user request)
 // =========================================
 
 function renderDayHistory() {
-  const grid = document.getElementById("dayHistoryGrid");
-  const empty = document.getElementById("emptyDayHistory");
-  const daysCountLabel = document.getElementById("historyDaysCount");
-  grid.innerHTML = "";
-
-  const datesSet = new Set();
-  garageData.forEach((r) => datesSet.add(r.date));
-  garageExpenses.forEach((e) => datesSet.add(e.date));
-  datesSet.add(getLocalDate());
-  if (activeDate) datesSet.add(activeDate);
-
-  const sortedDates = Array.from(datesSet).sort().reverse();
-
-  daysCountLabel.textContent = `${sortedDates.length} Day${sortedDates.length !== 1 ? "s" : ""} Recorded`;
-
-  if (sortedDates.length === 0) {
-    empty.style.display = "block";
-    return;
-  }
-
-  empty.style.display = "none";
-
-  sortedDates.forEach((dateStr) => {
-    const dayRecords = garageData.filter((r) => r.date === dateStr);
-    const dayExpenses = garageExpenses.filter((e) => e.date === dateStr);
-
-    const completedJobs = dayRecords.length;
-    const totalBilled = roundMoney(dayRecords.reduce((sum, r) => sum + (Number(r.totalAmount) || 0), 0));
-    const incomeCollected = roundMoney(dayRecords.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0));
-    const pendingAmount = roundMoney(dayRecords.reduce((sum, r) => sum + (Number(r.pendingAmount) || 0), 0));
-    const totalExp = roundMoney(dayExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0));
-
-    const isSelected = dateStr === activeDate && currentScope === "day";
-    const isToday = dateStr === getLocalDate();
-    const isPending = pendingAmount > 0;
-
-    const card = document.createElement("div");
-    card.className = `day-history-card ${isSelected ? "is-selected" : ""}`;
-
-    card.innerHTML = `
-      <div>
-        <div class="card-date-row">
-          <div>
-            <strong>${formatPrettyDate(dateStr)}</strong>
-            ${isToday ? '<span style="font-size:10px;margin-left:6px;color:var(--primary);font-weight:800;">(Today)</span>' : ""}
-          </div>
-          <span class="card-status-pill ${isPending ? "pending" : "paid"}">
-            ${isPending ? `Pending ${money(pendingAmount)}` : "Fully Paid"}
-          </span>
-        </div>
-
-        <div class="card-metrics-grid">
-          <div class="metric-item">
-            <span>Vehicles</span>
-            <strong>${completedJobs}</strong>
-          </div>
-          <div class="metric-item">
-            <span>Billed</span>
-            <strong>${money(totalBilled)}</strong>
-          </div>
-          <div class="metric-item">
-            <span>Collected</span>
-            <strong style="color:var(--success);">${money(incomeCollected)}</strong>
-          </div>
-          <div class="metric-item">
-            <span>Expenses</span>
-            <strong style="color:var(--purple);">${money(totalExp)}</strong>
-          </div>
-        </div>
-      </div>
-
-      <button type="button" class="btn-open-day" data-open-date="${dateStr}">
-        ${isSelected ? '<i class="fa-solid fa-check"></i> Currently Viewing' : '<i class="fa-solid fa-folder-open"></i> Open Day &amp; Manage'}
-      </button>
-    `;
-
-    grid.appendChild(card);
-  });
-
-  grid.querySelectorAll("[data-open-date]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      setActiveDate(btn.dataset.openDate);
-      filterScope = "date";
-      document.getElementById("scopeDateBtn")?.classList.add("active");
-      document.getElementById("scopeAllBtn")?.classList.remove("active");
-      refreshRecordsView();
-      document.getElementById("performanceNavigator")?.scrollIntoView({ behavior: "smooth" });
-    });
-  });
+  // Archive section removed from UI
 }
 
 // =========================================
@@ -3585,6 +3665,16 @@ function sendWhatsApp(recordId) {
     .map((item) => `• ${item.name} × ${item.qty} = ${money(item.total)}`)
     .join("\n");
 
+  const subtotal = record.subtotal != null ? record.subtotal : roundMoney((record.items || []).reduce((s, it) => s + it.total, 0));
+  const discount = Number(record.discountAmount) || 0;
+
+  let billSummaryText = "";
+  if (discount > 0) {
+    billSummaryText = `*Subtotal:* ${money(subtotal)}\n*Discount (છૂટ):* -${money(discount)}\n*Total Bill:* ${money(record.totalAmount)}`;
+  } else {
+    billSummaryText = `*Total Bill:* ${money(record.totalAmount)}`;
+  }
+
   const message = `*PATEL AUTO GARAGE & SERVICE*
 ━━━━━━━━━━━━━━━━━━━━━━━━
 Hello *${record.name || "Customer"}*,
@@ -3598,7 +3688,7 @@ Here is your vehicle service invoice:
 ${itemsList || "• Vehicle Service"}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
-*Total Bill:* ${money(record.totalAmount)}
+${billSummaryText}
 *Amount Paid:* ${money(record.paidAmount)}
 *Balance Due:* ${money(record.pendingAmount)}
 *Payment Status:* ${record.paymentStatus}
@@ -3643,6 +3733,26 @@ function printInvoice(recordId) {
     tbody.appendChild(row);
   });
 
+  const subtotal = record.subtotal != null ? record.subtotal : roundMoney((record.items || []).reduce((s, it) => s + it.total, 0));
+  const discount = Number(record.discountAmount) || 0;
+
+  const subRow = document.getElementById("printSubtotalRow");
+  const discRow = document.getElementById("printDiscountRow");
+
+  if (discount > 0) {
+    if (subRow) {
+      subRow.style.display = "flex";
+      document.getElementById("printSubtotal").textContent = money(subtotal);
+    }
+    if (discRow) {
+      discRow.style.display = "flex";
+      document.getElementById("printDiscount").textContent = `-${money(discount)}`;
+    }
+  } else {
+    if (subRow) subRow.style.display = "none";
+    if (discRow) discRow.style.display = "none";
+  }
+
   document.getElementById("printTotal").textContent = money(record.totalAmount);
   document.getElementById("printReceived").textContent = money(record.paidAmount);
   document.getElementById("printBalance").textContent = money(record.pendingAmount);
@@ -3680,6 +3790,8 @@ function exportToCSV(onlyActiveDay = false) {
     "Vehicle Model",
     "Customer Name",
     "Mobile Number",
+    "Subtotal (INR)",
+    "Discount (INR)",
     "Total Bill (INR)",
     "Amount Paid (INR)",
     "Balance Due (INR)",
@@ -3698,6 +3810,8 @@ function exportToCSV(onlyActiveDay = false) {
       r.vehicleModel,
       r.name,
       r.phone,
+      r.subtotal != null ? r.subtotal : r.totalAmount,
+      r.discountAmount || 0,
       r.totalAmount,
       r.paidAmount,
       r.pendingAmount,
@@ -3877,6 +3991,7 @@ function setupDOMListeners() {
 
   setupVehicleSelector();
   setupPaymentOptions();
+  setupDiscountListeners();
   setupInputGuards();
 
   // Expenses entry
@@ -3908,6 +4023,8 @@ function setupDOMListeners() {
   document.getElementById("editAddItemBtn")?.addEventListener("click", addEditModalPart);
   document.getElementById("editAmountReceived")?.addEventListener("input", updateEditBalanceDue);
   document.getElementById("editPaymentStatus")?.addEventListener("change", updateEditBalanceDue);
+  document.getElementById("editDiscountAmount")?.addEventListener("input", updateEditBalanceDue);
+  document.getElementById("editDiscountAmount")?.addEventListener("change", updateEditBalanceDue);
 
   // Confirmation Modal
   document.getElementById("confirmCancel")?.addEventListener("click", () => closeConfirm(false));

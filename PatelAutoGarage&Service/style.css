@@ -2137,125 +2137,323 @@ tbody tr:hover {
 }
 
 /* =========================================
-   DATE / DAY HISTORY DIRECTORY
+   BILLING SUMMARY & DISCOUNT SYSTEM
 ========================================= */
 
-.day-history-panel {
-    background: var(--surface);
-}
-
-.history-stats-pill {
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: var(--primary-light);
-    color: var(--primary);
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.day-history-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
-    padding: 20px 24px;
-}
-
-.day-history-card {
+.billing-summary-card {
+    margin-top: 18px;
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px;
-    transition: all 0.2s ease;
+    padding: 16px 20px;
     display: flex;
     flex-direction: column;
+    gap: 14px;
+    transition: all 0.2s ease;
+}
+
+.billing-summary-header {
+    display: flex;
     justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
 }
 
-.day-history-card:hover {
-    border-color: var(--primary);
-    box-shadow: var(--shadow);
-    transform: translateY(-2px);
+.summary-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
-.day-history-card.is-selected {
-    border-color: var(--primary);
-    background: var(--primary-light);
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
-}
-
-.card-date-row {
+.summary-metric-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
+    gap: 5px;
 }
 
-.card-date-row strong {
-    font-size: 14px;
+.summary-metric-value {
+    font-size: 16px;
+    font-weight: 800;
     color: var(--text-primary);
 }
 
-.card-status-pill {
-    font-size: 10px;
-    padding: 3px 8px;
+/* Discount Box */
+.discount-box {
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%);
+}
+
+.discount-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.discount-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--warning-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.discount-applied-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--warning-light);
+    color: var(--warning-dark);
+    padding: 3px 10px;
     border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.discount-applied-badge strong {
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.discount-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.discount-input-wrapper {
+    min-width: 170px;
+    max-width: 200px;
+    position: relative;
+    border-color: var(--warning);
+    background: var(--surface);
+}
+
+.discount-input-wrapper:focus-within {
+    border-color: var(--warning-dark);
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+}
+
+.discount-input-wrapper input {
+    font-weight: 800;
+    color: var(--warning-dark);
+    font-size: 16px;
+}
+
+.clear-discount-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.clear-discount-btn:hover {
+    color: var(--danger);
+    background: var(--danger-light);
+}
+
+.quick-discount-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.quick-disc-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 6px 11px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.quick-disc-btn:hover {
+    border-color: var(--warning);
+    background: var(--warning-light);
+    color: var(--warning-dark);
+    transform: translateY(-1px);
+}
+
+.quick-disc-btn:active {
+    transform: translateY(0);
+}
+
+.quick-disc-reset {
+    color: var(--text-muted);
+    border-color: var(--border-light);
+}
+
+.quick-disc-reset:hover {
+    border-color: var(--danger);
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.discount-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+/* Final Grand Total Row */
+.bill-grand-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+}
+
+.grand-total-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.grand-total-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.grand-total-subtext {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.grand-total-value {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--success);
+    letter-spacing: -0.5px;
+}
+
+/* Modal Billing Summary */
+.modal-billing-summary {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.modal-summary-row strong {
+    font-size: 16px;
+    color: var(--text-primary);
     font-weight: 800;
 }
 
-.card-status-pill.paid {
-    background: var(--success-light);
-    color: var(--success-dark);
+.modal-discount-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-radius: 8px;
 }
 
-.card-status-pill.pending {
-    background: var(--warning-light);
+.modal-discount-row label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--warning-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+}
+
+.modal-discount-input {
+    max-width: 140px;
+    border-color: var(--warning);
+}
+
+.modal-discount-input input {
+    font-weight: 800;
     color: var(--warning-dark);
 }
 
-.card-metrics-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 14px;
+.modal-final-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border);
 }
 
-.metric-item {
-    background: var(--surface);
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border-light);
-}
-
-.metric-item span {
+.modal-final-label {
     display: block;
-    color: var(--text-muted);
-    font-size: 9px;
-    text-transform: uppercase;
-    font-weight: 700;
-}
-
-.metric-item strong {
-    display: block;
-    font-size: 13px;
-    color: var(--text-primary);
-    margin-top: 2px;
-}
-
-.btn-open-day {
-    width: 100%;
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid var(--primary);
-    background: var(--surface);
-    color: var(--primary);
     font-size: 11px;
     font-weight: 800;
-    transition: all 0.2s ease;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
-.btn-open-day:hover {
-    background: var(--primary);
-    color: white;
+.modal-final-total-row small {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.modal-final-total-row strong {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--success);
+}
+
+/* Record Table Discount Pill */
+.record-discount-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--warning-dark);
+    background: var(--warning-light);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+}
+
+/* Printable Bill Grand Total */
+.print-grand-total strong {
+    font-size: 19px !important;
+    color: #111827;
 }
 
 /* =========================================
@@ -3076,15 +3274,36 @@ tbody tr:hover {
         padding: 12px 14px;
     }
 
-    .bill-total {
+    .billing-summary-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .discount-input-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .discount-input-wrapper {
+        min-width: 100%;
+        max-width: 100%;
+    }
+
+    .bill-grand-total-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .modal-discount-row {
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
-        text-align: right;
     }
 
-    .day-history-grid {
-        grid-template-columns: 1fr;
+    .modal-discount-input {
+        max-width: 100%;
     }
 
     .topbar-actions .btn,
