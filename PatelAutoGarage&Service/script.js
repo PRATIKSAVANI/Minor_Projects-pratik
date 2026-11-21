@@ -118,7 +118,7 @@ function updateGarageBrandingUI() {
   const isHarsh = activeMember && (activeMember.username === "harsh" || activeMember.username === "admin" || activeMember.username === "owner" || (activeMember.email && activeMember.email.includes("harsh")));
 
   let displayGarageName = info.garageName;
-  if (!isHarsh && (!displayGarageName || displayGarageName === "Patel Auto Garage & Service" || displayGarageName === "PatelAutoGarage&Service" || displayGarageName === "Auto Garage & Service")) {
+  if (!info.isCustom && !isHarsh && (!displayGarageName || displayGarageName === "Patel Auto Garage & Service" || displayGarageName === "PatelAutoGarage&Service" || displayGarageName === "Auto Garage & Service")) {
     displayGarageName = "Add Your Garage Name";
   }
 
@@ -439,7 +439,19 @@ function setupAuthListeners() {
   const quickEditCancelBtn = document.getElementById("quickEditCancelBtn");
   if (quickEditCancelBtn) quickEditCancelBtn.addEventListener("click", closeQuickEditModal);
   const quickEditSaveBtn = document.getElementById("quickEditSaveBtn");
-  if (quickEditSaveBtn) quickEditSaveBtn.addEventListener("click", handleQuickEditSave);
+  if (quickEditSaveBtn) {
+    quickEditSaveBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      handleQuickEditSave();
+    });
+  }
+  const quickEditForm = document.getElementById("quickEditForm");
+  if (quickEditForm) {
+    quickEditForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      handleQuickEditSave();
+    });
+  }
   const quickEditModal = document.getElementById("quickEditModal");
   if (quickEditModal) {
     quickEditModal.addEventListener("click", (e) => {
@@ -456,6 +468,26 @@ function setupAuthListeners() {
         closeQuickEditModal();
       }
     });
+  }
+
+  // Allow clicking on titles directly to edit
+  const loginTitleEl = document.getElementById("loginGarageTitle");
+  if (loginTitleEl) {
+    loginTitleEl.style.cursor = "pointer";
+    loginTitleEl.title = "Click to Edit Garage Name";
+    loginTitleEl.addEventListener("click", editGarageNameDirect);
+  }
+  const topbarTitleEl = document.getElementById("topbarGarageName");
+  if (topbarTitleEl) {
+    topbarTitleEl.style.cursor = "pointer";
+    topbarTitleEl.title = "Click to Edit Garage Name";
+    topbarTitleEl.addEventListener("click", editGarageNameDirect);
+  }
+  const heroOwnerEl = document.getElementById("heroOwnerName");
+  if (heroOwnerEl) {
+    heroOwnerEl.style.cursor = "pointer";
+    heroOwnerEl.title = "Click to Edit Owner Name";
+    heroOwnerEl.addEventListener("click", editOwnerNameDirect);
   }
 }
 
@@ -666,18 +698,28 @@ async function handleQuickEditSave() {
   const activeMember = getActiveMember();
 
   if (quickEditTargetType === "garageName") {
-    const updatedInfo = { ...current, garageName: value, isCustom: true };
+    const updatedInfo = { ...current, garageName: value, isCustom: true, updatedAt: Date.now() };
     saveGarageInfoLocally(updatedInfo);
+
+    const owner = readJSON(STORAGE_KEYS.owner, null);
+    if (owner) {
+      owner.garageName = value;
+      localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(owner));
+    }
 
     if (activeMember) {
       if (currentActiveMember) {
         currentActiveMember.garageName = value;
       }
-      const owner = readJSON(STORAGE_KEYS.owner, null);
-      if (owner) {
-        owner.garageName = value;
-        localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(owner));
-      }
+      const activeObj = {
+        username: activeMember.username,
+        fullName: activeMember.fullName || activeMember.username,
+        role: activeMember.role || "Owner",
+        garageName: value,
+      };
+      localStorage.setItem(STORAGE_KEYS.activeMember, JSON.stringify(activeObj));
+      sessionStorage.setItem(STORAGE_KEYS.activeMember, JSON.stringify(activeObj));
+
       garageFamilyMembers = garageFamilyMembers.map((m) => {
         if (m.username === activeMember.username) {
           return { ...m, garageName: value };
@@ -700,28 +742,42 @@ async function handleQuickEditSave() {
       }
     }
 
+    // Direct immediate DOM updates
+    const loginTitle = document.getElementById("loginGarageTitle");
+    if (loginTitle) loginTitle.textContent = value;
+    const topbarName = document.getElementById("topbarGarageName");
+    if (topbarName) topbarName.textContent = value;
+    const printName = document.getElementById("printGarageName");
+    if (printName) printName.textContent = value;
+    document.title = `${value} - Garage Management System`;
+
     updateGarageBrandingUI();
     closeQuickEditModal();
     showToast(`✅ Garage name updated to "${value}"!`);
   } else {
     // Owner name
-    const updatedInfo = { ...current, ownerName: value, isCustom: true };
+    const updatedInfo = { ...current, ownerName: value, isCustom: true, updatedAt: Date.now() };
     saveGarageInfoLocally(updatedInfo);
+
+    const owner = readJSON(STORAGE_KEYS.owner, null);
+    if (owner) {
+      owner.fullName = value;
+      localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(owner));
+    }
 
     if (activeMember) {
       if (currentActiveMember) {
         currentActiveMember.fullName = value;
-        localStorage.setItem(STORAGE_KEYS.activeMember, JSON.stringify({
-          username: activeMember.username,
-          fullName: value,
-          role: activeMember.role || "Owner",
-        }));
       }
-      const owner = readJSON(STORAGE_KEYS.owner, null);
-      if (owner) {
-        owner.fullName = value;
-        localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(owner));
-      }
+      const activeObj = {
+        username: activeMember.username,
+        fullName: value,
+        role: activeMember.role || "Owner",
+        garageName: activeMember.garageName || current.garageName,
+      };
+      localStorage.setItem(STORAGE_KEYS.activeMember, JSON.stringify(activeObj));
+      sessionStorage.setItem(STORAGE_KEYS.activeMember, JSON.stringify(activeObj));
+
       garageFamilyMembers = garageFamilyMembers.map((m) => {
         if (m.username === activeMember.username) {
           return { ...m, fullName: value };
@@ -742,6 +798,17 @@ async function handleQuickEditSave() {
           }, { merge: true }),
         ]).catch((e) => console.warn("Cloud sync ownerName notice:", e));
       }
+    }
+
+    // Direct immediate DOM updates
+    const heroOwner = document.getElementById("heroOwnerName");
+    if (heroOwner) heroOwner.textContent = value.toUpperCase();
+    const topbarMember = document.getElementById("topbarMemberName");
+    if (topbarMember) topbarMember.textContent = value;
+    const printOwner = document.getElementById("printOwnerName");
+    if (printOwner) {
+      const phoneStr = current.phone ? ` | Mobile: ${current.phone}` : "";
+      printOwner.textContent = `Owner: ${value}${phoneStr}`;
     }
 
     updateGarageBrandingUI();

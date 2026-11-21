@@ -19,7 +19,7 @@
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=3.5">
+    <link rel="stylesheet" href="style.css?v=3.8">
 </head>
 
 <body class="app-locked">
@@ -1610,7 +1610,7 @@
                 </button>
             </div>
             <div class="modal-body" style="padding: 16px 20px;">
-                <form id="quickEditForm" onsubmit="return false;">
+                <form id="quickEditForm">
                     <div class="form-group" style="margin-bottom: 16px;">
                         <label for="quickEditInput" id="quickEditInputLabel">Name</label>
                         <div class="input-wrap">
@@ -1620,7 +1620,7 @@
                     </div>
                     <div class="modal-actions" style="margin-top: 20px; display:flex; justify-content:flex-end; gap:10px;">
                         <button type="button" id="quickEditCancelBtn" class="btn btn-light">Cancel</button>
-                        <button type="button" id="quickEditSaveBtn" class="btn btn-save">
+                        <button type="submit" id="quickEditSaveBtn" class="btn btn-save">
                             <i class="fa-solid fa-check"></i> Save Changes
                         </button>
                     </div>
@@ -1640,7 +1640,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js?v=3.5"></script>
+    <script src="script.js?v=3.8"></script>
 </body>
 
 </html>
