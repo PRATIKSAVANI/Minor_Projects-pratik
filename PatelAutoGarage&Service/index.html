@@ -26,13 +26,20 @@
 
     <!-- OWNER & FAMILY LOGIN SCREEN -->
     <section id="loginScreen" class="login-screen" aria-label="Login">
+        <input type="file" id="directLogoFileInput" accept="image/*" style="display:none;">
         <div class="login-card">
             <div class="login-brand">
-                <div class="brand-icon" id="loginBrandIcon">
+                <div class="brand-icon brand-icon-clickable" id="loginBrandIcon" title="Click to Change Logo / Photo">
                     <img id="loginBrandImg" src="" alt="Garage Logo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
                     <i class="fa-solid fa-screwdriver-wrench" id="loginBrandDefaultIcon"></i>
+                    <div class="brand-icon-edit-badge" title="Change Photo"><i class="fa-solid fa-camera"></i></div>
                 </div>
-                <h1 id="loginGarageTitle">PatelAutoGarage&Service</h1>
+                <div class="garage-title-row">
+                    <h1 id="loginGarageTitle">PatelAutoGarage&Service</h1>
+                    <button type="button" id="editGarageNameBtn" class="btn-icon-inline" title="Edit Garage Name">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </div>
                 <p id="loginSubtitle">Sign in to open the garage dashboard</p>
                 <div class="login-badge-row">
                     <button type="button" class="badge-shared-cloud btn-cloud-badge" id="loginCloudBtn" title="Click to view or setup Firebase Cloud Sync">
@@ -47,84 +54,24 @@
                 </div>
             </div>
 
-            <!-- Tab Buttons: Sign In / Register Garage / Join Family -->
-            <div class="login-tabs" id="loginTabs">
-                <button type="button" id="tabSignInBtn" class="login-tab is-active" title="Sign In to existing garage">
-                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
-                </button>
-                <button type="button" id="tabRegisterBtn" class="login-tab" title="Create a new garage account">
-                    <i class="fa-solid fa-store"></i> Register Garage
-                </button>
-                <button type="button" id="tabJoinFamilyBtn" class="login-tab" title="Join with garage PIN">
-                    <i class="fa-solid fa-users"></i> Join with PIN
+            <!-- PROMINENT GOOGLE SIGN IN BUTTON -->
+            <div class="google-auth-wrap">
+                <button type="button" id="googleSignInBtn" class="btn-google-login" title="Sign in with your Google account">
+                    <svg class="google-icon" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z" fill="#4285F4"/>
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                        <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                    </svg>
+                    <span>Continue with Google</span>
                 </button>
             </div>
 
+            <div class="auth-divider">
+                <span>or sign in with credentials</span>
+            </div>
+
             <form id="loginForm" class="login-form" autocomplete="on" novalidate>
-                <!-- Garage Name Group (For Registration) -->
-                <div class="form-group" id="garageNameGroup" hidden>
-                    <label for="loginGarageName">Garage / Workshop Name</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-store"></i>
-                        <input id="loginGarageName" name="garageName" type="text" maxlength="60"
-                            placeholder="e.g. Patel Auto Garage & Service">
-                    </div>
-                </div>
-
-                <!-- Full Name Group (For Registration & Join) -->
-                <div class="form-group" id="joinNameGroup" hidden>
-                    <label for="loginFullName" id="joinNameLabel">Owner / Your Full Name</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-id-card"></i>
-                        <input id="loginFullName" name="fullName" type="text" maxlength="40"
-                            placeholder="e.g. Harsh Savani">
-                    </div>
-                </div>
-
-                <!-- Mobile Phone Group (For Registration) -->
-                <div class="form-group" id="garageOwnerPhoneGroup" hidden>
-                    <label for="loginOwnerPhone">Mobile / Contact Number (For Bills)</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-phone"></i>
-                        <input id="loginOwnerPhone" name="ownerPhone" type="tel" maxlength="15"
-                            placeholder="e.g. 9876543210">
-                    </div>
-                </div>
-
-                <!-- Garage Logo / Profile Photo (For Registration) -->
-                <div class="form-group" id="garagePhotoGroup" hidden>
-                    <label>Garage Logo / Profile Photo (Optional)</label>
-                    <div style="display:flex; align-items:center; gap:12px; margin-top:6px;">
-                        <div id="loginPhotoPreviewWrap" style="width:52px; height:52px; border-radius:14px; border:2px dashed var(--border-color); display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; flex-shrink:0;">
-                            <img id="loginPhotoPreviewImg" src="" alt="Preview" style="display:none; width:100%; height:100%; object-fit:cover;">
-                            <i id="loginPhotoPlaceholderIcon" class="fa-solid fa-camera" style="color:var(--text-muted); font-size:18px;"></i>
-                        </div>
-                        <div style="flex:1;">
-                            <input type="file" id="loginPhotoInput" accept="image/*" style="display:none;">
-                            <button type="button" id="loginPhotoChooseBtn" class="btn btn-light" style="padding:6px 12px; font-size:12px; font-weight:600;">
-                                <i class="fa-solid fa-upload"></i> Choose Photo
-                            </button>
-                            <button type="button" id="loginPhotoRemoveBtn" class="btn btn-light" style="padding:6px 10px; font-size:12px; display:none; color:var(--danger); margin-left:4px;">
-                                Remove
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Role Group (For Join Mode) -->
-                <div class="form-group" id="joinRoleGroup" hidden>
-                    <label for="loginRole">Your Staff / Family Role</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-users"></i>
-                        <select id="loginRole" name="role" class="login-select">
-                            <option value="Brother / Partner">Brother / Partner</option>
-                            <option value="Owner">Garage Owner</option>
-                            <option value="Service Manager">Service Manager</option>
-                            <option value="Technician / Staff">Technician / Staff</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="form-group">
                     <label for="loginUsername">Username</label>
                     <div class="input-wrap">
@@ -138,32 +85,13 @@
                     <label for="loginPassword">Password</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-key"></i>
-                        <input id="loginPassword" name="password" type="password" maxlength="64" minlength="6"
+                        <input id="loginPassword" name="password" type="password" maxlength="64" minlength="4"
                             placeholder="Enter password" autocomplete="current-password" required>
                         <button type="button" id="togglePasswordBtn" class="password-toggle"
                             title="Show password" aria-label="Show password" aria-pressed="false">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                     </div>
-                </div>
-
-                <div class="form-group" id="confirmPasswordGroup" hidden>
-                    <label for="loginPasswordConfirm">Confirm Password</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-key"></i>
-                        <input id="loginPasswordConfirm" name="passwordConfirm" type="password" maxlength="64"
-                            placeholder="Re-enter password" autocomplete="new-password" disabled>
-                    </div>
-                </div>
-
-                <div class="form-group" id="familyPasskeyGroup" hidden>
-                    <label for="loginFamilyPasskey" id="familyPasskeyLabel">Garage Security Passkey (6-digit PIN)</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <input id="loginFamilyPasskey" name="familyPasskey" type="password" maxlength="10"
-                            placeholder="Enter 6-digit family passkey">
-                    </div>
-                    <small class="field-hint" id="familyPasskeyHint">Ask the garage owner for the family passkey PIN.</small>
                 </div>
 
                 <label class="remember-row" id="rememberRow">
@@ -179,9 +107,6 @@
                 </button>
 
                 <div class="login-footer-links" id="loginFooterLinks">
-                    <button type="button" id="switchLoginModeBtn" class="login-text-link">
-                        <i class="fa-solid fa-store"></i> New Garage? Register Account
-                    </button>
                     <button type="button" id="resetLoginBtn" class="login-text-link">
                         <i class="fa-solid fa-key"></i> Forgot Password / Reset Login
                     </button>
@@ -196,12 +121,18 @@
         <header class="topbar">
             <div class="topbar-inner">
                 <div class="brand">
-                    <div class="brand-icon" id="topbarBrandIcon">
+                    <div class="brand-icon brand-icon-clickable" id="topbarBrandIcon" title="Click to Change Logo / Photo">
                         <img id="topbarBrandImg" src="" alt="Garage Logo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
                         <i class="fa-solid fa-screwdriver-wrench" id="topbarBrandDefaultIcon"></i>
+                        <div class="brand-icon-edit-badge" title="Change Photo"><i class="fa-solid fa-camera"></i></div>
                     </div>
                     <div>
-                        <h1 id="topbarGarageName">PatelAutoGarage&Service</h1>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <h1 id="topbarGarageName">PatelAutoGarage&Service</h1>
+                            <button type="button" id="topbarEditGarageNameBtn" class="btn-icon-inline" title="Edit Garage Name">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                        </div>
                         <span id="topbarGarageTagline">Multi-Day Garage Management &amp; Billing</span>
                     </div>
                 </div>
@@ -287,7 +218,12 @@
                         <i class="fa-solid fa-circle-check"></i>
                         Permanent Multi-Day Garage History
                     </div>
-                    <h2 id="heroOwnerName">HARSH SAVANI</h2>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <h2 id="heroOwnerName">HARSH SAVANI</h2>
+                        <button type="button" id="heroEditOwnerBtn" class="btn-icon-inline-hero" title="Edit Owner Name">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
                     <p id="heroGarageTagline">
                         Service with Purpose.
                     </p>

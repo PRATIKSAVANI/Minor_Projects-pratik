@@ -3859,3 +3859,144 @@ tbody tr:hover {
         margin: 10mm;
     }
 }
+
+/* =========================================
+   GOOGLE AUTH, CLICKABLE LOGO & INLINE EDIT
+   ========================================= */
+
+.google-auth-wrap {
+    margin: 16px 0 14px 0;
+}
+
+.btn-google-login {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #ffffff;
+    border: 1.5px solid #dadce0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #3c4043;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08);
+    transition: all 0.2s ease;
+}
+
+.btn-google-login:hover {
+    background: #f8f9fa;
+    border-color: #c6c9ce;
+    box-shadow: 0 2px 6px rgba(60, 64, 67, 0.15);
+}
+
+.btn-google-login:active {
+    background: #f1f3f4;
+}
+
+.dark-mode .btn-google-login {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark-mode .btn-google-login:hover {
+    background: #334155;
+}
+
+.google-icon {
+    flex-shrink: 0;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 14px 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.auth-divider span {
+    padding: 0 12px;
+}
+
+/* Clickable Brand Icon with Badge */
+.brand-icon-clickable {
+    cursor: pointer !important;
+    position: relative !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.brand-icon-clickable:hover {
+    transform: scale(1.06);
+}
+
+.brand-icon-edit-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 22px;
+    height: 22px;
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
+/* Inline Edit Buttons */
+.garage-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.btn-icon-inline {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.btn-icon-inline:hover {
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.btn-icon-inline-hero {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-icon-inline-hero:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.05);
+}
