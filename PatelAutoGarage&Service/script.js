@@ -36,9 +36,9 @@ function getGarageInfo() {
   );
 
   const stored = readJSON(STORAGE_KEYS.garageInfo, null);
-  if (stored && stored.garageName) {
-    // If the user explicitly saved a custom name, preserve it always!
-    if (stored.isCustom || (stored.garageName !== "Patel Auto Garage & Service" && stored.garageName !== "PatelAutoGarage&Service" && stored.garageName !== "Auto Garage & Service")) {
+  if (stored && stored.garageName && stored.garageName.trim()) {
+    // If the user saved a custom garage name, ALWAYS honor and return it!
+    if (stored.isCustom || (stored.garageName !== "Patel Auto Garage & Service" && stored.garageName !== "Auto Garage & Service")) {
       return { ...DEFAULT_GARAGE_INFO, ...stored };
     }
     if (isHarsh) {
@@ -47,16 +47,15 @@ function getGarageInfo() {
     return { ...DEFAULT_GARAGE_INFO, ...stored, garageName: "Add Your Garage Name" };
   }
 
-  if (activeMember) {
-    const owner = readJSON(STORAGE_KEYS.owner, null);
-    if (owner && (owner.garageName || owner.fullName)) {
-      return {
-        ...DEFAULT_GARAGE_INFO,
-        garageName: owner.garageName || DEFAULT_GARAGE_INFO.garageName,
-        ownerName: owner.fullName || DEFAULT_GARAGE_INFO.ownerName,
-        photo: owner.photo || "",
-      };
-    }
+  const owner = readJSON(STORAGE_KEYS.owner, null);
+  if (owner && (owner.garageName || owner.fullName)) {
+    return {
+      ...DEFAULT_GARAGE_INFO,
+      garageName: owner.garageName || DEFAULT_GARAGE_INFO.garageName,
+      ownerName: owner.fullName || DEFAULT_GARAGE_INFO.ownerName,
+      photo: owner.photo || "",
+      isCustom: true,
+    };
   }
 
   if (isHarsh) {
@@ -114,13 +113,7 @@ function processImageFile(file, maxWidth = 300, maxHeight = 300) {
 
 function updateGarageBrandingUI() {
   const info = getGarageInfo();
-  const activeMember = getActiveMember();
-  const isHarsh = activeMember && (activeMember.username === "harsh" || activeMember.username === "admin" || activeMember.username === "owner" || (activeMember.email && activeMember.email.includes("harsh")));
-
-  let displayGarageName = info.garageName;
-  if (!info.isCustom && !isHarsh && (!displayGarageName || displayGarageName === "Patel Auto Garage & Service" || displayGarageName === "PatelAutoGarage&Service" || displayGarageName === "Auto Garage & Service")) {
-    displayGarageName = "Add Your Garage Name";
-  }
+  const displayGarageName = (info.garageName && info.garageName.trim()) ? info.garageName.trim() : "Add Your Garage Name";
 
   // 1. Browser Tab Title
   document.title = `${displayGarageName} - Garage Management System`;
@@ -1497,9 +1490,13 @@ function setupResetLogin() {
   const resetBtn = document.getElementById("resetLoginBtn");
   if (!resetBtn) return;
   resetBtn.addEventListener("click", () => {
-    const hasOwner = ownerAccountExists();
-    if (!hasOwner) {
-      showToast("No owner login exists yet. Create one using the form above.");
+    const owner = readJSON(STORAGE_KEYS.owner, null);
+    const hasAccounts = (owner && owner.username) || (Array.isArray(garageFamilyMembers) && garageFamilyMembers.length > 0);
+
+    if (!hasAccounts) {
+      isRegisterMode = true;
+      updateLoginMode();
+      showToast("Create a new garage account below or sign in with Google.", "info");
       return;
     }
 
@@ -1512,17 +1509,23 @@ function setupResetLogin() {
       sessionStorage.removeItem(STORAGE_KEYS.loginSession);
       localStorage.removeItem(STORAGE_KEYS.loginSession);
       sessionStorage.removeItem(STORAGE_KEYS.loginLock);
+      sessionStorage.removeItem(STORAGE_KEYS.activeMember);
+      localStorage.removeItem(STORAGE_KEYS.activeMember);
 
-      if (cloudDb) {
+      if (cloudDb && owner && owner.username) {
         try {
-          await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").delete();
+          await Promise.all([
+            cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").delete(),
+            cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(owner.username).delete(),
+          ]);
         } catch (e) {
           console.warn("Could not delete owner from cloud:", e);
         }
       }
 
+      isRegisterMode = true;
       updateLoginMode();
-      showToast("Owner login has been reset. You can now create a new login.");
+      showToast("Owner login has been reset. You can now create a new login or sign in with Google.");
     });
   });
 }

@@ -19,7 +19,7 @@
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=3.8">
+    <link rel="stylesheet" href="style.css?v=3.9">
 </head>
 
 <body class="app-locked">
@@ -1145,44 +1145,6 @@
             </div>
         </div>
 
-        <!-- CONFIRM DIALOG MODAL -->
-        <div id="confirmModal" class="modal" hidden>
-            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-                <h3 id="confirmTitle">Confirm</h3>
-                <p id="confirmMessage"></p>
-                <div class="modal-actions">
-                    <button type="button" id="confirmCancel" class="btn btn-light">Cancel</button>
-                    <button type="button" id="confirmOk" class="btn btn-danger">Confirm</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- CHANGE PASSWORD MODAL -->
-        <div id="passwordModal" class="modal" hidden>
-            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
-                <h3 id="passwordTitle">Change Password</h3>
-                <p>Update the password used to open this dashboard.</p>
-                <div class="form-group">
-                    <label for="currentPassword">Current Password</label>
-                    <input id="currentPassword" type="password" maxlength="64" autocomplete="current-password">
-                </div>
-                <div class="form-group">
-                    <label for="newPassword">New Password</label>
-                    <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password">
-                </div>
-                <div class="form-group">
-                    <label for="newPasswordConfirm">Confirm New Password</label>
-                    <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
-                    <button type="button" id="passwordSave" class="btn btn-save">Update Password</button>
-                </div>
-            </div>
-        </div>
-
-
-
         <!-- FAMILY MEMBERS & MULTI-DEVICE ACCESS MODAL -->
         <div id="familyModal" class="modal" hidden>
             <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="familyModalTitle">
@@ -1597,6 +1559,42 @@
         </div>
     </div>
 
+    <!-- CONFIRM DIALOG MODAL (Accessible on login page and dashboard) -->
+    <div id="confirmModal" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <h3 id="confirmTitle">Confirm</h3>
+            <p id="confirmMessage"></p>
+            <div class="modal-actions">
+                <button type="button" id="confirmCancel" class="btn btn-light">Cancel</button>
+                <button type="button" id="confirmOk" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div id="passwordModal" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+            <h3 id="passwordTitle">Change Password</h3>
+            <p>Update the password used to open this dashboard.</p>
+            <div class="form-group">
+                <label for="currentPassword">Current Password</label>
+                <input id="currentPassword" type="password" maxlength="64" autocomplete="current-password">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label for="newPasswordConfirm">Confirm New Password</label>
+                <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
+                <button type="button" id="passwordSave" class="btn btn-save">Update Password</button>
+            </div>
+        </div>
+    </div>
+
     <!-- QUICK EDIT NAME MODAL (Works reliably on all mobile devices & desktop) -->
     <div id="quickEditModal" class="modal" hidden>
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quickEditModalTitle" style="max-width: 440px;">
@@ -1640,7 +1638,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js?v=3.8"></script>
+    <script src="script.js?v=3.9"></script>
 </body>
 
 </html>
