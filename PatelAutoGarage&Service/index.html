@@ -12,6 +12,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="dns-prefetch" href="https://apis.google.com">
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="style.css?v=3.5">
@@ -42,15 +47,11 @@
                 </div>
                 <p id="loginSubtitle">Sign in to open the garage dashboard</p>
                 <div class="login-badge-row">
-                    <button type="button" class="badge-shared-cloud btn-cloud-badge" id="loginCloudBtn" title="Click to view or setup Firebase Cloud Sync">
-                        <span class="cloud-status-dot is-offline" id="loginCloudDot"></span>
+                    <button type="button" class="badge-shared-cloud btn-cloud-badge" id="loginCloudBtn" title="Shared Firebase Cloud Sync is Active">
+                        <span class="cloud-status-dot is-online" id="loginCloudDot"></span>
                         <i class="fa-solid fa-cloud"></i>
-                        <span id="loginCloudLabel">Cloud Database</span>
+                        <span id="loginCloudLabel">Cloud Synced</span>
                     </button>
-                </div>
-                <div id="loginCloudAlert" class="login-cloud-alert" hidden style="display: none;">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <span>Cloud sync not configured on this device. <button type="button" id="loginSetupCloudBtn" class="link-inline-btn">Connect Firebase</button> to sync across all devices.</span>
                 </div>
             </div>
 

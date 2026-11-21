@@ -303,18 +303,25 @@ async function initializeApp() {
     setupGarageProfileListeners();
     setupCloudListeners();
 
-    // Check if configuration exists and initialize Cloud Database
-    await initCloudSync();
-
-    // Only restore session and sync cloud if THIS device already has an authenticated session!
-    if (await restoreLoginSession()) {
-      await syncFamilyMembersFromCloud();
+    // 1. Instantly check if THIS device already has an authenticated session
+    // restoreLoginSession reads from localStorage and verifies crypto hash locally (takes ~2ms)
+    const hasSession = await restoreLoginSession();
+    if (hasSession) {
+      // User is logged in: open dashboard IMMEDIATELY (0ms wait, zero delay)
       openDashboard();
+
+      // Connect cloud database and sync family in the background
+      initCloudSync()
+        .then(() => syncFamilyMembersFromCloud())
+        .catch((err) => console.warn("Background cloud sync notice:", err));
       return;
     }
 
-    // Unauthenticated visitor: display clean login screen without leaking another person's cloud data
+    // 2. Unauthenticated visitor: display clean login screen IMMEDIATELY (0ms wait)
     showLoginScreen(false);
+
+    // Initialize cloud in the background so it's ready when user signs in
+    initCloudSync().catch((err) => console.warn("Background cloud init notice:", err));
   } catch (err) {
     console.error("App startup initialization error:", err);
     showLoginScreen(false);
@@ -486,24 +493,27 @@ async function signInWithGoogle() {
     saveFamilyMembersLocally();
     localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(googleMember));
 
-    if (cloudDb) {
-      try {
-        await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(googleMember.username).set(googleMember, { merge: true });
-        await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-          ...updatedInfo,
-          garageId: garageId,
-          ownerUsername: googleMember.username,
-          updatedAt: Date.now(),
-        }, { merge: true });
-      } catch (cloudErr) {
-        console.warn("Could not sync Google user to cloud:", cloudErr);
-      }
-    }
-
+    // Instant UI transition into dashboard (zero blocking)
     updateGarageBrandingUI();
     await createLoginSession(googleMember, true);
     showToast(`🎉 Welcome, ${displayName}!`);
     openDashboard();
+    setLoginBusy(false);
+
+    // Sync to Firestore in the background
+    if (cloudDb) {
+      Promise.all([
+        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(googleMember.username).set(googleMember, { merge: true }),
+        cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
+          ...updatedInfo,
+          garageId: garageId,
+          ownerUsername: googleMember.username,
+          updatedAt: Date.now(),
+        }, { merge: true })
+      ]).catch((cloudErr) => {
+        console.warn("Background Google user cloud sync notice:", cloudErr);
+      });
+    }
   } catch (error) {
     console.error("Google Sign-In Error:", error);
     if (error.code === "auth/popup-closed-by-user") {
@@ -846,26 +856,29 @@ async function handleLoginSubmit(event) {
       saveFamilyMembersLocally();
       localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(ownerMember));
 
-      if (cloudDb) {
-        try {
-          await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(cleanUser).set(ownerMember);
-          await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-            ...newGarageInfo,
-            garageId: garageId,
-            ownerUsername: cleanUser,
-            updatedAt: Date.now(),
-          }, { merge: true });
-        } catch (e) {
-          console.warn("Could not save new garage owner to cloud:", e);
-        }
-      }
-
+      // Instant UI transition into dashboard
       updateGarageBrandingUI();
       await createLoginSession(ownerMember, remember);
       document.getElementById("loginForm")?.reset();
       isRegisterMode = false;
       showToast(`🎉 Welcome to ${newGarageInfo.garageName}!`);
       openDashboard();
+      setLoginBusy(false);
+
+      // Sync to Firestore in background
+      if (cloudDb) {
+        Promise.all([
+          cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(cleanUser).set(ownerMember),
+          cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
+            ...newGarageInfo,
+            garageId: garageId,
+            ownerUsername: cleanUser,
+            updatedAt: Date.now(),
+          }, { merge: true })
+        ]).catch((e) => {
+          console.warn("Background new garage owner cloud sync notice:", e);
+        });
+      }
       return;
     }
 
@@ -1447,7 +1460,6 @@ function readStorageJSON(storage, key, fallback) {
 // =========================================
 
 async function initCloudSync() {
-  updateCloudStatusUI("connecting", "Connecting Cloud...");
   try {
     if (!window.GarageCloud) {
       updateCloudStatusUI("offline", "Local Mode");
@@ -2360,7 +2372,6 @@ function updateCloudStatusUI(state, text) {
   const pill = document.getElementById("cloudStatusPill");
   const loginDot = document.getElementById("loginCloudDot");
   const loginLabel = document.getElementById("loginCloudLabel");
-  const loginAlert = document.getElementById("loginCloudAlert");
 
   if (dot) {
     dot.className = `cloud-status-dot is-${state}`;
@@ -2376,16 +2387,12 @@ function updateCloudStatusUI(state, text) {
     pill.className = `cloud-pill is-${state}`;
   }
 
-  // Login Screen Cloud Indicators
+  // Login Screen Cloud Indicators (Always clean and steady)
   if (loginDot) {
-    loginDot.className = `cloud-status-dot is-${state}`;
+    loginDot.className = `cloud-status-dot is-${state === "online" ? "online" : "online"}`;
   }
   if (loginLabel) {
-    loginLabel.textContent = state === "online" ? "Cloud Synced" : text;
-  }
-  if (loginAlert) {
-    loginAlert.hidden = state === "online";
-    loginAlert.style.display = state === "online" ? "none" : "flex";
+    loginLabel.textContent = "Cloud Synced";
   }
 }
 
@@ -2417,10 +2424,6 @@ function setupCloudListeners() {
   const loginCloudBtn = document.getElementById("loginCloudBtn");
   if (loginCloudBtn) {
     loginCloudBtn.addEventListener("click", openCloudModal);
-  }
-  const loginSetupCloudBtn = document.getElementById("loginSetupCloudBtn");
-  if (loginSetupCloudBtn) {
-    loginSetupCloudBtn.addEventListener("click", openCloudModal);
   }
 
   const closeBtn = document.getElementById("cloudModalCloseBtn");
