@@ -14,7 +14,83 @@ const STORAGE_KEYS = {
   loginLock: "patelAutoGarageLoginLock",
   theme: "patelAutoGarageTheme",
   pendingDeletions: "patelAutoGaragePendingDeletions",
+  garageInfo: "patelAutoGarageInfo",
 };
+
+const DEFAULT_GARAGE_INFO = {
+  garageName: "Patel Auto Garage & Service",
+  ownerName: "Harsh Savani",
+  phone: "",
+  tagline: "Professional Vehicle Service, Maintenance & Repair",
+  address: "",
+};
+
+function getGarageInfo() {
+  const stored = readJSON(STORAGE_KEYS.garageInfo, null);
+  if (stored && stored.garageName) {
+    return { ...DEFAULT_GARAGE_INFO, ...stored };
+  }
+  const owner = readJSON(STORAGE_KEYS.owner, null);
+  if (owner && (owner.garageName || owner.fullName)) {
+    return {
+      ...DEFAULT_GARAGE_INFO,
+      garageName: owner.garageName || DEFAULT_GARAGE_INFO.garageName,
+      ownerName: owner.fullName || DEFAULT_GARAGE_INFO.ownerName,
+    };
+  }
+  return { ...DEFAULT_GARAGE_INFO };
+}
+
+function saveGarageInfoLocally(info) {
+  localStorage.setItem(STORAGE_KEYS.garageInfo, JSON.stringify(info));
+}
+
+function updateGarageBrandingUI() {
+  const info = getGarageInfo();
+
+  // 1. Browser Tab Title
+  document.title = `${info.garageName} - Garage Management System`;
+
+  // 2. Login screen title
+  const loginTitle = document.getElementById("loginGarageTitle");
+  if (loginTitle) loginTitle.textContent = info.garageName;
+
+  // 3. Topbar Brand
+  const topbarName = document.getElementById("topbarGarageName");
+  if (topbarName) topbarName.textContent = info.garageName;
+  const topbarTagline = document.getElementById("topbarGarageTagline");
+  if (topbarTagline) topbarTagline.textContent = info.tagline || "Multi-Day Garage Management & Billing";
+
+  // 4. Hero Section
+  const heroOwner = document.getElementById("heroOwnerName");
+  if (heroOwner) heroOwner.textContent = (info.ownerName || info.garageName).toUpperCase();
+  const heroTagline = document.getElementById("heroGarageTagline");
+  if (heroTagline) heroTagline.textContent = info.tagline || "Service with Purpose.";
+
+  // 5. Printable Invoice
+  const printName = document.getElementById("printGarageName");
+  if (printName) printName.textContent = info.garageName;
+  const printTagline = document.getElementById("printGarageTagline");
+  if (printTagline) printTagline.textContent = info.tagline || "Professional Vehicle Service, Maintenance & Repair";
+  const printOwner = document.getElementById("printOwnerName");
+  if (printOwner) {
+    const phoneStr = info.phone ? ` | Mobile: ${info.phone}` : "";
+    printOwner.textContent = `Owner: ${info.ownerName || "Garage Owner"}${phoneStr}`;
+  }
+  const printFooter = document.getElementById("printFooterMessage");
+  if (printFooter) printFooter.textContent = `Thank you for choosing ${info.garageName}.`;
+
+  // 6. Topbar User Chip
+  const activeMember = getActiveMember();
+  const topbarMember = document.getElementById("topbarMemberName");
+  const topbarRole = document.getElementById("topbarMemberRole");
+  if (topbarMember) {
+    topbarMember.textContent = activeMember ? (activeMember.fullName || activeMember.username) : (info.ownerName || "Owner");
+  }
+  if (topbarRole) {
+    topbarRole.textContent = activeMember ? activeMember.role : "Owner";
+  }
+}
 
 const FIRESTORE_COLLECTIONS = {
   records: "patel_records",
@@ -80,9 +156,11 @@ document.addEventListener("DOMContentLoaded", initializeApp);
 
 async function initializeApp() {
   try {
+    updateGarageBrandingUI();
     setupMobileKeyboardAndScroll();
     setupAuthListeners();
     setupFamilyListeners();
+    setupGarageProfileListeners();
     setupCloudListeners();
 
     // Check if configuration exists and initialize Cloud Database
@@ -151,12 +229,19 @@ function setupAuthListeners() {
 
   // Mode switching tabs & button
   const tabSignIn = document.getElementById("tabSignInBtn");
+  const tabRegister = document.getElementById("tabRegisterBtn");
   const tabJoin = document.getElementById("tabJoinFamilyBtn");
   const switchBtn = document.getElementById("switchLoginModeBtn");
 
   if (tabSignIn) {
     tabSignIn.addEventListener("click", () => {
       loginMode = "signin";
+      updateLoginMode();
+    });
+  }
+  if (tabRegister) {
+    tabRegister.addEventListener("click", () => {
+      loginMode = "register";
       updateLoginMode();
     });
   }
@@ -168,7 +253,7 @@ function setupAuthListeners() {
   }
   if (switchBtn) {
     switchBtn.addEventListener("click", () => {
-      loginMode = loginMode === "signin" ? "join" : "signin";
+      loginMode = loginMode === "signin" ? "register" : "signin";
       updateLoginMode();
     });
   }
@@ -272,10 +357,14 @@ function updateLoginMode() {
   const hasAccounts = garageHasAccounts();
   const tabs = document.getElementById("loginTabs");
   const tabSignIn = document.getElementById("tabSignInBtn");
+  const tabRegister = document.getElementById("tabRegisterBtn");
   const tabJoin = document.getElementById("tabJoinFamilyBtn");
   const switchBtn = document.getElementById("switchLoginModeBtn");
   const subtitle = document.getElementById("loginSubtitle");
+  const garageNameGroup = document.getElementById("garageNameGroup");
+  const garageOwnerPhoneGroup = document.getElementById("garageOwnerPhoneGroup");
   const joinNameGroup = document.getElementById("joinNameGroup");
+  const joinNameLabel = document.getElementById("joinNameLabel");
   const joinRoleGroup = document.getElementById("joinRoleGroup");
   const confirmGroup = document.getElementById("confirmPasswordGroup");
   const passkeyGroup = document.getElementById("familyPasskeyGroup");
@@ -287,79 +376,134 @@ function updateLoginMode() {
   const passwordInput = document.getElementById("loginPassword");
   const confirmInput = document.getElementById("loginPasswordConfirm");
   const fullNameInput = document.getElementById("loginFullName");
+  const garageNameInput = document.getElementById("loginGarageName");
+  const ownerPhoneInput = document.getElementById("loginOwnerPhone");
 
   document.getElementById("loginError").hidden = true;
   setLoginBusy(false);
 
-  if (!hasAccounts) {
-    // Initial Setup Mode: Create Master Account & PIN
-    loginMode = "setup";
-    if (tabs) tabs.hidden = true;
-    if (switchBtn) switchBtn.hidden = true;
+  // If no account exists yet and currently on signin, direct to register
+  if (!hasAccounts && loginMode === "signin") {
+    loginMode = "register";
+  }
+
+  if (tabs) tabs.hidden = false;
+  if (tabSignIn) tabSignIn.classList.toggle("is-active", loginMode === "signin");
+  if (tabRegister) tabRegister.classList.toggle("is-active", loginMode === "register" || loginMode === "setup");
+  if (tabJoin) tabJoin.classList.toggle("is-active", loginMode === "join");
+
+  if (loginMode === "register" || loginMode === "setup") {
+    loginMode = "register";
     if (subtitle) {
-      subtitle.textContent = "Create Master Owner login & set 6-digit family passkey for your garage.";
+      subtitle.textContent = "Register your garage account, set owner details & 6-digit security PIN.";
     }
+    if (garageNameGroup) garageNameGroup.hidden = false;
+    if (garageOwnerPhoneGroup) garageOwnerPhoneGroup.hidden = false;
     if (joinNameGroup) joinNameGroup.hidden = false;
+    if (joinNameLabel) joinNameLabel.textContent = "Owner / Your Full Name";
     if (joinRoleGroup) joinRoleGroup.hidden = true;
     if (confirmGroup) confirmGroup.hidden = false;
     if (passkeyGroup) passkeyGroup.hidden = false;
-    if (passkeyLabel) passkeyLabel.textContent = "Create Garage Family Passkey (6-digit PIN)";
-    if (passkeyHint) passkeyHint.textContent = "You will share this PIN with your brother so he can join from his device.";
+    if (passkeyLabel) passkeyLabel.textContent = "Create Garage Security Passkey (6-digit PIN)";
+    if (passkeyHint) passkeyHint.textContent = "Keep this PIN safe. Your staff or other devices will use it to join your garage.";
     if (rememberRow) rememberRow.hidden = true;
-    if (submitText) submitText.textContent = "Create Owner & Setup Cloud Garage";
+    if (submitText) submitText.textContent = "Register Garage & Start";
+    if (switchBtn) {
+      switchBtn.hidden = !hasAccounts;
+      switchBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Already have an account? Sign In';
+    }
 
+    if (garageNameInput) {
+      garageNameInput.disabled = false;
+      garageNameInput.required = true;
+    }
+    if (ownerPhoneInput) {
+      ownerPhoneInput.disabled = false;
+      ownerPhoneInput.required = false;
+    }
+    if (fullNameInput) {
+      fullNameInput.disabled = false;
+      fullNameInput.required = true;
+    }
     confirmInput.disabled = false;
     confirmInput.required = true;
     passkeyInput.disabled = false;
     passkeyInput.required = true;
-    if (fullNameInput) fullNameInput.required = true;
+    passwordInput.autocomplete = "new-password";
+  } else if (loginMode === "join") {
+    const info = getGarageInfo();
+    if (subtitle) {
+      subtitle.textContent = `Authorize your device to join ${info.garageName} database`;
+    }
+    if (garageNameGroup) garageNameGroup.hidden = true;
+    if (garageOwnerPhoneGroup) garageOwnerPhoneGroup.hidden = true;
+    if (joinNameGroup) joinNameGroup.hidden = false;
+    if (joinNameLabel) joinNameLabel.textContent = "Your Full Name";
+    if (joinRoleGroup) joinRoleGroup.hidden = false;
+    if (confirmGroup) confirmGroup.hidden = false;
+    if (passkeyGroup) passkeyGroup.hidden = false;
+    if (passkeyLabel) passkeyLabel.textContent = "Garage Security Passkey (PIN)";
+    if (passkeyHint) passkeyHint.textContent = "Enter the 6-digit PIN given to you by the garage owner.";
+    if (rememberRow) rememberRow.hidden = false;
+    if (submitText) submitText.textContent = "Join with PIN & Sign In";
+    if (switchBtn) {
+      switchBtn.hidden = false;
+      switchBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Already registered? Sign In';
+    }
+
+    if (garageNameInput) {
+      garageNameInput.disabled = true;
+      garageNameInput.required = false;
+    }
+    if (ownerPhoneInput) {
+      ownerPhoneInput.disabled = true;
+      ownerPhoneInput.required = false;
+    }
+    if (fullNameInput) {
+      fullNameInput.disabled = false;
+      fullNameInput.required = true;
+    }
+    confirmInput.disabled = false;
+    confirmInput.required = true;
+    passkeyInput.disabled = false;
+    passkeyInput.required = true;
     passwordInput.autocomplete = "new-password";
   } else {
-    // Garage already exists: allow Sign In or Join Family
-    if (tabs) tabs.hidden = false;
-    if (switchBtn) switchBtn.hidden = false;
-
-    if (loginMode === "join") {
-      if (tabJoin) tabJoin.classList.add("is-active");
-      if (tabSignIn) tabSignIn.classList.remove("is-active");
-      if (subtitle) subtitle.textContent = "Authorize your device to join the Patel Auto Garage family database";
-      if (joinNameGroup) joinNameGroup.hidden = false;
-      if (joinRoleGroup) joinRoleGroup.hidden = false;
-      if (confirmGroup) confirmGroup.hidden = false;
-      if (passkeyGroup) passkeyGroup.hidden = false;
-      if (passkeyLabel) passkeyLabel.textContent = "Garage Family Passkey (PIN)";
-      if (passkeyHint) passkeyHint.textContent = "Enter the 6-digit PIN given to you by the garage owner.";
-      if (rememberRow) rememberRow.hidden = false;
-      if (submitText) submitText.textContent = "Join Family & Sign In";
-      if (switchBtn) switchBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Already registered? Sign In';
-
-      confirmInput.disabled = false;
-      confirmInput.required = true;
-      passkeyInput.disabled = false;
-      passkeyInput.required = true;
-      if (fullNameInput) fullNameInput.required = true;
-      passwordInput.autocomplete = "new-password";
-    } else {
-      // Default: Sign In
-      loginMode = "signin";
-      if (tabSignIn) tabSignIn.classList.add("is-active");
-      if (tabJoin) tabJoin.classList.remove("is-active");
-      if (subtitle) subtitle.textContent = "Sign in to access live garage job cards, bills & payments";
-      if (joinNameGroup) joinNameGroup.hidden = true;
-      if (joinRoleGroup) joinRoleGroup.hidden = true;
-      if (confirmGroup) confirmGroup.hidden = true;
-      if (passkeyGroup) passkeyGroup.hidden = true;
-      if (rememberRow) rememberRow.hidden = false;
-      if (submitText) submitText.textContent = "Sign In";
-      if (switchBtn) switchBtn.innerHTML = '<i class="fa-solid fa-users"></i> Join Family Device with Passkey';
-
-      confirmInput.disabled = true;
-      confirmInput.required = false;
-      passkeyInput.disabled = true;
-      passkeyInput.required = false;
-      if (fullNameInput) fullNameInput.required = false;
-      passwordInput.autocomplete = "current-password";
+    // Default: Sign In
+    loginMode = "signin";
+    if (subtitle) {
+      subtitle.textContent = "Sign in to access live garage job cards, bills & payments";
     }
+    if (garageNameGroup) garageNameGroup.hidden = true;
+    if (garageOwnerPhoneGroup) garageOwnerPhoneGroup.hidden = true;
+    if (joinNameGroup) joinNameGroup.hidden = true;
+    if (joinRoleGroup) joinRoleGroup.hidden = true;
+    if (confirmGroup) confirmGroup.hidden = true;
+    if (passkeyGroup) passkeyGroup.hidden = true;
+    if (rememberRow) rememberRow.hidden = false;
+    if (submitText) submitText.textContent = "Sign In";
+    if (switchBtn) {
+      switchBtn.hidden = false;
+      switchBtn.innerHTML = '<i class="fa-solid fa-store"></i> New Garage? Register Account';
+    }
+
+    if (garageNameInput) {
+      garageNameInput.disabled = true;
+      garageNameInput.required = false;
+    }
+    if (ownerPhoneInput) {
+      ownerPhoneInput.disabled = true;
+      ownerPhoneInput.required = false;
+    }
+    if (fullNameInput) {
+      fullNameInput.disabled = true;
+      fullNameInput.required = false;
+    }
+    confirmInput.disabled = true;
+    confirmInput.required = false;
+    passkeyInput.disabled = true;
+    passkeyInput.required = false;
+    passwordInput.autocomplete = "current-password";
   }
 }
 
@@ -419,6 +563,8 @@ async function handleLoginSubmit(event) {
     return;
   }
 
+  const garageName = (document.getElementById("loginGarageName")?.value || "").trim();
+  const ownerPhone = (document.getElementById("loginOwnerPhone")?.value || "").trim();
   const username = document.getElementById("loginUsername").value.trim().toLowerCase();
   const password = document.getElementById("loginPassword").value;
   const confirmPassword = document.getElementById("loginPasswordConfirm").value;
@@ -440,13 +586,21 @@ async function handleLoginSubmit(event) {
   setLoginBusy(true);
 
   try {
-    // 1. If cloud is available, refresh family data
+    // 1. If cloud is available, refresh family & meta data
     if (cloudDb) {
       await syncFamilyMembersFromCloud();
     }
 
-    // 2. Handle Initial Setup Mode
-    if (loginMode === "setup") {
+    // 2. Handle Register Garage / Initial Setup Mode
+    if (loginMode === "register" || loginMode === "setup") {
+      if (!garageName || garageName.length < 2) {
+        setLoginError("Please enter your Garage / Workshop Name (at least 2 letters).");
+        return;
+      }
+      if (!fullName || fullName.length < 2) {
+        setLoginError("Please enter your Full Name as Garage Owner.");
+        return;
+      }
       if (!/^[a-z0-9._-]+$/.test(username)) {
         setLoginError("Username can only contain letters, numbers, dot, underscore and hyphen.");
         return;
@@ -456,14 +610,26 @@ async function handleLoginSubmit(event) {
         return;
       }
       if (!passkey || passkey.length < 4) {
-        setLoginError("Please create a family passkey PIN (at least 4-6 digits).");
+        setLoginError("Please create a security passkey PIN (at least 4-6 digits).");
         return;
       }
 
       const passwordHash = await hashCredential(username, password);
+      const newGarageInfo = {
+        garageName,
+        ownerName: fullName,
+        phone: ownerPhone,
+        tagline: "Professional Vehicle Service, Maintenance & Repair",
+        address: "",
+      };
+
+      saveGarageInfoLocally(newGarageInfo);
+
       const ownerMember = {
         username,
-        fullName: fullName || "Owner",
+        fullName,
+        phone: ownerPhone,
+        garageName,
         role: "Owner",
         passwordHash,
         createdAt: Date.now(),
@@ -480,26 +646,32 @@ async function handleLoginSubmit(event) {
         try {
           await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(username).set(ownerMember);
           await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-            garageName: "Patel Auto Garage & Service",
+            garageName: newGarageInfo.garageName,
+            ownerName: newGarageInfo.ownerName,
+            phone: newGarageInfo.phone,
+            tagline: newGarageInfo.tagline,
+            address: newGarageInfo.address,
             familyPasskey: passkey,
             ownerUsername: username,
             createdAt: Date.now(),
+            updatedAt: Date.now(),
           });
           await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").set(ownerMember);
-          console.log("Master Owner & Family Passkey initialized in shared Cloud Firestore.");
+          console.log("Master Owner & Garage Info initialized in shared Cloud Firestore.");
         } catch (e) {
           console.warn("Could not save initial owner/passkey to cloud:", e);
         }
       }
 
-      await createLoginSession(ownerMember, false);
+      updateGarageBrandingUI();
+      await createLoginSession(ownerMember, remember);
       document.getElementById("loginForm").reset();
-      showToast("🎉 Master Owner account created & saved to shared Cloud Database!");
+      showToast(`🎉 Garage "${newGarageInfo.garageName}" registered successfully!`);
       openDashboard();
       return;
     }
 
-    // 3. Handle Join Family with Passkey
+    // 3. Handle Join with Passkey PIN
     if (loginMode === "join") {
       if (password !== confirmPassword) {
         setLoginError("Passwords do not match.");
@@ -508,7 +680,7 @@ async function handleLoginSubmit(event) {
 
       const activePin = await getActivePasskey();
       if (passkey !== activePin) {
-        setLoginError("Incorrect Family Passkey PIN. Ask the garage owner for the PIN.");
+        setLoginError("Incorrect Garage Passkey PIN. Ask the garage owner for the PIN.");
         return;
       }
 
@@ -518,11 +690,13 @@ async function handleLoginSubmit(event) {
         return;
       }
 
+      const currentInfo = getGarageInfo();
       const passwordHash = await hashCredential(username, password);
       const newMember = {
         username,
         fullName: fullName || username,
         role: role || "Brother / Partner",
+        garageName: currentInfo.garageName,
         passwordHash,
         createdAt: Date.now(),
         status: "active",
@@ -540,9 +714,10 @@ async function handleLoginSubmit(event) {
         }
       }
 
+      updateGarageBrandingUI();
       await createLoginSession(newMember, remember);
       document.getElementById("loginForm").reset();
-      showToast(`Welcome to the family database, ${newMember.fullName}!`);
+      showToast(`Welcome to the ${currentInfo.garageName} team, ${newMember.fullName}!`);
       openDashboard();
       return;
     }
@@ -557,7 +732,7 @@ async function handleLoginSubmit(event) {
         return;
       }
       setLoginLock(nextAttempts, 0);
-      setLoginError("Username not found. Check spelling or choose 'Join Family' if this is your first time.");
+      setLoginError("Username not found. Check spelling or choose 'Register Garage' / 'Join with PIN'.");
       return;
     }
 
@@ -577,6 +752,17 @@ async function handleLoginSubmit(event) {
     }
 
     clearLoginLock();
+    if (member.garageName) {
+      const cur = getGarageInfo();
+      if (!cur || cur.garageName === DEFAULT_GARAGE_INFO.garageName) {
+        saveGarageInfoLocally({
+          ...cur,
+          garageName: member.garageName,
+          ownerName: member.role === "Owner" ? (member.fullName || member.username) : cur.ownerName,
+        });
+      }
+    }
+    updateGarageBrandingUI();
     await createLoginSession(member, remember);
     document.getElementById("loginForm").reset();
     showToast(`Welcome back, ${member.fullName || member.username}!`);
@@ -747,9 +933,25 @@ async function syncFamilyMembersFromCloud() {
     }
 
     const metaDoc = await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").get();
-    if (metaDoc.exists && metaDoc.data().familyPasskey) {
-      garageFamilyPasskey = String(metaDoc.data().familyPasskey);
-      localStorage.setItem(STORAGE_KEYS.familyPasskey, garageFamilyPasskey);
+    if (metaDoc.exists) {
+      const metaData = metaDoc.data();
+      if (metaData.familyPasskey) {
+        garageFamilyPasskey = String(metaData.familyPasskey);
+        localStorage.setItem(STORAGE_KEYS.familyPasskey, garageFamilyPasskey);
+      }
+      if (metaData.garageName || metaData.ownerName) {
+        const cur = getGarageInfo();
+        const updated = {
+          ...cur,
+          garageName: metaData.garageName || cur.garageName,
+          ownerName: metaData.ownerName || cur.ownerName,
+          phone: metaData.phone !== undefined ? metaData.phone : cur.phone,
+          tagline: metaData.tagline !== undefined ? metaData.tagline : cur.tagline,
+          address: metaData.address !== undefined ? metaData.address : cur.address,
+        };
+        saveGarageInfoLocally(updated);
+        updateGarageBrandingUI();
+      }
     }
   } catch (err) {
     console.warn("Could not sync family members from cloud:", err);
@@ -1270,18 +1472,34 @@ function setupCloudRealtimeListeners() {
       }
     );
 
-  // 4. Meta / Garage Info real-time listener (for live passkey changes)
+  // 4. Meta / Garage Info real-time listener (for live passkey changes & garage branding)
   if (cloudMetaUnsubscribe) cloudMetaUnsubscribe();
   cloudMetaUnsubscribe = cloudDb
     .collection(FIRESTORE_COLLECTIONS.meta)
     .doc("garage_info")
     .onSnapshot(
       (doc) => {
-        if (doc.exists && doc.data().familyPasskey) {
-          garageFamilyPasskey = String(doc.data().familyPasskey);
-          localStorage.setItem(STORAGE_KEYS.familyPasskey, garageFamilyPasskey);
-          const pinInput = document.getElementById("familyPasskeyInput");
-          if (pinInput) pinInput.value = garageFamilyPasskey;
+        if (doc.exists) {
+          const data = doc.data();
+          if (data.familyPasskey) {
+            garageFamilyPasskey = String(data.familyPasskey);
+            localStorage.setItem(STORAGE_KEYS.familyPasskey, garageFamilyPasskey);
+            const pinInput = document.getElementById("familyPasskeyInput");
+            if (pinInput) pinInput.value = garageFamilyPasskey;
+          }
+          if (data.garageName || data.ownerName) {
+            const current = getGarageInfo();
+            const updated = {
+              ...current,
+              garageName: data.garageName || current.garageName,
+              ownerName: data.ownerName || current.ownerName,
+              phone: data.phone !== undefined ? data.phone : current.phone,
+              tagline: data.tagline !== undefined ? data.tagline : current.tagline,
+              address: data.address !== undefined ? data.address : current.address,
+            };
+            saveGarageInfoLocally(updated);
+            updateGarageBrandingUI();
+          }
         }
       },
       (error) => {
@@ -1487,8 +1705,13 @@ async function migrateLocalDataToCloud() {
         status: "active",
         createdAt: Date.now(),
       });
+      const currentGarageInfo = getGarageInfo();
       await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-        garageName: "Patel Auto Garage & Service",
+        garageName: currentGarageInfo.garageName,
+        ownerName: currentGarageInfo.ownerName,
+        phone: currentGarageInfo.phone,
+        tagline: currentGarageInfo.tagline,
+        address: currentGarageInfo.address,
         familyPasskey: garageFamilyPasskey || "123456",
         ownerUsername: owner.username,
         updatedAt: Date.now(),
@@ -1511,13 +1734,123 @@ async function migrateLocalDataToCloud() {
 
 function updateActiveMemberUI() {
   const member = getActiveMember();
+  const info = getGarageInfo();
   const nameEl = document.getElementById("topbarMemberName");
   const roleEl = document.getElementById("topbarMemberRole");
   const countEl = document.getElementById("topbarFamilyCount");
 
-  if (nameEl) nameEl.textContent = member ? (member.fullName || member.username) : "Owner";
+  if (nameEl) nameEl.textContent = member ? (member.fullName || member.username) : (info.ownerName || "Owner");
   if (roleEl) roleEl.textContent = member ? (member.role || "Admin") : "Admin";
   if (countEl) countEl.textContent = garageFamilyMembers.length || 1;
+}
+
+// GARAGE PROFILE MODAL CONTROLLERS
+function openGarageProfileModal() {
+  if (!requireAuth()) return;
+  const info = getGarageInfo();
+  const nameInput = document.getElementById("profileGarageName");
+  const ownerInput = document.getElementById("profileOwnerName");
+  const phoneInput = document.getElementById("profilePhone");
+  const taglineInput = document.getElementById("profileTagline");
+  const addressInput = document.getElementById("profileAddress");
+
+  if (nameInput) nameInput.value = info.garageName || "";
+  if (ownerInput) ownerInput.value = info.ownerName || "";
+  if (phoneInput) phoneInput.value = info.phone || "";
+  if (taglineInput) taglineInput.value = info.tagline || "";
+  if (addressInput) addressInput.value = info.address || "";
+
+  const modal = document.getElementById("garageProfileModal");
+  if (modal) {
+    modal.hidden = false;
+    modal.removeAttribute("aria-hidden");
+  }
+}
+
+function closeGarageProfileModal() {
+  const modal = document.getElementById("garageProfileModal");
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+  }
+}
+
+async function saveGarageProfile() {
+  if (!requireAuth()) return;
+  const nameInput = document.getElementById("profileGarageName");
+  const ownerInput = document.getElementById("profileOwnerName");
+  const phoneInput = document.getElementById("profilePhone");
+  const taglineInput = document.getElementById("profileTagline");
+  const addressInput = document.getElementById("profileAddress");
+
+  const garageName = (nameInput?.value || "").trim();
+  const ownerName = (ownerInput?.value || "").trim();
+  const phone = (phoneInput?.value || "").trim();
+  const tagline = (taglineInput?.value || "").trim();
+  const address = (addressInput?.value || "").trim();
+
+  if (!garageName || garageName.length < 2) {
+    showToast("Please enter a valid garage name (at least 2 letters).", "error");
+    if (nameInput) nameInput.focus();
+    return;
+  }
+
+  const updatedInfo = {
+    garageName,
+    ownerName: ownerName || "Garage Owner",
+    phone,
+    tagline: tagline || "Professional Vehicle Service, Maintenance & Repair",
+    address,
+  };
+
+  saveGarageInfoLocally(updatedInfo);
+  updateGarageBrandingUI();
+
+  // If cloud connected, update in cloud Firestore meta/garage_info
+  if (cloudDb) {
+    try {
+      await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
+        ...updatedInfo,
+        updatedAt: Date.now(),
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Could not sync garage profile to cloud:", err);
+    }
+  }
+
+  closeGarageProfileModal();
+  showToast("Garage Profile updated successfully!");
+}
+
+function setupGarageProfileListeners() {
+  const profileBtn = document.getElementById("garageProfileBtn");
+  if (profileBtn) {
+    profileBtn.addEventListener("click", openGarageProfileModal);
+  }
+
+  const closeBtn = document.getElementById("garageProfileCloseBtn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeGarageProfileModal);
+  }
+
+  const cancelBtn = document.getElementById("garageProfileCancelBtn");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", closeGarageProfileModal);
+  }
+
+  const saveBtn = document.getElementById("garageProfileSaveBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", saveGarageProfile);
+  }
+
+  const modal = document.getElementById("garageProfileModal");
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target.id === "garageProfileModal") {
+        closeGarageProfileModal();
+      }
+    });
+  }
 }
 
 function setupFamilyListeners() {
@@ -3675,7 +4008,12 @@ function sendWhatsApp(recordId) {
     billSummaryText = `*Total Bill:* ${money(record.totalAmount)}`;
   }
 
-  const message = `*PATEL AUTO GARAGE & SERVICE*
+  const garageInfo = getGarageInfo();
+  const garageTitleUpper = (garageInfo.garageName || "GARAGE SERVICE").toUpperCase();
+  const ownerSignature = garageInfo.ownerName ? `\nOwner: ${garageInfo.ownerName}` : "";
+  const contactSignature = garageInfo.phone ? `\nContact: ${garageInfo.phone}` : "";
+
+  const message = `*${garageTitleUpper}*
 ━━━━━━━━━━━━━━━━━━━━━━━━
 Hello *${record.name || "Customer"}*,
 Here is your vehicle service invoice:
@@ -3693,8 +4031,7 @@ ${billSummaryText}
 *Balance Due:* ${money(record.pendingAmount)}
 *Payment Status:* ${record.paymentStatus}
 
-Thank you for trusting Patel Auto Garage!
-Owner: Harsh Savani
+Thank you for trusting ${garageInfo.garageName}!${ownerSignature}${contactSignature}
 Please visit again!`;
 
   const cleanPhone = record.phone.startsWith("91") ? record.phone : `91${record.phone}`;
@@ -3703,6 +4040,7 @@ Please visit again!`;
 
 function printInvoice(recordId) {
   if (!requireAuth()) return;
+  updateGarageBrandingUI();
 
   const record = garageData.find((r) => String(r.id) === String(recordId));
   if (!record) {
@@ -3826,9 +4164,11 @@ function exportToCSV(onlyActiveDay = false) {
   });
 
   const scopeInfo = getScopeDisplayInfo();
+  const garageInfo = getGarageInfo();
+  const safeGaragePrefix = (garageInfo.garageName || "Garage").replace(/[^a-zA-Z0-9_-]/g, "_");
   const filename = onlyActiveDay
-    ? `Patel_Garage_${currentScope}_${getLocalDate()}.csv`
-    : `Patel_Garage_All_History_${getLocalDate()}.csv`;
+    ? `${safeGaragePrefix}_${currentScope}_${getLocalDate()}.csv`
+    : `${safeGaragePrefix}_All_History_${getLocalDate()}.csv`;
 
   downloadBlob(csvContent, filename, "text/csv;charset=utf-8;");
   showToast("CSV exported successfully.");
@@ -3837,17 +4177,20 @@ function exportToCSV(onlyActiveDay = false) {
 function downloadJSONBackup() {
   if (!requireAuth()) return;
 
+  const garageInfo = getGarageInfo();
+  const safeGaragePrefix = (garageInfo.garageName || "Garage").replace(/[^a-zA-Z0-9_-]/g, "_");
   const backupData = {
-    app: "PatelAutoGarage&Service",
+    app: garageInfo.garageName,
     version: "3.0",
     exportDate: getLocalDate(),
     timestamp: Date.now(),
+    garageInfo,
     records: garageData,
     expenses: garageExpenses,
   };
 
   const jsonStr = JSON.stringify(backupData, null, 2);
-  downloadBlob(jsonStr, `Patel_Garage_Backup_${getLocalDate()}.json`, "application/json");
+  downloadBlob(jsonStr, `${safeGaragePrefix}_Backup_${getLocalDate()}.json`, "application/json");
   showToast("Full backup downloaded successfully.");
 }
 
@@ -3867,6 +4210,11 @@ function handleRestoreFile(event) {
       if (!parsed || (!Array.isArray(parsed.records) && !Array.isArray(parsed))) {
         showToast("Invalid backup file format.", "error");
         return;
+      }
+
+      if (parsed.garageInfo && parsed.garageInfo.garageName) {
+        saveGarageInfoLocally(parsed.garageInfo);
+        updateGarageBrandingUI();
       }
 
       const newRecords = Array.isArray(parsed.records) ? parsed.records : parsed;
@@ -4040,6 +4388,8 @@ function setupDOMListeners() {
       closePasswordModal();
       closeEditModal();
       closeCloudModal();
+      closeGarageProfileModal();
+      closeFamilyModal();
       return;
     }
 

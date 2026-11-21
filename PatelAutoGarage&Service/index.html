@@ -31,7 +31,7 @@
                 <div class="brand-icon">
                     <i class="fa-solid fa-screwdriver-wrench"></i>
                 </div>
-                <h1>PatelAutoGarage&Service</h1>
+                <h1 id="loginGarageTitle">PatelAutoGarage&Service</h1>
                 <p id="loginSubtitle">Sign in to open the garage dashboard</p>
                 <div class="login-badge-row">
                     <button type="button" class="badge-shared-cloud btn-cloud-badge" id="loginCloudBtn" title="Click to view or setup Firebase Cloud Sync">
@@ -46,34 +46,60 @@
                 </div>
             </div>
 
-            <!-- Tab Buttons: Sign In / Join Family -->
-            <div class="login-tabs" id="loginTabs" hidden>
-                <button type="button" id="tabSignInBtn" class="login-tab is-active">
+            <!-- Tab Buttons: Sign In / Register Garage / Join Family -->
+            <div class="login-tabs" id="loginTabs">
+                <button type="button" id="tabSignInBtn" class="login-tab is-active" title="Sign In to existing garage">
                     <i class="fa-solid fa-right-to-bracket"></i> Sign In
                 </button>
-                <button type="button" id="tabJoinFamilyBtn" class="login-tab">
-                    <i class="fa-solid fa-user-plus"></i> Join Family
+                <button type="button" id="tabRegisterBtn" class="login-tab" title="Create a new garage account">
+                    <i class="fa-solid fa-store"></i> Register Garage
+                </button>
+                <button type="button" id="tabJoinFamilyBtn" class="login-tab" title="Join with garage PIN">
+                    <i class="fa-solid fa-users"></i> Join with PIN
                 </button>
             </div>
 
             <form id="loginForm" class="login-form" autocomplete="on" novalidate>
-                <div class="form-group" id="joinNameGroup" hidden>
-                    <label for="loginFullName">Your Full Name</label>
+                <!-- Garage Name Group (For Registration) -->
+                <div class="form-group" id="garageNameGroup" hidden>
+                    <label for="loginGarageName">Garage / Workshop Name</label>
                     <div class="input-wrap">
-                        <i class="fa-solid fa-id-card"></i>
-                        <input id="loginFullName" name="fullName" type="text" maxlength="40"
-                            placeholder="e.g. Harsh Savani (Brother)">
+                        <i class="fa-solid fa-store"></i>
+                        <input id="loginGarageName" name="garageName" type="text" maxlength="60"
+                            placeholder="e.g. Patel Auto Garage & Service">
                     </div>
                 </div>
 
+                <!-- Full Name Group (For Registration & Join) -->
+                <div class="form-group" id="joinNameGroup" hidden>
+                    <label for="loginFullName" id="joinNameLabel">Owner / Your Full Name</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-id-card"></i>
+                        <input id="loginFullName" name="fullName" type="text" maxlength="40"
+                            placeholder="e.g. Harsh Savani">
+                    </div>
+                </div>
+
+                <!-- Mobile Phone Group (For Registration) -->
+                <div class="form-group" id="garageOwnerPhoneGroup" hidden>
+                    <label for="loginOwnerPhone">Mobile / Contact Number (For Bills)</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-phone"></i>
+                        <input id="loginOwnerPhone" name="ownerPhone" type="tel" maxlength="15"
+                            placeholder="e.g. 9876543210">
+                    </div>
+                </div>
+
+                <!-- Role Group (For Join Mode) -->
                 <div class="form-group" id="joinRoleGroup" hidden>
-                    <label for="loginRole">Your Family Role</label>
+                    <label for="loginRole">Your Staff / Family Role</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-users"></i>
                         <select id="loginRole" name="role" class="login-select">
                             <option value="Brother / Partner">Brother / Partner</option>
                             <option value="Owner">Garage Owner</option>
                             <option value="Service Manager">Service Manager</option>
+                            <option value="Technician / Staff">Technician / Staff</option>
                         </select>
                     </div>
                 </div>
@@ -110,7 +136,7 @@
                 </div>
 
                 <div class="form-group" id="familyPasskeyGroup" hidden>
-                    <label for="loginFamilyPasskey" id="familyPasskeyLabel">Garage Family Passkey (6-digit PIN)</label>
+                    <label for="loginFamilyPasskey" id="familyPasskeyLabel">Garage Security Passkey (6-digit PIN)</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-shield-halved"></i>
                         <input id="loginFamilyPasskey" name="familyPasskey" type="password" maxlength="10"
@@ -133,7 +159,7 @@
 
                 <div class="login-footer-links" id="loginFooterLinks">
                     <button type="button" id="switchLoginModeBtn" class="login-text-link">
-                        <i class="fa-solid fa-users"></i> Join Family Device with Passkey
+                        <i class="fa-solid fa-store"></i> New Garage? Register Account
                     </button>
                     <button type="button" id="resetLoginBtn" class="login-text-link">
                         <i class="fa-solid fa-key"></i> Forgot Password / Reset Login
@@ -153,8 +179,8 @@
                         <i class="fa-solid fa-screwdriver-wrench"></i>
                     </div>
                     <div>
-                        <h1>PatelAutoGarage&Service</h1>
-                        <span>Multi-Day Garage Management &amp; Billing</span>
+                        <h1 id="topbarGarageName">PatelAutoGarage&Service</h1>
+                        <span id="topbarGarageTagline">Multi-Day Garage Management &amp; Billing</span>
                     </div>
                 </div>
 
@@ -173,6 +199,11 @@
                     <button type="button" id="manageFamilyBtn" class="btn btn-light" title="Authorized Family Members &amp; Share Link">
                         <i class="fa-solid fa-users"></i>
                         <span>Family (<span id="topbarFamilyCount">1</span>)</span>
+                    </button>
+
+                    <button type="button" id="garageProfileBtn" class="btn btn-light" title="Garage Name, Owner & Info Settings">
+                        <i class="fa-solid fa-store"></i>
+                        <span>Garage Profile</span>
                     </button>
 
                     <div class="user-chip" id="topbarUserChip" title="Signed in family member">
@@ -234,8 +265,8 @@
                         <i class="fa-solid fa-circle-check"></i>
                         Permanent Multi-Day Garage History
                     </div>
-                    <h2>HARSH SAVANI</h2>
-                    <p>
+                    <h2 id="heroOwnerName">HARSH SAVANI</h2>
+                    <p id="heroGarageTagline">
                         Service with Purpose.
                     </p>
                 </div>
@@ -1295,6 +1326,68 @@
             </div>
         </div>
 
+        <!-- GARAGE PROFILE & SETTINGS MODAL -->
+        <div id="garageProfileModal" class="modal" hidden>
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="garageProfileTitle">
+                <div class="modal-header">
+                    <div>
+                        <span class="section-label">BUSINESS PROFILE</span>
+                        <h3 id="garageProfileTitle">
+                            <i class="fa-solid fa-store"></i>
+                            Garage Profile &amp; Settings
+                        </h3>
+                    </div>
+                    <button type="button" id="garageProfileCloseBtn" class="modal-close" aria-label="Close modal">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 20px 24px;">
+                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+                        Customize your garage name and owner details. These will appear across the dashboard, printable invoices, and WhatsApp bills.
+                    </p>
+                    <form id="garageProfileForm" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="profileGarageName"><strong>Garage / Workshop Name</strong></label>
+                            <input type="text" id="profileGarageName" maxlength="60" required
+                                placeholder="e.g. Patel Auto Garage & Service">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileOwnerName"><strong>Owner Full Name</strong></label>
+                            <input type="text" id="profileOwnerName" maxlength="40" required
+                                placeholder="e.g. Harsh Savani">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profilePhone"><strong>Contact / WhatsApp Mobile Number</strong></label>
+                            <input type="tel" id="profilePhone" maxlength="15"
+                                placeholder="e.g. 9876543210 (Printed on bills)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileTagline"><strong>Garage Tagline / Subtitle</strong></label>
+                            <input type="text" id="profileTagline" maxlength="80"
+                                placeholder="e.g. Professional Vehicle Service, Maintenance & Repair">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileAddress"><strong>Shop Address (Optional)</strong></label>
+                            <textarea id="profileAddress" rows="2" maxlength="120"
+                                placeholder="e.g. Station Road, Near Main Chowk"></textarea>
+                        </div>
+
+                        <div class="modal-actions" style="margin-top:20px;">
+                            <button type="button" id="garageProfileCancelBtn" class="btn btn-light">Cancel</button>
+                            <button type="button" id="garageProfileSaveBtn" class="btn btn-save">
+                                <i class="fa-solid fa-check"></i> Save Garage Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- PRINTABLE INVOICE TEMPLATE -->
@@ -1302,9 +1395,9 @@
         <div class="invoice">
             <div class="invoice-header">
                 <div>
-                    <h1>PatelAutoGarage&Service</h1>
-                    <p>Professional Vehicle Service, Maintenance &amp; Repair</p>
-                    <small>Owner: Harsh Savani</small>
+                    <h1 id="printGarageName">PatelAutoGarage&Service</h1>
+                    <p id="printGarageTagline">Professional Vehicle Service, Maintenance &amp; Repair</p>
+                    <small id="printOwnerName">Owner: Harsh Savani</small>
                 </div>
                 <div class="invoice-title">
                     <span>INVOICE</span>
@@ -1349,7 +1442,7 @@
             </div>
 
             <div class="invoice-footer">
-                <p>Thank you for choosing PatelAutoGarage&Service.</p>
+                <p id="printFooterMessage">Thank you for choosing PatelAutoGarage&Service.</p>
                 <span>We appreciate your business. Please visit again!</span>
             </div>
         </div>
