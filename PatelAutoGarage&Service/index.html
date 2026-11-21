@@ -72,6 +72,25 @@
             </div>
 
             <form id="loginForm" class="login-form" autocomplete="on" novalidate>
+                <!-- Registration Specific Fields -->
+                <div class="form-group" id="regGarageNameGroup" hidden>
+                    <label for="regGarageName">Your Garage / Workshop Name</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-store"></i>
+                        <input id="regGarageName" name="regGarageName" type="text" maxlength="60"
+                            placeholder="e.g. Maruti Auto Care">
+                    </div>
+                </div>
+
+                <div class="form-group" id="regOwnerNameGroup" hidden>
+                    <label for="regOwnerName">Owner / Your Full Name</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-user-tie"></i>
+                        <input id="regOwnerName" name="regOwnerName" type="text" maxlength="40"
+                            placeholder="e.g. Kishore Patel">
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="loginUsername">Username</label>
                     <div class="input-wrap">
@@ -107,6 +126,9 @@
                 </button>
 
                 <div class="login-footer-links" id="loginFooterLinks">
+                    <button type="button" id="toggleRegisterModeBtn" class="login-text-link" style="color:var(--primary); font-weight:700;">
+                        <i class="fa-solid fa-plus-circle"></i> <span id="toggleRegisterText">New Garage? Create Free Account</span>
+                    </button>
                     <button type="button" id="resetLoginBtn" class="login-text-link">
                         <i class="fa-solid fa-key"></i> Forgot Password / Reset Login
                     </button>

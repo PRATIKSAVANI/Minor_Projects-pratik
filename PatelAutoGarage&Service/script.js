@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_GARAGE_INFO = {
-  garageName: "Patel Auto Garage & Service",
-  ownerName: "Harsh Savani",
+  garageName: "Auto Garage & Service",
+  ownerName: "Garage Owner",
   phone: "",
   tagline: "Professional Vehicle Service, Maintenance & Repair",
   address: "",
@@ -174,12 +174,47 @@ function updateGarageBrandingUI() {
   }
 }
 
-const FIRESTORE_COLLECTIONS = {
-  records: "patel_records",
-  expenses: "patel_expenses",
-  meta: "patel_meta",
-  family: "patel_family",
-};
+function getActiveGarageId() {
+  const member = getActiveMember();
+  if (member) {
+    if (member.garageId) return member.garageId;
+    if (member.username === "harsh" || member.username === "admin" || member.username === "owner" || member.username === "patel") {
+      return "patel_auto_garage";
+    }
+    return member.username.replace(/[^a-z0-9_]/g, "_");
+  }
+  const owner = readJSON(STORAGE_KEYS.owner, null);
+  if (owner && owner.username) {
+    if (owner.garageId) return owner.garageId;
+    if (owner.username === "harsh" || owner.username === "admin" || owner.username === "owner" || owner.username === "patel") {
+      return "patel_auto_garage";
+    }
+    return owner.username.replace(/[^a-z0-9_]/g, "_");
+  }
+  return "patel_auto_garage";
+}
+
+function getFirestoreCollections() {
+  const garageId = getActiveGarageId();
+  if (!garageId || garageId === "patel_auto_garage") {
+    return {
+      records: "patel_records",
+      expenses: "patel_expenses",
+      meta: "patel_meta",
+      family: "patel_family",
+    };
+  }
+  return {
+    records: `garage_${garageId}_records`,
+    expenses: `garage_${garageId}_expenses`,
+    meta: `garage_${garageId}_meta`,
+    family: `garage_${garageId}_family`,
+  };
+}
+
+const FIRESTORE_COLLECTIONS = new Proxy({}, {
+  get: (_, prop) => getFirestoreCollections()[prop],
+});
 
 const AUTH_SALT = "patel-auto-garage-v2";
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -248,13 +283,14 @@ async function initializeApp() {
     // Check if configuration exists and initialize Cloud Database
     await initCloudSync();
 
-    // Sync active family members and passkey from cloud
-    await syncFamilyMembersFromCloud();
-
+    // Only restore session and sync cloud if THIS device already has an authenticated session!
     if (await restoreLoginSession()) {
+      await syncFamilyMembersFromCloud();
       openDashboard();
       return;
     }
+
+    // Unauthenticated visitor: display clean login screen without leaking another person's cloud data
     showLoginScreen(false);
   } catch (err) {
     console.error("App startup initialization error:", err);
@@ -347,7 +383,18 @@ function setupAuthListeners() {
   if (heroEditOwnerBtn) {
     heroEditOwnerBtn.addEventListener("click", editOwnerNameDirect);
   }
+
+  // Toggle Register vs Sign In
+  const toggleRegBtn = document.getElementById("toggleRegisterModeBtn");
+  if (toggleRegBtn) {
+    toggleRegBtn.addEventListener("click", () => {
+      isRegisterMode = !isRegisterMode;
+      updateLoginMode();
+    });
+  }
 }
+
+let isRegisterMode = false;
 
 // =========================================
 // GOOGLE AUTH & DIRECT BRANDING EDITORS
@@ -370,23 +417,33 @@ async function signInWithGoogle() {
     }
 
     const displayName = user.displayName || "Garage Owner";
-    const email = user.email || "";
-    const username = email ? email.split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g, "") : "owner";
+    const email = (user.email || "").toLowerCase();
+    const cleanUser = email ? email.split("@")[0].replace(/[^a-z0-9._-]/g, "") : `user_${user.uid.slice(0, 8)}`;
     const photoURL = user.photoURL || "";
 
+    const isHarsh = email.includes("harsh") || cleanUser.includes("harsh") || cleanUser === "owner";
+    const garageId = isHarsh ? "patel_auto_garage" : cleanUser;
+
     const currentInfo = getGarageInfo();
+    const garageName = isHarsh
+      ? (currentInfo.garageName || "Patel Auto Garage & Service")
+      : (currentInfo.garageName && currentInfo.garageName !== DEFAULT_GARAGE_INFO.garageName ? currentInfo.garageName : `${displayName}'s Garage`);
+    const ownerName = displayName;
+
     const updatedInfo = {
       ...currentInfo,
-      ownerName: (currentInfo.ownerName && currentInfo.ownerName !== DEFAULT_GARAGE_INFO.ownerName) ? currentInfo.ownerName : displayName,
+      garageName,
+      ownerName,
       photo: currentInfo.photo || photoURL || "",
     };
     saveGarageInfoLocally(updatedInfo);
 
     const googleMember = {
-      username: username || "owner",
+      username: cleanUser,
       fullName: displayName,
       email: email,
       garageName: updatedInfo.garageName,
+      garageId: garageId,
       photo: updatedInfo.photo,
       role: "Owner",
       authProvider: "google",
@@ -405,9 +462,8 @@ async function signInWithGoogle() {
       try {
         await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(googleMember.username).set(googleMember, { merge: true });
         await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-          garageName: updatedInfo.garageName,
-          ownerName: updatedInfo.ownerName,
-          photo: updatedInfo.photo,
+          ...updatedInfo,
+          garageId: garageId,
           ownerUsername: googleMember.username,
           updatedAt: Date.now(),
         }, { merge: true });
@@ -426,6 +482,9 @@ async function signInWithGoogle() {
       setLoginError("Google sign-in popup was closed. Please try again.");
     } else if (error.code === "auth/network-request-failed") {
       setLoginError("Network connection error. Please verify internet access.");
+    } else if (error.code === "auth/unauthorized-domain") {
+      const currentHost = window.location.hostname;
+      setLoginError(`Google Sign-In Unauthorized Domain: Firebase Console -> Authentication -> Settings -> Authorized Domains માં આ ડોમેન (${currentHost}) ઉમેરો. અથવા નીચે "Create Free Account" થી એકાઉન્ટ બનાવીને તરત Sign In કરો.`);
     } else {
       setLoginError(error.message || "Failed to sign in with Google.");
     }
@@ -619,9 +678,25 @@ function updateLoginMode() {
   const error = document.getElementById("loginError");
   if (error) error.hidden = true;
   setLoginBusy(false);
+
+  const regGarageGroup = document.getElementById("regGarageNameGroup");
+  const regOwnerGroup = document.getElementById("regOwnerNameGroup");
   const subtitle = document.getElementById("loginSubtitle");
-  if (subtitle) {
-    subtitle.textContent = "Sign in to access live garage job cards, bills & payments";
+  const submitText = document.getElementById("loginSubmitText");
+  const toggleBtnText = document.getElementById("toggleRegisterText");
+
+  if (isRegisterMode) {
+    if (regGarageGroup) regGarageGroup.hidden = false;
+    if (regOwnerGroup) regOwnerGroup.hidden = false;
+    if (subtitle) subtitle.textContent = "Create your own garage account in 10 seconds";
+    if (submitText) submitText.textContent = "Create Garage & Sign In";
+    if (toggleBtnText) toggleBtnText.textContent = "Already have an account? Sign In";
+  } else {
+    if (regGarageGroup) regGarageGroup.hidden = true;
+    if (regOwnerGroup) regOwnerGroup.hidden = true;
+    if (subtitle) subtitle.textContent = "Sign in to access live garage job cards, bills & payments";
+    if (submitText) submitText.textContent = "Sign In";
+    if (toggleBtnText) toggleBtnText.textContent = "New Garage? Create Free Account";
   }
 }
 
@@ -700,54 +775,85 @@ async function handleLoginSubmit(event) {
   setLoginBusy(true);
 
   try {
-    if (cloudDb) {
-      await syncFamilyMembersFromCloud();
-    }
+    // 1. REGISTER NEW GARAGE MODE
+    if (isRegisterMode) {
+      const garageNameInput = (document.getElementById("regGarageName")?.value || "").trim();
+      const ownerNameInput = (document.getElementById("regOwnerName")?.value || "").trim();
 
-    // Auto-create initial owner account on first login if no account exists yet
-    if (!garageHasAccounts()) {
-      const passwordHash = await hashCredential(username, password);
-      const currentInfo = getGarageInfo();
+      if (!garageNameInput || garageNameInput.length < 2) {
+        setLoginError("Please enter your Garage Name (at least 2 letters).");
+        return;
+      }
+
+      const cleanUser = username.replace(/[^a-z0-9._-]/g, "");
+      const isHarsh = cleanUser === "harsh" || cleanUser === "admin" || cleanUser === "owner";
+      const garageId = isHarsh ? "patel_auto_garage" : cleanUser;
+
+      const passwordHash = await hashCredential(cleanUser, password);
+      const newGarageInfo = {
+        garageName: garageNameInput,
+        ownerName: ownerNameInput || "Garage Owner",
+        phone: "",
+        tagline: "Professional Vehicle Service, Maintenance & Repair",
+        address: "",
+        photo: "",
+      };
+      saveGarageInfoLocally(newGarageInfo);
+
       const ownerMember = {
-        username,
-        fullName: currentInfo.ownerName || "Garage Owner",
-        garageName: currentInfo.garageName,
-        photo: currentInfo.photo || "",
+        username: cleanUser,
+        fullName: ownerNameInput || "Garage Owner",
+        garageName: garageNameInput,
+        garageId: garageId,
+        photo: "",
         role: "Owner",
         passwordHash,
         createdAt: Date.now(),
         status: "active",
       };
+
       garageFamilyMembers = [ownerMember];
       saveFamilyMembersLocally();
       localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(ownerMember));
 
       if (cloudDb) {
         try {
-          await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(username).set(ownerMember);
-          await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").set(ownerMember);
+          await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(cleanUser).set(ownerMember);
           await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-            garageName: currentInfo.garageName,
-            ownerName: currentInfo.ownerName,
-            photo: currentInfo.photo || "",
-            ownerUsername: username,
+            ...newGarageInfo,
+            garageId: garageId,
+            ownerUsername: cleanUser,
             updatedAt: Date.now(),
           }, { merge: true });
         } catch (e) {
-          console.warn("Could not save initial owner to cloud:", e);
+          console.warn("Could not save new garage owner to cloud:", e);
         }
       }
 
       updateGarageBrandingUI();
       await createLoginSession(ownerMember, remember);
       document.getElementById("loginForm")?.reset();
-      showToast(`🎉 Welcome to ${currentInfo.garageName}!`);
+      isRegisterMode = false;
+      showToast(`🎉 Welcome to ${newGarageInfo.garageName}!`);
       openDashboard();
       return;
     }
 
-    // Sign in existing user
-    const member = findFamilyMember(username);
+    // 2. SIGN IN EXISTING USER
+    let member = findFamilyMember(username);
+    if (!member && cloudDb) {
+      try {
+        const doc = await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(username).get();
+        if (doc.exists) {
+          member = doc.data();
+          garageFamilyMembers.push(member);
+          saveFamilyMembersLocally();
+        }
+      } catch (e) {
+        console.warn("Could not fetch member from cloud:", e);
+      }
+    }
+
     if (!member) {
       const nextAttempts = lock.attempts + 1;
       if (nextAttempts >= MAX_LOGIN_ATTEMPTS) {
@@ -756,7 +862,7 @@ async function handleLoginSubmit(event) {
         return;
       }
       setLoginLock(nextAttempts, 0);
-      setLoginError("Username not found. Check spelling or sign in with Google.");
+      setLoginError(`Username "${username}" not found. Click "New Garage? Create Free Account" below to register.`);
       return;
     }
 
@@ -781,13 +887,12 @@ async function handleLoginSubmit(event) {
     clearLoginLock();
     if (member.garageName) {
       const cur = getGarageInfo();
-      if (!cur || cur.garageName === DEFAULT_GARAGE_INFO.garageName) {
-        saveGarageInfoLocally({
-          ...cur,
-          garageName: member.garageName,
-          ownerName: member.role === "Owner" ? (member.fullName || member.username) : cur.ownerName,
-        });
-      }
+      saveGarageInfoLocally({
+        ...cur,
+        garageName: member.garageName,
+        ownerName: member.fullName || cur.ownerName,
+        photo: member.photo || cur.photo || "",
+      });
     }
     updateGarageBrandingUI();
     await createLoginSession(member, remember);
