@@ -19,7 +19,7 @@
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=4.0">
+    <link rel="stylesheet" href="style.css?v=4.1">
 </head>
 
 <body class="app-locked">
@@ -121,9 +121,15 @@
                     <button type="button" id="toggleRegisterModeBtn" class="login-text-link" style="color:var(--primary); font-weight:700;">
                         <i class="fa-solid fa-plus-circle"></i> <span id="toggleRegisterText">New Garage? Create Free Account</span>
                     </button>
-                    <button type="button" id="resetLoginBtn" class="login-text-link">
-                        <i class="fa-solid fa-key"></i> Forgot Password / Reset Login
-                    </button>
+                    <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; margin-top:4px;">
+                        <button type="button" id="forgotPasswordBtn" class="login-text-link">
+                            <i class="fa-solid fa-key"></i> Forgot Password?
+                        </button>
+                        <span style="color:var(--text-muted, #94a3b8); font-size:12px;">•</span>
+                        <button type="button" id="resetLoginBtn" class="login-text-link">
+                            <i class="fa-solid fa-arrows-rotate"></i> Reset Login
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1571,6 +1577,55 @@
         </div>
     </div>
 
+    <!-- FORGOT / RECOVER PASSWORD MODAL -->
+    <div id="forgotPasswordModal" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle" style="max-width: 440px;">
+            <div class="modal-header">
+                <div>
+                    <span class="section-label">ACCOUNT SECURITY</span>
+                    <h3 id="forgotPasswordTitle"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Set New Password</h3>
+                </div>
+                <button type="button" id="forgotPasswordCloseBtn" class="modal-close" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 16px 20px;">
+                <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
+                    Enter your username and choose a new password for your garage account.
+                </p>
+                <form id="forgotPasswordForm">
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label for="forgotUser">Username</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-user"></i>
+                            <input id="forgotUser" type="text" maxlength="30" placeholder="Enter your username" autocomplete="username" required>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label for="forgotNewPass">New Password</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-lock"></i>
+                            <input id="forgotNewPass" type="password" minlength="4" maxlength="64" placeholder="Enter new password (min 4 chars)" autocomplete="new-password" required>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label for="forgotConfirmPass">Confirm New Password</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <input id="forgotConfirmPass" type="password" minlength="4" maxlength="64" placeholder="Re-enter new password" autocomplete="new-password" required>
+                        </div>
+                    </div>
+                    <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" id="forgotPasswordCancelBtn" class="btn btn-light">Cancel</button>
+                        <button type="submit" id="forgotPasswordSubmitBtn" class="btn btn-save">
+                            <i class="fa-solid fa-check"></i> Set New Password &amp; Sign In
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- CHANGE PASSWORD MODAL -->
     <div id="passwordModal" class="modal" hidden>
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
@@ -1638,7 +1693,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js?v=4.0"></script>
+    <script src="script.js?v=4.1"></script>
 </body>
 
 </html>

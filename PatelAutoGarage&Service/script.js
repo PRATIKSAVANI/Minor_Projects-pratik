@@ -379,6 +379,15 @@ function setupAuthListeners() {
   });
   setupResetLogin();
 
+  // Forgot Password Modal Listeners
+  document.getElementById("forgotPasswordBtn")?.addEventListener("click", openForgotPasswordModal);
+  document.getElementById("forgotPasswordCloseBtn")?.addEventListener("click", closeForgotPasswordModal);
+  document.getElementById("forgotPasswordCancelBtn")?.addEventListener("click", closeForgotPasswordModal);
+  document.getElementById("forgotPasswordForm")?.addEventListener("submit", handleForgotPasswordSubmit);
+  document.getElementById("forgotPasswordModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "forgotPasswordModal") closeForgotPasswordModal();
+  });
+
   // Confirmation Modal Listeners (Available on login screen and inside app)
   document.getElementById("confirmCancel")?.addEventListener("click", () => closeConfirm(false));
   document.getElementById("confirmOk")?.addEventListener("click", () => closeConfirm(true));
@@ -913,6 +922,7 @@ function showLoginScreen(clearForm = true) {
   appShell.setAttribute("aria-hidden", "true");
 
   closePasswordModal();
+  closeForgotPasswordModal();
   closeConfirm(false);
   updateLoginMode();
   updateGarageBrandingUI();
@@ -1494,6 +1504,123 @@ async function saveNewPassword() {
   showToast("Password updated successfully.");
 }
 
+function openForgotPasswordModal() {
+  const modal = document.getElementById("forgotPasswordModal");
+  if (!modal) return;
+  const userInput = document.getElementById("forgotUser");
+  const newPassInput = document.getElementById("forgotNewPass");
+  const confirmPassInput = document.getElementById("forgotConfirmPass");
+
+  const owner = readJSON(STORAGE_KEYS.owner, null);
+  const activeUser = getActiveMember();
+  const rememberedUser = (activeUser && activeUser.username) || (owner && owner.username) || (document.getElementById("loginUsername")?.value || "").trim();
+
+  if (userInput) userInput.value = rememberedUser;
+  if (newPassInput) newPassInput.value = "";
+  if (confirmPassInput) confirmPassInput.value = "";
+
+  modal.hidden = false;
+  modal.removeAttribute("aria-hidden");
+  setTimeout(() => {
+    if (rememberedUser && newPassInput) {
+      if (newPassInput.focus) newPassInput.focus();
+    } else if (userInput) {
+      if (userInput.focus) userInput.focus();
+    }
+  }, 80);
+}
+
+function closeForgotPasswordModal() {
+  const modal = document.getElementById("forgotPasswordModal");
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+  }
+}
+
+async function handleForgotPasswordSubmit(e) {
+  if (e) e.preventDefault();
+  const userInput = document.getElementById("forgotUser");
+  const newPassInput = document.getElementById("forgotNewPass");
+  const confirmPassInput = document.getElementById("forgotConfirmPass");
+
+  const username = (userInput?.value || "").trim().toLowerCase();
+  const newPassword = newPassInput?.value || "";
+  const confirmPassword = confirmPassInput?.value || "";
+
+  if (!username || username.length < 3) {
+    showToast("Please enter a valid username (min 3 characters).", "error");
+    if (userInput && userInput.focus) userInput.focus();
+    return;
+  }
+
+  if (!newPassword || newPassword.length < 4) {
+    showToast("Password must be at least 4 characters.", "error");
+    if (newPassInput && newPassInput.focus) newPassInput.focus();
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showToast("Passwords do not match. Please re-enter.", "error");
+    if (confirmPassInput && confirmPassInput.focus) confirmPassInput.focus();
+    return;
+  }
+
+  try {
+    const passwordHash = await hashCredential(username, newPassword);
+
+    let owner = readJSON(STORAGE_KEYS.owner, null);
+    if (!owner) {
+      owner = {
+        username: username,
+        fullName: "Garage Owner",
+        role: "Owner",
+        garageName: getGarageInfo().garageName,
+        createdAt: Date.now(),
+        status: "active",
+      };
+    }
+    owner.username = username;
+    owner.passwordHash = passwordHash;
+    owner.updatedAt = Date.now();
+    localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(owner));
+
+    // Update member in family list
+    let memberFound = false;
+    garageFamilyMembers = garageFamilyMembers.map((m) => {
+      if (String(m.username || "").toLowerCase() === username) {
+        memberFound = true;
+        return { ...m, passwordHash, updatedAt: Date.now() };
+      }
+      return m;
+    });
+    if (!memberFound) {
+      garageFamilyMembers.unshift(owner);
+    }
+    saveFamilyMembersLocally();
+
+    // Sync to Cloud Firestore if connected
+    if (cloudDb) {
+      Promise.all([
+        cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").set(owner, { merge: true }),
+        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(username).set({
+          username: username,
+          passwordHash: passwordHash,
+          updatedAt: Date.now(),
+        }, { merge: true }),
+      ]).catch((err) => console.warn("Cloud sync password recovery notice:", err));
+    }
+
+    closeForgotPasswordModal();
+    showToast("🎉 Password updated successfully! Logging you in...");
+    await createLoginSession(owner, true);
+    openDashboard();
+  } catch (err) {
+    console.error("Password reset error:", err);
+    showToast("Could not update password. Please try again.", "error");
+  }
+}
+
 function setupResetLogin() {
   const resetBtn = document.getElementById("resetLoginBtn");
   if (!resetBtn) return;
@@ -1509,8 +1636,8 @@ function setupResetLogin() {
     }
 
     askConfirm(
-      "Reset Owner Login?",
-      "This will reset your login username and password so you can set a new one. Your garage service records and history will NOT be deleted. Proceed?",
+      "Reset Login / Switch Account?",
+      "This will disconnect this device's login session so you can create a new account or switch user. Your garage records, day history, and bills will NOT be deleted. Proceed?",
     ).then(async (ok) => {
       if (!ok) return;
       localStorage.removeItem(STORAGE_KEYS.owner);
@@ -1533,7 +1660,7 @@ function setupResetLogin() {
 
       isRegisterMode = true;
       updateLoginMode();
-      showToast("Owner login has been reset. You can now create a new login or sign in with Google.");
+      showToast("Login session has been reset. You can now create a new login or sign in with Google.");
     });
   });
 }
@@ -4896,6 +5023,7 @@ function setupDOMListeners() {
     if (e.key === "Escape") {
       closeConfirm(false);
       closePasswordModal();
+      closeForgotPasswordModal();
       closeEditModal();
       closeCloudModal();
       closeGarageProfileModal();
