@@ -665,8 +665,8 @@ function openQuickEditModal(type) {
   modal.hidden = false;
   modal.removeAttribute("aria-hidden");
   setTimeout(() => {
-    input.focus();
-    input.select();
+    if (input.focus) input.focus();
+    if (input.select) input.select();
   }, 80);
 }
 
