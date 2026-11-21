@@ -18,7 +18,7 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_GARAGE_INFO = {
-  garageName: "Auto Garage & Service",
+  garageName: "Add Your Garage Name",
   ownerName: "Garage Owner",
   phone: "",
   tagline: "Professional Vehicle Service, Maintenance & Repair",
@@ -27,17 +27,34 @@ const DEFAULT_GARAGE_INFO = {
 };
 
 function getGarageInfo() {
+  const activeMember = getActiveMember();
+  const isHarsh = activeMember && (activeMember.username === "harsh" || activeMember.username === "admin" || activeMember.username === "owner" || (activeMember.email && activeMember.email.includes("harsh")));
+
   const stored = readJSON(STORAGE_KEYS.garageInfo, null);
   if (stored && stored.garageName) {
+    if (!isHarsh && (stored.garageName === "Patel Auto Garage & Service" || stored.garageName === "PatelAutoGarage&Service" || stored.garageName === "Auto Garage & Service")) {
+      return { ...DEFAULT_GARAGE_INFO, ...stored, garageName: "Add Your Garage Name" };
+    }
     return { ...DEFAULT_GARAGE_INFO, ...stored };
   }
   const owner = readJSON(STORAGE_KEYS.owner, null);
   if (owner && (owner.garageName || owner.fullName)) {
+    let gName = owner.garageName || DEFAULT_GARAGE_INFO.garageName;
+    if (!isHarsh && (gName === "Patel Auto Garage & Service" || gName === "PatelAutoGarage&Service" || gName === "Auto Garage & Service")) {
+      gName = "Add Your Garage Name";
+    }
     return {
       ...DEFAULT_GARAGE_INFO,
-      garageName: owner.garageName || DEFAULT_GARAGE_INFO.garageName,
+      garageName: gName,
       ownerName: owner.fullName || DEFAULT_GARAGE_INFO.ownerName,
       photo: owner.photo || "",
+    };
+  }
+  if (isHarsh) {
+    return {
+      ...DEFAULT_GARAGE_INFO,
+      garageName: "Patel Auto Garage & Service",
+      ownerName: "Harsh Savani",
     };
   }
   return { ...DEFAULT_GARAGE_INFO };
@@ -87,10 +104,13 @@ function processImageFile(file, maxWidth = 300, maxHeight = 300) {
 
 function updateGarageBrandingUI() {
   const info = getGarageInfo();
-  const isAuth = isAuthenticated || Boolean(getActiveMember());
-  const displayGarageName = isAuth
-    ? info.garageName
-    : (info.garageName === "Patel Auto Garage & Service" ? "Auto Garage & Service" : info.garageName);
+  const activeMember = getActiveMember();
+  const isHarsh = activeMember && (activeMember.username === "harsh" || activeMember.username === "admin" || activeMember.username === "owner" || (activeMember.email && activeMember.email.includes("harsh")));
+
+  let displayGarageName = info.garageName;
+  if (!isHarsh && (!displayGarageName || displayGarageName === "Patel Auto Garage & Service" || displayGarageName === "PatelAutoGarage&Service" || displayGarageName === "Auto Garage & Service")) {
+    displayGarageName = "Add Your Garage Name";
+  }
 
   // 1. Browser Tab Title
   document.title = `${displayGarageName} - Garage Management System`;
@@ -117,7 +137,7 @@ function updateGarageBrandingUI() {
 
   // 3. Topbar Brand & Logo
   const topbarName = document.getElementById("topbarGarageName");
-  if (topbarName) topbarName.textContent = info.garageName;
+  if (topbarName) topbarName.textContent = displayGarageName;
   const topbarTagline = document.getElementById("topbarGarageTagline");
   if (topbarTagline) topbarTagline.textContent = info.tagline || "Multi-Day Garage Management & Billing";
 
@@ -145,7 +165,7 @@ function updateGarageBrandingUI() {
 
   // 5. Printable Invoice
   const printName = document.getElementById("printGarageName");
-  if (printName) printName.textContent = info.garageName;
+  if (printName) printName.textContent = displayGarageName;
   const printTagline = document.getElementById("printGarageTagline");
   if (printTagline) printTagline.textContent = info.tagline || "Professional Vehicle Service, Maintenance & Repair";
   const printOwner = document.getElementById("printOwnerName");
@@ -154,7 +174,7 @@ function updateGarageBrandingUI() {
     printOwner.textContent = `Owner: ${info.ownerName || "Garage Owner"}${phoneStr}`;
   }
   const printFooter = document.getElementById("printFooterMessage");
-  if (printFooter) printFooter.textContent = `Thank you for choosing ${info.garageName}.`;
+  if (printFooter) printFooter.textContent = `Thank you for choosing ${displayGarageName}.`;
 
   const printLogo = document.getElementById("printGarageLogo");
   if (printLogo) {
@@ -167,7 +187,6 @@ function updateGarageBrandingUI() {
   }
 
   // 6. Topbar User Chip
-  const activeMember = getActiveMember();
   const topbarMember = document.getElementById("topbarMemberName");
   const topbarRole = document.getElementById("topbarMemberRole");
   if (topbarMember) {
@@ -429,9 +448,14 @@ async function signInWithGoogle() {
     const garageId = isHarsh ? "patel_auto_garage" : cleanUser;
 
     const currentInfo = getGarageInfo();
-    const garageName = isHarsh
-      ? (currentInfo.garageName || "Patel Auto Garage & Service")
-      : (currentInfo.garageName && currentInfo.garageName !== DEFAULT_GARAGE_INFO.garageName ? currentInfo.garageName : `${displayName}'s Garage`);
+    let garageName = currentInfo.garageName;
+    if (isHarsh) {
+      garageName = currentInfo.garageName || "Patel Auto Garage & Service";
+    } else {
+      if (!garageName || garageName === "Patel Auto Garage & Service" || garageName === "PatelAutoGarage&Service" || garageName === "Auto Garage & Service") {
+        garageName = "Add Your Garage Name";
+      }
+    }
     const ownerName = displayName;
 
     const updatedInfo = {
@@ -766,7 +790,7 @@ async function handleLoginSubmit(event) {
 
   const username = (document.getElementById("loginUsername")?.value || "").trim().toLowerCase();
   const password = document.getElementById("loginPassword")?.value || "";
-  const remember = document.getElementById("rememberMe")?.checked || false;
+  const remember = true;
 
   if (username.length < 3 || username.length > 30) {
     setLoginError("Username must be between 3 and 30 characters.");
