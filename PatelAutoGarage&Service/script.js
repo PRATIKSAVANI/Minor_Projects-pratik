@@ -202,40 +202,15 @@ function updateGarageBrandingUI() {
 }
 
 function getActiveGarageId() {
-  const member = getActiveMember();
-  if (member) {
-    if (member.garageId) return member.garageId;
-    if (member.username === "harsh" || member.username === "admin" || member.username === "owner" || member.username === "patel") {
-      return "patel_auto_garage";
-    }
-    return member.username.replace(/[^a-z0-9_]/g, "_");
-  }
-  const owner = readJSON(STORAGE_KEYS.owner, null);
-  if (owner && owner.username) {
-    if (owner.garageId) return owner.garageId;
-    if (owner.username === "harsh" || owner.username === "admin" || owner.username === "owner" || owner.username === "patel") {
-      return "patel_auto_garage";
-    }
-    return owner.username.replace(/[^a-z0-9_]/g, "_");
-  }
   return "patel_auto_garage";
 }
 
 function getFirestoreCollections() {
-  const garageId = getActiveGarageId();
-  if (!garageId || garageId === "patel_auto_garage") {
-    return {
-      records: "patel_records",
-      expenses: "patel_expenses",
-      meta: "patel_meta",
-      family: "patel_family",
-    };
-  }
   return {
-    records: `garage_${garageId}_records`,
-    expenses: `garage_${garageId}_expenses`,
-    meta: `garage_${garageId}_meta`,
-    family: `garage_${garageId}_family`,
+    records: "patel_records",
+    expenses: "patel_expenses",
+    meta: "patel_meta",
+    family: "patel_family",
   };
 }
 
@@ -1411,6 +1386,14 @@ function openDashboard() {
 
   loadData();
 
+  if (garageData.length > 0 && garageData.filter((r) => r.date === activeDate).length === 0) {
+    filterScope = "all";
+    const scopeAll = document.getElementById("scopeAllBtn");
+    const scopeDate = document.getElementById("scopeDateBtn");
+    if (scopeAll) scopeAll.classList.add("active");
+    if (scopeDate) scopeDate.classList.remove("active");
+  }
+
   if (!dashboardReady) {
     dashboardReady = true;
     setupDOMListeners();
@@ -1905,6 +1888,13 @@ function setupCloudRealtimeListeners() {
         if (hasChanges || isInitialCloudLoad) {
           saveRecordsLocally();
           if (dashboardReady && isAuthenticated) {
+            if (garageData.length > 0 && garageData.filter((r) => r.date === activeDate).length === 0 && filterScope === "date") {
+              filterScope = "all";
+              const scopeAll = document.getElementById("scopeAllBtn");
+              const scopeDate = document.getElementById("scopeDateBtn");
+              if (scopeAll) scopeAll.classList.add("active");
+              if (scopeDate) scopeDate.classList.remove("active");
+            }
             updateDashboard();
             refreshRecordsView();
             renderDayHistory();
