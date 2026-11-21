@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_GARAGE_INFO = {
-  garageName: "Add Your Garage Name",
-  ownerName: "Garage Owner",
+  garageName: "Patel Auto Garage & Service",
+  ownerName: "Harsh Savani",
   phone: "",
   tagline: "Professional Vehicle Service, Maintenance & Repair",
   address: "",
@@ -27,42 +27,30 @@ const DEFAULT_GARAGE_INFO = {
 };
 
 function getGarageInfo() {
-  const activeMember = getActiveMember();
-  const isHarsh = activeMember && (
-    activeMember.username === "harsh" ||
-    activeMember.username === "admin" ||
-    activeMember.username === "owner" ||
-    (activeMember.email && activeMember.email.includes("harsh"))
-  );
-
   const stored = readJSON(STORAGE_KEYS.garageInfo, null);
-  if (stored && stored.garageName && stored.garageName.trim()) {
-    // If the user saved a custom garage name, ALWAYS honor and return it!
-    if (stored.isCustom || (stored.garageName !== "Patel Auto Garage & Service" && stored.garageName !== "Auto Garage & Service")) {
-      return { ...DEFAULT_GARAGE_INFO, ...stored };
-    }
-    if (isHarsh) {
-      return { ...DEFAULT_GARAGE_INFO, ...stored, garageName: "Patel Auto Garage & Service", ownerName: stored.ownerName || "Harsh Savani" };
-    }
-    return { ...DEFAULT_GARAGE_INFO, ...stored, garageName: "Add Your Garage Name" };
+  if (stored && stored.garageName && stored.garageName.trim() && stored.garageName !== "Add Your Garage Name") {
+    return { ...DEFAULT_GARAGE_INFO, ...stored };
   }
 
   const owner = readJSON(STORAGE_KEYS.owner, null);
-  if (owner && (owner.garageName || owner.fullName)) {
+  if (owner && owner.garageName && owner.garageName.trim() && owner.garageName !== "Add Your Garage Name") {
     return {
       ...DEFAULT_GARAGE_INFO,
-      garageName: owner.garageName || DEFAULT_GARAGE_INFO.garageName,
+      garageName: owner.garageName,
       ownerName: owner.fullName || DEFAULT_GARAGE_INFO.ownerName,
       photo: owner.photo || "",
       isCustom: true,
     };
   }
 
-  if (isHarsh) {
+  if (stored && typeof stored === "object") {
+    const validStoredName = (stored.garageName && stored.garageName.trim() && stored.garageName !== "Add Your Garage Name")
+      ? stored.garageName.trim()
+      : DEFAULT_GARAGE_INFO.garageName;
     return {
       ...DEFAULT_GARAGE_INFO,
-      garageName: "Patel Auto Garage & Service",
-      ownerName: "Harsh Savani",
+      ...stored,
+      garageName: validStoredName,
     };
   }
 
@@ -114,7 +102,7 @@ function processImageFile(file, maxWidth = 300, maxHeight = 300) {
 function updateGarageBrandingUI() {
   const info = getGarageInfo();
   const activeMember = getActiveMember();
-  const displayGarageName = (info.garageName && info.garageName.trim()) ? info.garageName.trim() : "Add Your Garage Name";
+  const displayGarageName = (info.garageName && info.garageName.trim() && info.garageName !== "Add Your Garage Name") ? info.garageName.trim() : "Patel Auto Garage & Service";
 
   // 1. Browser Tab Title
   document.title = `${displayGarageName} - Garage Management System`;
@@ -163,7 +151,7 @@ function updateGarageBrandingUI() {
 
   // 4. Hero Section
   const heroOwner = document.getElementById("heroOwnerName");
-  if (heroOwner) heroOwner.textContent = (info.ownerName || info.garageName).toUpperCase();
+  if (heroOwner) heroOwner.textContent = displayGarageName.toUpperCase();
   const heroTagline = document.getElementById("heroGarageTagline");
   if (heroTagline) heroTagline.textContent = info.tagline || "Service with Purpose.";
 
@@ -503,25 +491,18 @@ async function signInWithGoogle() {
     const cleanUser = email ? email.split("@")[0].replace(/[^a-z0-9._-]/g, "") : `user_${user.uid.slice(0, 8)}`;
     const photoURL = user.photoURL || "";
 
-    const isHarsh = email.includes("harsh") || cleanUser.includes("harsh") || cleanUser === "owner";
-    const garageId = isHarsh ? "patel_auto_garage" : cleanUser;
+    const garageId = "patel_auto_garage";
 
     const currentInfo = getGarageInfo();
-    let garageName = currentInfo.garageName;
-    if (isHarsh) {
-      garageName = currentInfo.garageName || "Patel Auto Garage & Service";
-    } else {
-      if (!garageName || garageName === "Patel Auto Garage & Service" || garageName === "PatelAutoGarage&Service" || garageName === "Auto Garage & Service") {
-        garageName = "Add Your Garage Name";
-      }
-    }
-    const ownerName = displayName;
+    const garageName = (currentInfo.garageName && currentInfo.garageName.trim() && currentInfo.garageName !== "Add Your Garage Name")
+      ? currentInfo.garageName.trim()
+      : "Patel Auto Garage & Service";
 
     const updatedInfo = {
       ...currentInfo,
       garageName,
-      ownerName,
       photo: currentInfo.photo || photoURL || "",
+      isCustom: true,
     };
     saveGarageInfoLocally(updatedInfo);
 
@@ -529,7 +510,7 @@ async function signInWithGoogle() {
       username: cleanUser,
       fullName: displayName,
       email: email,
-      garageName: updatedInfo.garageName,
+      garageName: garageName,
       garageId: garageId,
       photo: updatedInfo.photo,
       role: "Owner",
@@ -557,9 +538,8 @@ async function signInWithGoogle() {
       Promise.all([
         cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(googleMember.username).set(googleMember, { merge: true }),
         cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-          ...updatedInfo,
-          garageId: garageId,
-          ownerUsername: googleMember.username,
+          garageName: garageName,
+          photo: updatedInfo.photo,
           updatedAt: Date.now(),
         }, { merge: true })
       ]).catch((cloudErr) => {
@@ -641,9 +621,8 @@ function openQuickEditModal(type) {
     if (title) title.textContent = "Edit Garage Name";
     if (label) label.textContent = "Garage / Workshop Name";
     if (icon) icon.className = "fa-solid fa-store";
-    input.placeholder = "e.g. Maruti Auto Care";
-    const currentName = (currentInfo.garageName === "Add Your Garage Name" || (currentInfo.garageName === "Patel Auto Garage & Service" && !getActiveMember())) ? "" : currentInfo.garageName;
-    input.value = currentName;
+    input.placeholder = "e.g. Patel Auto Garage & Service";
+    input.value = (currentInfo.garageName && currentInfo.garageName !== "Add Your Garage Name") ? currentInfo.garageName : "Patel Auto Garage & Service";
   } else {
     if (sectionLabel) sectionLabel.textContent = "OWNER PROFILE";
     if (title) title.textContent = "Edit Owner Name";
@@ -714,17 +693,19 @@ async function handleQuickEditSave() {
       saveFamilyMembersLocally();
 
       if (cloudDb) {
-        Promise.all([
-          cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-            garageName: value,
-            updatedAt: Date.now(),
-          }, { merge: true }),
-          cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(activeMember.username).set({
-            garageName: value,
-            updatedAt: Date.now(),
-          }, { merge: true }),
-        ]).catch((e) => console.warn("Cloud sync garageName notice:", e));
+        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(activeMember.username).set({
+          garageName: value,
+          updatedAt: Date.now(),
+        }, { merge: true }).catch((e) => console.warn("Cloud sync family garageName notice:", e));
       }
+    }
+
+    if (cloudDb) {
+      cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
+        garageName: value,
+        isCustom: true,
+        updatedAt: Date.now(),
+      }, { merge: true }).catch((e) => console.warn("Cloud sync garageName notice:", e));
     }
 
     // Direct immediate DOM updates
@@ -772,17 +753,18 @@ async function handleQuickEditSave() {
       saveFamilyMembersLocally();
 
       if (cloudDb) {
-        Promise.all([
-          cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-            ownerName: value,
-            updatedAt: Date.now(),
-          }, { merge: true }),
-          cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(activeMember.username).set({
-            fullName: value,
-            updatedAt: Date.now(),
-          }, { merge: true }),
-        ]).catch((e) => console.warn("Cloud sync ownerName notice:", e));
+        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(activeMember.username).set({
+          fullName: value,
+          updatedAt: Date.now(),
+        }, { merge: true }).catch((e) => console.warn("Cloud sync family fullName notice:", e));
       }
+    }
+
+    if (cloudDb) {
+      cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
+        ownerName: value,
+        updatedAt: Date.now(),
+      }, { merge: true }).catch((e) => console.warn("Cloud sync ownerName notice:", e));
     }
 
     // Direct immediate DOM updates
@@ -1023,8 +1005,7 @@ async function handleLoginSubmit(event) {
       }
 
       const cleanUser = username.replace(/[^a-z0-9._-]/g, "");
-      const isHarsh = cleanUser === "harsh" || cleanUser === "admin" || cleanUser === "owner";
-      const garageId = isHarsh ? "patel_auto_garage" : cleanUser;
+      const garageId = "patel_auto_garage";
 
       const passwordHash = await hashCredential(cleanUser, password);
       const newGarageInfo = {
@@ -2003,22 +1984,23 @@ function setupCloudRealtimeListeners() {
             const pinInput = document.getElementById("familyPasskeyInput");
             if (pinInput) pinInput.value = garageFamilyPasskey;
           }
-          if (data.garageName || data.ownerName) {
-            // Guard: Only apply cloud meta if user is authenticated so unauthenticated visitor is not overwritten
-            if (isAuthenticated || isSessionActive()) {
-              const current = getGarageInfo();
-              const updated = {
-                ...current,
-                garageName: data.garageName || current.garageName,
-                ownerName: data.ownerName || current.ownerName,
-                phone: data.phone !== undefined ? data.phone : current.phone,
-                tagline: data.tagline !== undefined ? data.tagline : current.tagline,
-                address: data.address !== undefined ? data.address : current.address,
-                isCustom: true,
-              };
-              saveGarageInfoLocally(updated);
-              updateGarageBrandingUI();
-            }
+          if (data.garageName || data.ownerName || data.photo) {
+            const current = getGarageInfo();
+            const validCloudName = (data.garageName && data.garageName.trim() && data.garageName !== "Add Your Garage Name")
+              ? data.garageName.trim()
+              : current.garageName;
+            const updated = {
+              ...current,
+              garageName: validCloudName,
+              ownerName: data.ownerName || current.ownerName,
+              phone: data.phone !== undefined ? data.phone : current.phone,
+              tagline: data.tagline !== undefined ? data.tagline : current.tagline,
+              address: data.address !== undefined ? data.address : current.address,
+              photo: data.photo || current.photo || "",
+              isCustom: true,
+            };
+            saveGarageInfoLocally(updated);
+            updateGarageBrandingUI();
           }
         }
       },
