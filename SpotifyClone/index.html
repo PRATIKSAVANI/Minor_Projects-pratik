@@ -96,13 +96,19 @@
               <h2 id="playlistTitle">All songs</h2>
               <p class="muted" id="playlistMeta"></p>
             </div>
-            <button class="play-cta" id="playlistPlay">Play</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button id="deletePlaylistBtn" class="icon-btn delete-pl-btn hidden" title="Delete playlist" aria-label="Delete playlist">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              </button>
+              <button class="play-cta" id="playlistPlay">Play</button>
+            </div>
           </div>
           <div class="song-table">
             <div class="song-head">
               <span>#</span>
               <span>Title</span>
-              <span>Time</span>
+              <span style="text-align: right;">Time</span>
+              <span></span>
             </div>
             <div id="songList"></div>
           </div>
@@ -117,6 +123,9 @@
           <strong id="masterSongName">Sorath</strong>
           <span id="nowPlaylist">All songs</span>
         </div>
+        <button id="likeBtn" class="heart-btn" title="Save to Liked Songs" aria-label="Save to Liked Songs">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c2.54 0 4.91 1.28 6.5 3.22C16.59 4.28 18.96 3 21.5 3 24.58 3 27 5.42 27 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
       </div>
 
       <div class="transport">
