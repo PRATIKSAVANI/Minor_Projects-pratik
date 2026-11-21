@@ -379,6 +379,13 @@ function setupAuthListeners() {
   });
   setupResetLogin();
 
+  // Confirmation Modal Listeners (Available on login screen and inside app)
+  document.getElementById("confirmCancel")?.addEventListener("click", () => closeConfirm(false));
+  document.getElementById("confirmOk")?.addEventListener("click", () => closeConfirm(true));
+  document.getElementById("confirmModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "confirmModal") closeConfirm(false);
+  });
+
   // 1-Click Google Sign-In
   const googleBtn = document.getElementById("googleSignInBtn");
   if (googleBtn) {
