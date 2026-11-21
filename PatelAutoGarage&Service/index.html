@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3.5">
 </head>
 
 <body class="app-locked">
@@ -28,8 +28,9 @@
     <section id="loginScreen" class="login-screen" aria-label="Login">
         <div class="login-card">
             <div class="login-brand">
-                <div class="brand-icon">
-                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                <div class="brand-icon" id="loginBrandIcon">
+                    <img id="loginBrandImg" src="" alt="Garage Logo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
+                    <i class="fa-solid fa-screwdriver-wrench" id="loginBrandDefaultIcon"></i>
                 </div>
                 <h1 id="loginGarageTitle">PatelAutoGarage&Service</h1>
                 <p id="loginSubtitle">Sign in to open the garage dashboard</p>
@@ -87,6 +88,26 @@
                         <i class="fa-solid fa-phone"></i>
                         <input id="loginOwnerPhone" name="ownerPhone" type="tel" maxlength="15"
                             placeholder="e.g. 9876543210">
+                    </div>
+                </div>
+
+                <!-- Garage Logo / Profile Photo (For Registration) -->
+                <div class="form-group" id="garagePhotoGroup" hidden>
+                    <label>Garage Logo / Profile Photo (Optional)</label>
+                    <div style="display:flex; align-items:center; gap:12px; margin-top:6px;">
+                        <div id="loginPhotoPreviewWrap" style="width:52px; height:52px; border-radius:14px; border:2px dashed var(--border-color); display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; flex-shrink:0;">
+                            <img id="loginPhotoPreviewImg" src="" alt="Preview" style="display:none; width:100%; height:100%; object-fit:cover;">
+                            <i id="loginPhotoPlaceholderIcon" class="fa-solid fa-camera" style="color:var(--text-muted); font-size:18px;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" id="loginPhotoInput" accept="image/*" style="display:none;">
+                            <button type="button" id="loginPhotoChooseBtn" class="btn btn-light" style="padding:6px 12px; font-size:12px; font-weight:600;">
+                                <i class="fa-solid fa-upload"></i> Choose Photo
+                            </button>
+                            <button type="button" id="loginPhotoRemoveBtn" class="btn btn-light" style="padding:6px 10px; font-size:12px; display:none; color:var(--danger); margin-left:4px;">
+                                Remove
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -175,8 +196,9 @@
         <header class="topbar">
             <div class="topbar-inner">
                 <div class="brand">
-                    <div class="brand-icon">
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                    <div class="brand-icon" id="topbarBrandIcon">
+                        <img id="topbarBrandImg" src="" alt="Garage Logo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
+                        <i class="fa-solid fa-screwdriver-wrench" id="topbarBrandDefaultIcon"></i>
                     </div>
                     <div>
                         <h1 id="topbarGarageName">PatelAutoGarage&Service</h1>
@@ -1347,6 +1369,29 @@
                         Customize your garage name and owner details. These will appear across the dashboard, printable invoices, and WhatsApp bills.
                     </p>
                     <form id="garageProfileForm" onsubmit="return false;">
+                        <!-- Garage Logo / Profile Photo Upload -->
+                        <div class="form-group">
+                            <label><strong>Garage Logo / Profile Photo</strong></label>
+                            <div style="display:flex; align-items:center; gap:14px; margin-top:8px;">
+                                <div id="profilePhotoPreviewWrap" style="width:64px; height:64px; border-radius:16px; border:2px dashed var(--border-color); display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; flex-shrink:0;">
+                                    <img id="profilePhotoPreviewImg" src="" alt="Profile Photo" style="display:none; width:100%; height:100%; object-fit:cover;">
+                                    <i id="profilePhotoPlaceholderIcon" class="fa-solid fa-camera" style="color:var(--text-muted); font-size:22px;"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;">
+                                    <button type="button" id="profilePhotoChooseBtn" class="btn btn-light" style="padding:6px 14px; font-size:13px; font-weight:600;">
+                                        <i class="fa-solid fa-upload"></i> Upload Photo
+                                    </button>
+                                    <button type="button" id="profilePhotoRemoveBtn" class="btn btn-light" style="padding:6px 12px; font-size:13px; display:none; color:var(--danger); margin-left:6px;">
+                                        Remove
+                                    </button>
+                                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                                        Appears on login screen, dashboard topbar, and printable invoices.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label for="profileGarageName"><strong>Garage / Workshop Name</strong></label>
                             <input type="text" id="profileGarageName" maxlength="60" required
@@ -1394,10 +1439,13 @@
     <div id="printableBill" hidden aria-hidden="true">
         <div class="invoice">
             <div class="invoice-header">
-                <div>
-                    <h1 id="printGarageName">PatelAutoGarage&Service</h1>
-                    <p id="printGarageTagline">Professional Vehicle Service, Maintenance &amp; Repair</p>
-                    <small id="printOwnerName">Owner: Harsh Savani</small>
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <img id="printGarageLogo" src="" alt="Logo" style="display:none; width:64px; height:64px; object-fit:contain; border-radius:10px;">
+                    <div>
+                        <h1 id="printGarageName">PatelAutoGarage&Service</h1>
+                        <p id="printGarageTagline">Professional Vehicle Service, Maintenance &amp; Repair</p>
+                        <small id="printOwnerName">Owner: Harsh Savani</small>
+                    </div>
                 </div>
                 <div class="invoice-title">
                     <span>INVOICE</span>
@@ -1610,7 +1658,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=3.5"></script>
 </body>
 
 </html>

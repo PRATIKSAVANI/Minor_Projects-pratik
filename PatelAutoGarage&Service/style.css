@@ -211,6 +211,7 @@ input, select, textarea, button, .form-group {
     place-items: center;
     color: white;
     font-size: 28px;
+    overflow: hidden;
 }
 
 .login-brand h1 {
@@ -425,6 +426,7 @@ button {
     box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
     color: white;
     font-size: 20px;
+    overflow: hidden;
 }
 
 .brand h1 {

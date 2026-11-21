@@ -23,6 +23,7 @@ const DEFAULT_GARAGE_INFO = {
   phone: "",
   tagline: "Professional Vehicle Service, Maintenance & Repair",
   address: "",
+  photo: "",
 };
 
 function getGarageInfo() {
@@ -36,6 +37,7 @@ function getGarageInfo() {
       ...DEFAULT_GARAGE_INFO,
       garageName: owner.garageName || DEFAULT_GARAGE_INFO.garageName,
       ownerName: owner.fullName || DEFAULT_GARAGE_INFO.ownerName,
+      photo: owner.photo || "",
     };
   }
   return { ...DEFAULT_GARAGE_INFO };
@@ -45,21 +47,91 @@ function saveGarageInfoLocally(info) {
   localStorage.setItem(STORAGE_KEYS.garageInfo, JSON.stringify(info));
 }
 
+function processImageFile(file, maxWidth = 300, maxHeight = 300) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith("image/")) {
+      return reject(new Error("Please select a valid image file."));
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Failed to load image."));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("Failed to read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function updateGarageBrandingUI() {
   const info = getGarageInfo();
 
   // 1. Browser Tab Title
   document.title = `${info.garageName} - Garage Management System`;
 
-  // 2. Login screen title
+  // 2. Login screen title & logo
   const loginTitle = document.getElementById("loginGarageTitle");
   if (loginTitle) loginTitle.textContent = info.garageName;
 
-  // 3. Topbar Brand
+  const loginBrandImg = document.getElementById("loginBrandImg");
+  const loginBrandIcon = document.getElementById("loginBrandDefaultIcon");
+  const loginBrandBox = document.getElementById("loginBrandIcon");
+  if (loginBrandImg && loginBrandIcon) {
+    if (info.photo) {
+      loginBrandImg.src = info.photo;
+      loginBrandImg.style.display = "block";
+      loginBrandIcon.style.display = "none";
+      if (loginBrandBox) loginBrandBox.style.background = "#ffffff";
+    } else {
+      loginBrandImg.style.display = "none";
+      loginBrandIcon.style.display = "block";
+      if (loginBrandBox) loginBrandBox.style.background = "";
+    }
+  }
+
+  // 3. Topbar Brand & Logo
   const topbarName = document.getElementById("topbarGarageName");
   if (topbarName) topbarName.textContent = info.garageName;
   const topbarTagline = document.getElementById("topbarGarageTagline");
   if (topbarTagline) topbarTagline.textContent = info.tagline || "Multi-Day Garage Management & Billing";
+
+  const topbarBrandImg = document.getElementById("topbarBrandImg");
+  const topbarBrandIcon = document.getElementById("topbarBrandDefaultIcon");
+  const topbarBrandBox = document.getElementById("topbarBrandIcon");
+  if (topbarBrandImg && topbarBrandIcon) {
+    if (info.photo) {
+      topbarBrandImg.src = info.photo;
+      topbarBrandImg.style.display = "block";
+      topbarBrandIcon.style.display = "none";
+      if (topbarBrandBox) topbarBrandBox.style.background = "#ffffff";
+    } else {
+      topbarBrandImg.style.display = "none";
+      topbarBrandIcon.style.display = "block";
+      if (topbarBrandBox) topbarBrandBox.style.background = "";
+    }
+  }
 
   // 4. Hero Section
   const heroOwner = document.getElementById("heroOwnerName");
@@ -79,6 +151,16 @@ function updateGarageBrandingUI() {
   }
   const printFooter = document.getElementById("printFooterMessage");
   if (printFooter) printFooter.textContent = `Thank you for choosing ${info.garageName}.`;
+
+  const printLogo = document.getElementById("printGarageLogo");
+  if (printLogo) {
+    if (info.photo) {
+      printLogo.src = info.photo;
+      printLogo.style.display = "block";
+    } else {
+      printLogo.style.display = "none";
+    }
+  }
 
   // 6. Topbar User Chip
   const activeMember = getActiveMember();
@@ -257,6 +339,50 @@ function setupAuthListeners() {
       updateLoginMode();
     });
   }
+
+  setupLoginPhotoListeners();
+}
+
+let tempLoginPhoto = "";
+
+function setupLoginPhotoListeners() {
+  const chooseBtn = document.getElementById("loginPhotoChooseBtn");
+  const input = document.getElementById("loginPhotoInput");
+  const removeBtn = document.getElementById("loginPhotoRemoveBtn");
+  const previewImg = document.getElementById("loginPhotoPreviewImg");
+  const placeholder = document.getElementById("loginPhotoPlaceholderIcon");
+
+  if (chooseBtn && input) {
+    chooseBtn.addEventListener("click", () => input.click());
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        tempLoginPhoto = await processImageFile(file);
+        if (previewImg) {
+          previewImg.src = tempLoginPhoto;
+          previewImg.style.display = "block";
+        }
+        if (placeholder) placeholder.style.display = "none";
+        if (removeBtn) removeBtn.style.display = "inline-block";
+      } catch (err) {
+        showToast(err.message || "Could not process photo.", "error");
+      }
+    });
+  }
+
+  if (removeBtn) {
+    removeBtn.addEventListener("click", () => {
+      tempLoginPhoto = "";
+      if (input) input.value = "";
+      if (previewImg) {
+        previewImg.src = "";
+        previewImg.style.display = "none";
+      }
+      if (placeholder) placeholder.style.display = "block";
+      removeBtn.style.display = "none";
+    });
+  }
 }
 
 function garageHasAccounts() {
@@ -343,9 +469,17 @@ function showLoginScreen(clearForm = true) {
   closePasswordModal();
   closeConfirm(false);
   updateLoginMode();
+  updateGarageBrandingUI();
 
   if (clearForm) {
     document.getElementById("loginForm").reset();
+    tempLoginPhoto = "";
+    const preview = document.getElementById("loginPhotoPreviewImg");
+    const placeholder = document.getElementById("loginPhotoPlaceholderIcon");
+    const removeBtn = document.getElementById("loginPhotoRemoveBtn");
+    if (preview) { preview.src = ""; preview.style.display = "none"; }
+    if (placeholder) placeholder.style.display = "block";
+    if (removeBtn) removeBtn.style.display = "none";
   }
 
   window.setTimeout(() => {
@@ -363,6 +497,7 @@ function updateLoginMode() {
   const subtitle = document.getElementById("loginSubtitle");
   const garageNameGroup = document.getElementById("garageNameGroup");
   const garageOwnerPhoneGroup = document.getElementById("garageOwnerPhoneGroup");
+  const garagePhotoGroup = document.getElementById("garagePhotoGroup");
   const joinNameGroup = document.getElementById("joinNameGroup");
   const joinNameLabel = document.getElementById("joinNameLabel");
   const joinRoleGroup = document.getElementById("joinRoleGroup");
@@ -399,6 +534,7 @@ function updateLoginMode() {
     }
     if (garageNameGroup) garageNameGroup.hidden = false;
     if (garageOwnerPhoneGroup) garageOwnerPhoneGroup.hidden = false;
+    if (garagePhotoGroup) garagePhotoGroup.hidden = false;
     if (joinNameGroup) joinNameGroup.hidden = false;
     if (joinNameLabel) joinNameLabel.textContent = "Owner / Your Full Name";
     if (joinRoleGroup) joinRoleGroup.hidden = true;
@@ -437,6 +573,7 @@ function updateLoginMode() {
     }
     if (garageNameGroup) garageNameGroup.hidden = true;
     if (garageOwnerPhoneGroup) garageOwnerPhoneGroup.hidden = true;
+    if (garagePhotoGroup) garagePhotoGroup.hidden = true;
     if (joinNameGroup) joinNameGroup.hidden = false;
     if (joinNameLabel) joinNameLabel.textContent = "Your Full Name";
     if (joinRoleGroup) joinRoleGroup.hidden = false;
@@ -476,6 +613,7 @@ function updateLoginMode() {
     }
     if (garageNameGroup) garageNameGroup.hidden = true;
     if (garageOwnerPhoneGroup) garageOwnerPhoneGroup.hidden = true;
+    if (garagePhotoGroup) garagePhotoGroup.hidden = true;
     if (joinNameGroup) joinNameGroup.hidden = true;
     if (joinRoleGroup) joinRoleGroup.hidden = true;
     if (confirmGroup) confirmGroup.hidden = true;
@@ -621,6 +759,7 @@ async function handleLoginSubmit(event) {
         phone: ownerPhone,
         tagline: "Professional Vehicle Service, Maintenance & Repair",
         address: "",
+        photo: tempLoginPhoto || "",
       };
 
       saveGarageInfoLocally(newGarageInfo);
@@ -630,6 +769,7 @@ async function handleLoginSubmit(event) {
         fullName,
         phone: ownerPhone,
         garageName,
+        photo: tempLoginPhoto || "",
         role: "Owner",
         passwordHash,
         createdAt: Date.now(),
@@ -651,6 +791,7 @@ async function handleLoginSubmit(event) {
             phone: newGarageInfo.phone,
             tagline: newGarageInfo.tagline,
             address: newGarageInfo.address,
+            photo: newGarageInfo.photo || "",
             familyPasskey: passkey,
             ownerUsername: username,
             createdAt: Date.now(),
@@ -1744,6 +1885,48 @@ function updateActiveMemberUI() {
   if (countEl) countEl.textContent = garageFamilyMembers.length || 1;
 }
 
+let tempProfilePhoto = "";
+
+function setupProfilePhotoListeners() {
+  const chooseBtn = document.getElementById("profilePhotoChooseBtn");
+  const input = document.getElementById("profilePhotoInput");
+  const removeBtn = document.getElementById("profilePhotoRemoveBtn");
+  const previewImg = document.getElementById("profilePhotoPreviewImg");
+  const placeholder = document.getElementById("profilePhotoPlaceholderIcon");
+
+  if (chooseBtn && input) {
+    chooseBtn.addEventListener("click", () => input.click());
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        tempProfilePhoto = await processImageFile(file);
+        if (previewImg) {
+          previewImg.src = tempProfilePhoto;
+          previewImg.style.display = "block";
+        }
+        if (placeholder) placeholder.style.display = "none";
+        if (removeBtn) removeBtn.style.display = "inline-block";
+      } catch (err) {
+        showToast(err.message || "Could not process photo.", "error");
+      }
+    });
+  }
+
+  if (removeBtn) {
+    removeBtn.addEventListener("click", () => {
+      tempProfilePhoto = "";
+      if (input) input.value = "";
+      if (previewImg) {
+        previewImg.src = "";
+        previewImg.style.display = "none";
+      }
+      if (placeholder) placeholder.style.display = "block";
+      removeBtn.style.display = "none";
+    });
+  }
+}
+
 // GARAGE PROFILE MODAL CONTROLLERS
 function openGarageProfileModal() {
   if (!requireAuth()) return;
@@ -1759,6 +1942,22 @@ function openGarageProfileModal() {
   if (phoneInput) phoneInput.value = info.phone || "";
   if (taglineInput) taglineInput.value = info.tagline || "";
   if (addressInput) addressInput.value = info.address || "";
+
+  tempProfilePhoto = info.photo || "";
+  const profilePreview = document.getElementById("profilePhotoPreviewImg");
+  const profilePlaceholder = document.getElementById("profilePhotoPlaceholderIcon");
+  const profileRemoveBtn = document.getElementById("profilePhotoRemoveBtn");
+  if (tempProfilePhoto && profilePreview) {
+    profilePreview.src = tempProfilePhoto;
+    profilePreview.style.display = "block";
+    if (profilePlaceholder) profilePlaceholder.style.display = "none";
+    if (profileRemoveBtn) profileRemoveBtn.style.display = "inline-block";
+  } else if (profilePreview) {
+    profilePreview.src = "";
+    profilePreview.style.display = "none";
+    if (profilePlaceholder) profilePlaceholder.style.display = "block";
+    if (profileRemoveBtn) profileRemoveBtn.style.display = "none";
+  }
 
   const modal = document.getElementById("garageProfileModal");
   if (modal) {
@@ -1801,6 +2000,7 @@ async function saveGarageProfile() {
     phone,
     tagline: tagline || "Professional Vehicle Service, Maintenance & Repair",
     address,
+    photo: tempProfilePhoto || "",
   };
 
   saveGarageInfoLocally(updatedInfo);
@@ -1823,6 +2023,8 @@ async function saveGarageProfile() {
 }
 
 function setupGarageProfileListeners() {
+  setupProfilePhotoListeners();
+
   const profileBtn = document.getElementById("garageProfileBtn");
   if (profileBtn) {
     profileBtn.addEventListener("click", openGarageProfileModal);
