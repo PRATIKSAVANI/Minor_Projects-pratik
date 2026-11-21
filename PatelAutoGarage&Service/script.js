@@ -113,6 +113,7 @@ function processImageFile(file, maxWidth = 300, maxHeight = 300) {
 
 function updateGarageBrandingUI() {
   const info = getGarageInfo();
+  const activeMember = getActiveMember();
   const displayGarageName = (info.garageName && info.garageName.trim()) ? info.garageName.trim() : "Add Your Garage Name";
 
   // 1. Browser Tab Title
