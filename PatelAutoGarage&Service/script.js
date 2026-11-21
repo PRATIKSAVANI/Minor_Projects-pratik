@@ -87,13 +87,17 @@ function processImageFile(file, maxWidth = 300, maxHeight = 300) {
 
 function updateGarageBrandingUI() {
   const info = getGarageInfo();
+  const isAuth = isAuthenticated || Boolean(getActiveMember());
+  const displayGarageName = isAuth
+    ? info.garageName
+    : (info.garageName === "Patel Auto Garage & Service" ? "Auto Garage & Service" : info.garageName);
 
   // 1. Browser Tab Title
-  document.title = `${info.garageName} - Garage Management System`;
+  document.title = `${displayGarageName} - Garage Management System`;
 
   // 2. Login screen title & logo
   const loginTitle = document.getElementById("loginGarageTitle");
-  if (loginTitle) loginTitle.textContent = info.garageName;
+  if (loginTitle) loginTitle.textContent = displayGarageName;
 
   const loginBrandImg = document.getElementById("loginBrandImg");
   const loginBrandIcon = document.getElementById("loginBrandDefaultIcon");
@@ -484,7 +488,9 @@ async function signInWithGoogle() {
       setLoginError("Network connection error. Please verify internet access.");
     } else if (error.code === "auth/unauthorized-domain") {
       const currentHost = window.location.hostname;
-      setLoginError(`Google Sign-In Unauthorized Domain: Firebase Console -> Authentication -> Settings -> Authorized Domains માં આ ડોમેન (${currentHost}) ઉમેરો. અથવા નીચે "Create Free Account" થી એકાઉન્ટ બનાવીને તરત Sign In કરો.`);
+      setLoginError(`Google Sign-In Unauthorized Domain: Firebase Console -> Authentication -> Settings -> Authorized Domains માં આ ડોમેન (${currentHost}) ઉમેરો. અથવા નીચે "New Garage? Create Free Account" થી એકાઉન્ટ બનાવીને તરત Sign In કરો.`);
+    } else if (error.code === "auth/operation-not-allowed") {
+      setLoginError(`Google Sign-In Disabled: Firebase Console -> Authentication -> Sign-in method માં જઈને Google Provider ને Enable (Save) કરો. અથવા નીચે "New Garage? Create Free Account" પર ક્લિક કરીને તમારું એકાઉન્ટ બનાવી લો.`);
     } else {
       setLoginError(error.message || "Failed to sign in with Google.");
     }
