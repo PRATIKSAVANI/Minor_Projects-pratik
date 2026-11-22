@@ -127,13 +127,13 @@ songs.forEach((song, i) => {
 });
 
 // Liked Songs storage
-const LIKED_KEY = "spotify_clone_liked_v2";
+const LIKED_KEY = "spotify_clone_liked_v3";
 function getLikedIndexes() {
   try {
     const saved = JSON.parse(localStorage.getItem(LIKED_KEY));
     if (Array.isArray(saved)) return saved;
   } catch {}
-  return [0, 1, 3, 5, 7, 8]; // default popular liked songs
+  return []; // Start clean - no pre-liked songs!
 }
 function saveLikedIndexes(indexes) {
   localStorage.setItem(LIKED_KEY, JSON.stringify(indexes));
@@ -143,7 +143,7 @@ function isSongLiked(index) {
   return getLikedIndexes().includes(index);
 }
 
-// Built-in mood and main playlists
+// Built-in permanent playlists: ONLY "All songs" and "Liked Songs"
 const defaultPlaylists = [
   {
     id: "all",
@@ -159,52 +159,8 @@ const defaultPlaylists = [
     name: "Liked Songs",
     desc: "Your favorite saved tracks",
     color: "#e85d75",
-    cover: songs[3].coverPath,
-    indexes: getLikedIndexes(),
-    pinned: true,
-  },
-  {
-    id: "love",
-    name: "Late night love",
-    desc: "Slow, warm, and romantic",
-    color: "#e85d75",
-    cover: songs[5].coverPath,
-    indexes: songs
-      .map((s, i) => (s.mood === "love" ? i : -1))
-      .filter((i) => i >= 0),
-    pinned: true,
-  },
-  {
-    id: "bhakti",
-    name: "Bhakti hits",
-    desc: "Sorath, Morya, and divine tracks",
-    color: "#f5a524",
     cover: songs[0].coverPath,
-    indexes: songs
-      .map((s, i) => (s.mood === "bhakti" ? i : -1))
-      .filter((i) => i >= 0),
-    pinned: true,
-  },
-  {
-    id: "friends",
-    name: "Yaari",
-    desc: "The tracks you play with friends",
-    color: "#4c8dff",
-    cover: songs[4].coverPath,
-    indexes: songs
-      .map((s, i) => (s.mood === "friends" ? i : -1))
-      .filter((i) => i >= 0),
-    pinned: true,
-  },
-  {
-    id: "energy",
-    name: "High energy",
-    desc: "Turn the volume up",
-    color: "#b56bff",
-    cover: songs[9].coverPath,
-    indexes: songs
-      .map((s, i) => (s.mood === "energy" ? i : -1))
-      .filter((i) => i >= 0),
+    indexes: getLikedIndexes(),
     pinned: true,
   },
 ];
@@ -213,7 +169,12 @@ const PLAYLISTS_KEY = "spotify_clone_custom_playlists_v2";
 function loadPlaylists() {
   const base = defaultPlaylists.map((p) => {
     if (p.id === "liked-songs") {
-      return { ...p, indexes: getLikedIndexes() };
+      const likedIdxs = getLikedIndexes();
+      return {
+        ...p,
+        indexes: likedIdxs,
+        cover: likedIdxs.length > 0 ? songs[likedIdxs[likedIdxs.length - 1]].coverPath : songs[0].coverPath,
+      };
     }
     return { ...p };
   });
@@ -222,7 +183,13 @@ function loadPlaylists() {
     const custom = JSON.parse(localStorage.getItem(PLAYLISTS_KEY));
     if (Array.isArray(custom)) {
       custom.forEach((cp) => {
-        if (cp && cp.id && cp.name && !base.some((b) => b.id === cp.id)) {
+        if (
+          cp &&
+          cp.id &&
+          cp.name &&
+          !["all", "liked-songs", "love", "bhakti", "friends", "energy"].includes(cp.id) &&
+          !base.some((b) => b.id === cp.id)
+        ) {
           base.push({
             ...cp,
             indexes: Array.isArray(cp.indexes) ? cp.indexes : [],
@@ -287,6 +254,39 @@ const pauseSvg = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 5h4v1
 const speakerSvg = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9zm11.5 3a3.5 3.5 0 0 0-1.8-3.06v6.12A3.5 3.5 0 0 0 15.5 12"/></svg>`;
 const muteSvg = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9zm13.6.4 1.4 1.4-2.2 2.2 2.2 2.2-1.4 1.4-2.2-2.2-2.2 2.2-1.4-1.4 2.2-2.2-2.2-2.2 1.4-1.4 2.2 2.2z"/></svg>`;
 
+const heartOutlineSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+const heartFilledSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="#e85d75" stroke="#e85d75" stroke-width="1"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c2.54 0 4.91 1.28 6.5 3.22C16.59 4.28 18.96 3 21.5 3 24.58 3 27 5.42 27 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+function updateMediaSessionAndTitle() {
+  const song = songs[songIndex];
+  const playlist = playlistById(activePlaylistId);
+  if (!song) return;
+  const isPlaying = !audio.paused && audio.currentTime > 0;
+  document.title = `${isPlaying ? "▶ " : "⏸ "}${song.songName} · Spotify Clone`;
+
+  if ("mediaSession" in navigator) {
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.songName,
+        artist: playlist.name,
+        album: "Spotify Clone",
+        artwork: [
+          { src: song.coverPath, sizes: "300x300", type: "image/jpeg" },
+        ],
+      });
+    } catch {}
+  }
+}
+
 function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return "0:00";
   const min = Math.floor(seconds / 60);
@@ -321,12 +321,16 @@ function paintNowPlaying() {
   if (likeBtn) {
     const isLiked = isSongLiked(songIndex);
     likeBtn.classList.toggle("liked", isLiked);
+    likeBtn.innerHTML = isLiked ? heartFilledSvg : heartOutlineSvg;
     likeBtn.title = isLiked ? "Remove from Liked Songs" : "Save to Liked Songs";
   }
 
   document.querySelectorAll(".song-row").forEach((row) => {
     row.classList.toggle("active", Number(row.dataset.index) === songIndex);
   });
+
+  updateMediaSessionAndTitle();
+  updateHoverCard();
 }
 
 function loadSong(index, autoplay) {
@@ -388,10 +392,13 @@ function previousSong() {
 function toggleLike(index) {
   const currentLiked = getLikedIndexes();
   const pos = currentLiked.indexOf(index);
-  if (pos >= 0) {
+  const wasLiked = pos >= 0;
+  if (wasLiked) {
     currentLiked.splice(pos, 1);
+    showToast(`Removed "${songs[index].songName}" from Liked Songs`);
   } else {
     currentLiked.push(index);
+    showToast(`Added "${songs[index].songName}" to Liked Songs`);
   }
   saveLikedIndexes(currentLiked);
 
@@ -399,9 +406,14 @@ function toggleLike(index) {
   const likedPl = playlists.find((p) => p.id === "liked-songs");
   if (likedPl) {
     likedPl.indexes = currentLiked.slice();
+    if (currentLiked.length > 0) {
+      likedPl.cover = songs[currentLiked[currentLiked.length - 1]].coverPath;
+    }
   }
 
   paintNowPlaying();
+  renderSidebar();
+  renderAlbums();
 
   if (activePlaylistId === "liked-songs") {
     openPlaylist("liked-songs", false);
@@ -409,7 +421,8 @@ function toggleLike(index) {
     document.querySelectorAll(`[data-like="${index}"]`).forEach((btn) => {
       const liked = isSongLiked(index);
       btn.classList.toggle("liked", liked);
-      btn.title = liked ? "Unlike" : "Like";
+      btn.innerHTML = liked ? heartFilledSvg : heartOutlineSvg;
+      btn.title = liked ? "Remove from Liked Songs" : "Save to Liked Songs";
     });
   }
 }
@@ -441,6 +454,22 @@ function renderSongs(indexes) {
   const currentPl = playlistById(activePlaylistId);
   const isCustom = !currentPl.pinned;
 
+  if (activePlaylistId === "liked-songs" && !visible.length && !query) {
+    songList.innerHTML = `
+      <div class="empty-liked-state">
+        <div class="empty-liked-icon">
+          ${heartFilledSvg}
+        </div>
+        <h3>Songs you like will appear here</h3>
+        <p>Save songs by clicking the heart button in your Library or player.</p>
+        <button class="play-cta" id="exploreAllBtn" style="margin-top: 8px;">Explore All Songs</button>
+      </div>`;
+    document.getElementById("exploreAllBtn")?.addEventListener("click", () => {
+      openPlaylist("all");
+    });
+    return;
+  }
+
   if (!visible.length) {
     songList.innerHTML = `<div class="empty">No songs match “${searchSong.value.trim()}”.</div>`;
   } else {
@@ -457,8 +486,8 @@ function renderSongs(indexes) {
               <span class="title">${song.songName}</span>
             </span>
             <span class="time" data-duration="${index}">${timeText}</span>
-            <button class="heart-btn ${isLiked ? "liked" : ""}" data-like="${index}" title="${isLiked ? "Unlike" : "Like"}">
-              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c2.54 0 4.91 1.28 6.5 3.22C16.59 4.28 18.96 3 21.5 3 24.58 3 27 5.42 27 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <button class="heart-btn ${isLiked ? "liked" : ""}" data-like="${index}" title="${isLiked ? "Remove from Liked Songs" : "Save to Liked Songs"}" aria-label="Like song">
+              ${isLiked ? heartFilledSvg : heartOutlineSvg}
             </button>
           </div>`;
       })
@@ -571,14 +600,20 @@ function renderAlbums() {
 
 function renderSidebar() {
   sidePlaylists.innerHTML = playlists
-    .map(
-      (p) => `
+    .map((p) => {
+      const isLiked = p.id === "liked-songs";
+      const iconOrDot = isLiked
+        ? `<span style="display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; background:linear-gradient(135deg, #450af5, #c4efd9); margin-right:2px;">
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c2.54 0 4.91 1.28 6.5 3.22C16.59 4.28 18.96 3 21.5 3 24.58 3 27 5.42 27 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+           </span>`
+        : `<span class="dot" style="background:${p.color}"></span>`;
+      return `
         <button class="side-pl ${p.id === activePlaylistId ? "active" : ""}" data-id="${p.id}">
-            <span class="dot" style="background:${p.color}"></span>
+            ${iconOrDot}
             ${p.name}
         </button>
-    `
-    )
+      `;
+    })
     .join("");
 
   sidePlaylists.querySelectorAll(".side-pl").forEach((btn) => {
@@ -832,6 +867,64 @@ if (deletePlaylistBtn) {
       renderAlbums();
       openPlaylist("all");
     }
+  });
+}
+
+// Player Hover Card (Point 5)
+const playerHoverCard = document.getElementById("playerHoverCard");
+const hoverCardImg = document.getElementById("hoverCardImg");
+const hoverCardTitle = document.getElementById("hoverCardTitle");
+const hoverCardPlaylist = document.getElementById("hoverCardPlaylist");
+const hoverCardStatusText = document.getElementById("hoverCardStatusText");
+const hoverCardPulse = document.getElementById("hoverCardPulse");
+const hoverCardTime = document.getElementById("hoverCardTime");
+
+function updateHoverCard() {
+  const song = songs[songIndex];
+  const playlist = playlistById(activePlaylistId);
+  if (!song) return;
+  if (hoverCardImg) hoverCardImg.src = song.coverPath;
+  if (hoverCardTitle) hoverCardTitle.textContent = song.songName;
+  if (hoverCardPlaylist) hoverCardPlaylist.textContent = `Playlist: ${playlist.name}`;
+  const isPlaying = !audio.paused && audio.currentTime > 0;
+  if (hoverCardStatusText) hoverCardStatusText.textContent = isPlaying ? "Now Playing" : "Paused";
+  if (hoverCardPulse) hoverCardPulse.classList.toggle("paused", !isPlaying);
+  if (hoverCardTime) {
+    const cur = formatTime(audio.currentTime);
+    const dur = formatTime(audio.duration) || durations[songIndex] || "0:00";
+    hoverCardTime.textContent = `${cur} / ${dur}`;
+  }
+}
+
+const playerEl = document.querySelector(".player");
+if (playerEl && playerHoverCard) {
+  playerEl.addEventListener("mouseenter", () => {
+    updateHoverCard();
+    playerHoverCard.classList.add("visible");
+  });
+  playerEl.addEventListener("mouseleave", () => {
+    playerHoverCard.classList.remove("visible");
+  });
+  playerEl.addEventListener("mousemove", () => {
+    updateHoverCard();
+  });
+}
+
+// Seek Tooltip
+const seekTooltip = document.getElementById("seekTooltip");
+if (progressBar && seekTooltip) {
+  progressBar.addEventListener("mousemove", (e) => {
+    if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
+    const rect = progressBar.getBoundingClientRect();
+    const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+    const hoverSeconds = percent * audio.duration;
+    seekTooltip.textContent = formatTime(hoverSeconds);
+    seekTooltip.style.left = `${percent * 100}%`;
+    seekTooltip.classList.add("visible");
+  });
+
+  progressBar.addEventListener("mouseleave", () => {
+    seekTooltip.classList.remove("visible");
   });
 }
 

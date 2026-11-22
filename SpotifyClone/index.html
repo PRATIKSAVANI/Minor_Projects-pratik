@@ -103,6 +103,24 @@
     </main>
   </div>
 
+  <!-- Player Hover Preview Card (Shows on Taskbar / Player hover) -->
+  <div id="playerHoverCard" class="player-hover-card" aria-live="polite">
+    <div class="hover-card-content">
+      <img id="hoverCardImg" src="./covers/Sorath.jpg" alt="">
+      <div class="hover-card-details">
+        <div class="hover-card-status">
+          <span class="status-pulse" id="hoverCardPulse"></span>
+          <span id="hoverCardStatusText">Now Playing</span>
+        </div>
+        <strong id="hoverCardTitle">Sorath</strong>
+        <span id="hoverCardPlaylist" class="hover-card-pl">Playlist: All songs</span>
+        <div class="hover-card-time-row">
+          <span id="hoverCardTime">0:00 / 2:04</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="player">
     <div class="now">
       <img id="nowCover" src="./covers/Sorath.jpg" alt="" />
@@ -111,9 +129,8 @@
         <span id="nowPlaylist">All songs</span>
       </div>
       <button id="likeBtn" class="heart-btn" title="Save to Liked Songs" aria-label="Save to Liked Songs">
-        <svg viewBox="0 0 24 24">
-          <path fill="currentColor"
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c2.54 0 4.91 1.28 6.5 3.22C16.59 4.28 18.96 3 21.5 3 24.58 3 27 5.42 27 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
         </svg>
       </button>
     </div>
@@ -149,7 +166,10 @@
       </div>
       <div class="seek">
         <span id="currentTime">0:00</span>
-        <input type="range" id="myProgressBar" min="0" max="100" value="0" aria-label="Seek" />
+        <div class="progress-wrap">
+          <input type="range" id="myProgressBar" min="0" max="100" value="0" aria-label="Seek" />
+          <div id="seekTooltip" class="seek-tooltip">0:00</div>
+        </div>
         <span id="totalDuration">0:00</span>
       </div>
     </div>
@@ -184,6 +204,8 @@
   </div>
 
   <div id="playlistMenu" class="playlist-menu hidden" aria-label="Add to playlist"></div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="script.js"></script>
 </body>
