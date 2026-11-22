@@ -59,16 +59,14 @@ img {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px 16px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  font-size: 20px;
+  padding: 8px 10px 18px;
 }
 .brand img {
-  width: 36px;
-  height: 36px;
+  height: 38px;
+  width: auto;
+  max-width: 135px;
   object-fit: contain;
+  object-position: left center;
 }
 .side-nav {
   display: grid;
