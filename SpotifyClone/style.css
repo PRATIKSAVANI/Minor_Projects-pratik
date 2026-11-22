@@ -59,14 +59,14 @@ img {
 .brand {
   display: flex;
   align-items: center;
-  padding: 8px 10px 18px;
+  padding: 10px 12px 18px;
 }
 .brand img {
   height: 38px;
   width: auto;
   max-width: 135px;
   object-fit: contain;
-  object-position: left center;
+  display: block;
 }
 .side-nav {
   display: grid;
