@@ -19,7 +19,7 @@
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=4.3">
+    <link rel="stylesheet" href="style.css?v=4.4">
 </head>
 
 <body class="app-locked">
@@ -738,33 +738,30 @@
 
                         <!-- DISCOUNT SECTION -->
                         <div class="discount-box">
-                            <div class="discount-header-row">
-                                <label for="discountAmount" class="discount-label">
-                                    <i class="fa-solid fa-tag"></i>
-                                    <span>Discount / છૂટ (₹)</span>
-                                </label>
-                                <div id="discountBadge" class="discount-applied-badge" style="display: none;">
-                                    <span>Discount:</span>
-                                    <strong id="billDiscountDisplay">-₹0</strong>
+                            <div class="discount-box-content">
+                                <div class="discount-meta">
+                                    <div class="discount-label-row">
+                                        <label for="discountAmount" class="discount-label">
+                                            <i class="fa-solid fa-tag"></i>
+                                            <span>Discount (₹)</span>
+                                        </label>
+                                        <div id="discountBadge" class="discount-applied-badge" style="display: none;">
+                                            <span>Applied:</span>
+                                            <strong id="billDiscountDisplay">-₹0</strong>
+                                        </div>
+                                    </div>
+                                    <small class="discount-subtext">Direct deduction applied to total bill</small>
+                                </div>
+                                <div class="discount-input-container">
+                                    <div class="price-input discount-input-wrapper">
+                                        <span>₹</span>
+                                        <input id="discountAmount" type="number" min="0" max="999999" step="any" placeholder="0" value="0" autocomplete="off">
+                                        <button type="button" id="clearDiscountBtn" class="clear-discount-btn" title="Clear Discount" style="display: none;">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="discount-input-row">
-                                <div class="price-input discount-input-wrapper">
-                                    <span>₹</span>
-                                    <input id="discountAmount" type="number" min="0" max="999999" step="any" placeholder="0" value="0" autocomplete="off">
-                                    <button type="button" id="clearDiscountBtn" class="clear-discount-btn" title="Clear Discount" style="display: none;">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-                                <div class="quick-discount-chips">
-                                    <button type="button" class="quick-disc-btn" data-discount-add="50">+₹50</button>
-                                    <button type="button" class="quick-disc-btn" data-discount-add="100">+₹100</button>
-                                    <button type="button" class="quick-disc-btn" data-discount-add="200">+₹200</button>
-                                    <button type="button" class="quick-disc-btn" data-discount-add="500">+₹500</button>
-                                    <button type="button" class="quick-disc-btn quick-disc-reset" data-discount-set="0">Reset</button>
-                                </div>
-                            </div>
-                            <small class="discount-hint">Example: 1000 ના બિલ પર 300 ઓછા કરવા માટે અહીં 300 લખો (Final bill ₹700 થશે).</small>
                         </div>
 
                         <!-- FINAL GRAND TOTAL -->
@@ -1101,7 +1098,7 @@
                             <div class="modal-discount-row">
                                 <label for="editDiscountAmount">
                                     <i class="fa-solid fa-tag"></i>
-                                    Discount / છૂટ (₹)
+                                    Discount (₹)
                                 </label>
                                 <div class="price-input modal-discount-input">
                                     <span>₹</span>
@@ -1390,7 +1387,7 @@
                     <strong id="printSubtotal">₹0</strong>
                 </div>
                 <div id="printDiscountRow" style="display: none; color: #b45309;">
-                    <span>Discount (છૂટ)</span>
+                    <span>Discount</span>
                     <strong id="printDiscount">-₹0</strong>
                 </div>
                 <div class="print-grand-total">
@@ -1693,7 +1690,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js?v=4.3"></script>
+    <script src="script.js?v=4.4"></script>
 </body>
 
 </html>

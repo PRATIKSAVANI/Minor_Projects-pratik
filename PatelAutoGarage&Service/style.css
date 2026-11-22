@@ -2186,35 +2186,69 @@ tbody tr:hover {
 
 /* Discount Box */
 .discount-box {
-    border: 1px solid rgba(217, 119, 6, 0.25);
+    border: 1px solid rgba(217, 119, 6, 0.22);
     border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%);
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.03) 100%);
+    transition: all 0.2s ease;
 }
 
-.discount-header-row {
+.discount-box:hover {
+    border-color: rgba(217, 119, 6, 0.35);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.04) 100%);
+}
+
+.discount-box-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    gap: 16px;
+}
+
+.discount-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.discount-label-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .discount-label {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--warning-dark);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.discount-label i {
+    font-size: 13px;
+    color: var(--warning-dark);
+}
+
+.discount-subtext {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    line-height: 1.3;
 }
 
 .discount-applied-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: var(--warning-light);
-    color: var(--warning-dark);
-    padding: 3px 10px;
+    gap: 5px;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 10px;
     border-radius: 999px;
     font-size: 11px;
     font-weight: 800;
@@ -2222,99 +2256,86 @@ tbody tr:hover {
 }
 
 .discount-applied-badge strong {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 900;
+    color: #b45309;
 }
 
-.discount-input-row {
+.discount-input-container {
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .discount-input-wrapper {
-    min-width: 170px;
-    max-width: 200px;
+    width: 170px;
     position: relative;
-    border-color: var(--warning);
+    border: 1.5px solid rgba(217, 119, 6, 0.35);
     background: var(--surface);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.discount-input-wrapper:hover {
+    border-color: rgba(217, 119, 6, 0.55);
 }
 
 .discount-input-wrapper:focus-within {
     border-color: var(--warning-dark);
-    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.16);
+    background: var(--surface);
+}
+
+.discount-input-wrapper span {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--warning-dark);
+    font-weight: 800;
+    font-size: 14px;
+    pointer-events: none;
 }
 
 .discount-input-wrapper input {
+    width: 100%;
+    height: 38px;
+    padding-left: 28px;
+    padding-right: 32px;
     font-weight: 800;
     color: var(--warning-dark);
-    font-size: 16px;
-}
-
-.clear-discount-btn {
+    font-size: 15px;
     border: none;
+    outline: none;
     background: transparent;
+    border-radius: 7px;
+}
+
+.discount-input-wrapper .clear-discount-btn {
+    position: absolute;
+    right: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: rgba(148, 163, 184, 0.18);
     color: var(--text-muted);
-    padding: 4px 8px;
-    cursor: pointer;
-    font-size: 13px;
-    border-radius: 4px;
-    transition: all 0.15s ease;
-}
-
-.clear-discount-btn:hover {
-    color: var(--danger);
-    background: var(--danger-light);
-}
-
-.quick-discount-chips {
-    display: flex;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.quick-disc-btn {
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    padding: 6px 11px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
+    justify-content: center;
+    border-radius: 50%;
     cursor: pointer;
+    font-size: 11px;
     transition: all 0.15s ease;
 }
 
-.quick-disc-btn:hover {
-    border-color: var(--warning);
-    background: var(--warning-light);
-    color: var(--warning-dark);
-    transform: translateY(-1px);
-}
-
-.quick-disc-btn:active {
-    transform: translateY(0);
-}
-
-.quick-disc-reset {
-    color: var(--text-muted);
-    border-color: var(--border-light);
-}
-
-.quick-disc-reset:hover {
-    border-color: var(--danger);
-    background: var(--danger-light);
-    color: var(--danger);
-}
-
-.discount-hint {
-    display: block;
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 8px;
-    font-weight: 500;
+.discount-input-wrapper .clear-discount-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+    transform: translateY(-50%) scale(1.1);
 }
 
 /* Final Grand Total Row */
@@ -3282,13 +3303,15 @@ tbody tr:hover {
         gap: 8px;
     }
 
-    .discount-input-row {
+    .discount-box-content {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
+    .discount-input-container,
     .discount-input-wrapper {
-        min-width: 100%;
+        width: 100%;
         max-width: 100%;
     }
 

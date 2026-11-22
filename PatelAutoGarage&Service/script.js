@@ -554,9 +554,9 @@ async function signInWithGoogle() {
       setLoginError("Network connection error. Please verify internet access.");
     } else if (error.code === "auth/unauthorized-domain") {
       const currentHost = window.location.hostname;
-      setLoginError(`Google Sign-In Unauthorized Domain: Firebase Console -> Authentication -> Settings -> Authorized Domains માં આ ડોમેન (${currentHost}) ઉમેરો. અથવા નીચે "New Garage? Create Free Account" થી એકાઉન્ટ બનાવીને તરત Sign In કરો.`);
+      setLoginError(`Google Sign-In Unauthorized Domain: Add this domain (${currentHost}) in Firebase Console -> Authentication -> Settings -> Authorized Domains. Or create an account via "New Garage? Create Free Account" below.`);
     } else if (error.code === "auth/operation-not-allowed") {
-      setLoginError(`Google Sign-In Disabled: Firebase Console -> Authentication -> Sign-in method માં જઈને Google Provider ને Enable (Save) કરો. અથવા નીચે "New Garage? Create Free Account" પર ક્લિક કરીને તમારું એકાઉન્ટ બનાવી લો.`);
+      setLoginError(`Google Sign-In Disabled: Enable Google Provider in Firebase Console -> Authentication -> Sign-in method. Or create an account via "New Garage? Create Free Account" below.`);
     } else {
       setLoginError(error.message || "Failed to sign in with Google.");
     }
@@ -3938,26 +3938,6 @@ function setupDiscountListeners() {
     if (discInput) discInput.value = "0";
     updateDiscountAndTotals();
   });
-
-  document.querySelectorAll("[data-discount-add]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const addVal = Number(btn.dataset.discountAdd) || 0;
-      const current = Number(discInput?.value || 0);
-      const subtotal = getSubtotal();
-      let nextVal = current + addVal;
-      if (subtotal > 0 && nextVal > subtotal) nextVal = subtotal;
-      if (discInput) discInput.value = nextVal;
-      updateDiscountAndTotals();
-    });
-  });
-
-  document.querySelectorAll("[data-discount-set]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const setVal = Number(btn.dataset.discountSet) || 0;
-      if (discInput) discInput.value = setVal;
-      updateDiscountAndTotals();
-    });
-  });
 }
 
 function getPaymentStatus() {
@@ -4612,7 +4592,7 @@ function sendWhatsApp(recordId) {
 
   let billSummaryText = "";
   if (discount > 0) {
-    billSummaryText = `*Subtotal:* ${money(subtotal)}\n*Discount (છૂટ):* -${money(discount)}\n*Total Bill:* ${money(record.totalAmount)}`;
+    billSummaryText = `*Subtotal:* ${money(subtotal)}\n*Discount:* -${money(discount)}\n*Total Bill:* ${money(record.totalAmount)}`;
   } else {
     billSummaryText = `*Total Bill:* ${money(record.totalAmount)}`;
   }

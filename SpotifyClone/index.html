@@ -1,258 +1,191 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spotify Clone · PN</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="app">
-      <aside class="sidebar">
-        <div class="brand">
-          <img src="./covers/Spotifylogo.png" alt="Spotify" />
-          <span>Spotify</span>
-        </div>
-        <nav class="side-nav">
-          <button class="nav-item active" data-view="home" id="homeBtn">
-            <svg viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M12 3.2 3 10.4V21h6.2v-6.2h5.6V21H21V10.4z"
-              />
-            </svg>
-            Home
-          </button>
-          <button class="nav-item" data-view="library" id="libraryBtn">
-            <svg viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M4 5h3v14H4zm5 0h3v14H9zm5 0h6v14h-6z"
-              />
-            </svg>
-            Library
-          </button>
-        </nav>
-        <div class="side-label">
-          <span>Playlists</span>
-          <button
-            id="createPlaylistBtn"
-            class="create-playlist"
-            title="Create playlist"
-            aria-label="Create playlist"
-          >
-            +
-          </button>
-        </div>
-        <div id="sidePlaylists" class="side-playlists"></div>
-      </aside>
 
-      <main>
-        <header class="topbar">
-          <div class="searchBox">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M10.5 3a7.5 7.5 0 0 1 5.97 12.06l4.24 4.23-1.42 1.42-4.23-4.24A7.5 7.5 0 1 1 10.5 3m0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11"
-              />
-            </svg>
-            <input
-              type="text"
-              id="searchSong"
-              placeholder="What do you want to play?"
-              autocomplete="off"
-            />
-          </div>
-          <div class="top-pills">
-            <button class="pill active" data-view="home">Home</button>
-            <button class="pill" data-view="library">Library</button>
-          </div>
-        </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spotify Clone · PN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-        <section id="homeView" class="view">
-          <div class="hero" id="heroCard">
-            <p class="eyebrow" id="greeting">Good evening</p>
-            <h1>Play something<br />that hits.</h1>
-            <p class="hero-copy">
-              Your library, grouped into playlists. Search, shuffle, and keep
-              the bar running.
-            </p>
-            <button class="play-cta" id="heroPlay">Play library</button>
-          </div>
-          <h2 class="section-title">Made for you</h2>
-          <div id="albumGrid" class="album-grid"></div>
-        </section>
-
-        <section id="libraryView" class="view hidden">
-          <div class="library-head">
-            <div>
-              <p class="eyebrow" id="playlistKicker">Playlist</p>
-              <h2 id="playlistTitle">All songs</h2>
-              <p class="muted" id="playlistMeta"></p>
-            </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <button id="deletePlaylistBtn" class="icon-btn delete-pl-btn hidden" title="Delete playlist" aria-label="Delete playlist">
-                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              </button>
-              <button class="play-cta" id="playlistPlay">Play</button>
-            </div>
-          </div>
-          <div class="song-table">
-            <div class="song-head">
-              <span>#</span>
-              <span>Title</span>
-              <span style="text-align: right;">Time</span>
-              <span></span>
-            </div>
-            <div id="songList"></div>
-          </div>
-        </section>
-      </main>
-    </div>
-
-    <footer class="player">
-      <div class="now">
-        <img id="nowCover" src="./covers/Sorath.jpg" alt="" />
-        <div>
-          <strong id="masterSongName">Sorath</strong>
-          <span id="nowPlaylist">All songs</span>
-        </div>
-        <button id="likeBtn" class="heart-btn" title="Save to Liked Songs" aria-label="Save to Liked Songs">
-          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c2.54 0 4.91 1.28 6.5 3.22C16.59 4.28 18.96 3 21.5 3 24.58 3 27 5.42 27 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="./covers/Spotifylogo.png" alt="Spotify" />
+        <span>Spotify</span>
+      </div>
+      <nav class="side-nav">
+        <button class="nav-item active" data-view="home" id="homeBtn">
+          <svg viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12 3.2 3 10.4V21h6.2v-6.2h5.6V21H21V10.4z" />
+          </svg>
+          Home
+        </button>
+        <button class="nav-item" data-view="library" id="libraryBtn">
+          <svg viewBox="0 0 24 24">
+            <path fill="currentColor" d="M4 5h3v14H4zm5 0h3v14H9zm5 0h6v14h-6z" />
+          </svg>
+          Library
+        </button>
+      </nav>
+      <div class="side-label">
+        <span>Playlists</span>
+        <button id="createPlaylistBtn" class="create-playlist" title="Create playlist" aria-label="Create playlist">
+          +
         </button>
       </div>
+      <div id="sidePlaylists" class="side-playlists"></div>
+    </aside>
 
-      <div class="transport">
-        <div class="controls">
-          <button
-            id="shuffleBtn"
-            class="icon-btn"
-            title="Shuffle"
-            aria-label="Shuffle"
-          >
-            <svg viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M14.8 7.2h2.4l-2.2-2.2 1.4-1.4L20.6 8l-4.2 4.4-1.4-1.4 2.2-2.2h-2.1c-1.3 0-2.1.5-2.8 1.4l-.8 1L10 9.6c1.1-1.4 2.4-2.4 4.8-2.4m-4.6 6.1c.7.9 1.5 1.5 2.8 1.5h2.1l-2.2-2.2 1.4-1.4L18.5 16l-4.2 4.4-1.4-1.4 2.2-2.2h-2.4c-2.1 0-3.4-1-4.5-2.4l.8-1.1zm-6.4-6.5h3.2l1.6 2.1-1.5 1.1L5.4 7.2H3.8zm1.6 9.8-1.6-2.1 1.5-1.1 1.7 2.2H3.8v1h3.2z"
-              />
-            </svg>
-          </button>
-          <button id="previous" class="icon-btn" aria-label="Previous">
-            <svg viewBox="0 0 24 24">
-              <path fill="currentColor" d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
-            </svg>
-          </button>
-          <button id="masterPlay" class="play-btn" aria-label="Play">
-            <svg viewBox="0 0 24 24">
-              <path fill="currentColor" d="M8 5v14l11-7z" />
-            </svg>
-          </button>
-          <button id="next" class="icon-btn" aria-label="Next">
-            <svg viewBox="0 0 24 24">
-              <path fill="currentColor" d="M6 18l8.5-6L6 6zm10 0V6h2v12z" />
-            </svg>
-          </button>
-          <button
-            id="repeatBtn"
-            class="icon-btn"
-            title="Repeat"
-            aria-label="Repeat"
-          >
-            <svg viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"
-              />
-            </svg>
-          </button>
+    <main>
+      <header class="topbar">
+        <div class="searchBox">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor"
+              d="M10.5 3a7.5 7.5 0 0 1 5.97 12.06l4.24 4.23-1.42 1.42-4.23-4.24A7.5 7.5 0 1 1 10.5 3m0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11" />
+          </svg>
+          <input type="text" id="searchSong" placeholder="What do you want to play?" autocomplete="off" />
         </div>
-        <div class="seek">
-          <span id="currentTime">0:00</span>
-          <input
-            type="range"
-            id="myProgressBar"
-            min="0"
-            max="100"
-            value="0"
-            aria-label="Seek"
-          />
-          <span id="totalDuration">0:00</span>
+        <div class="top-pills">
+          <button class="pill active" data-view="home">Home</button>
+          <button class="pill" data-view="library">Library</button>
         </div>
+      </header>
+
+      <section id="homeView" class="view">
+        <div class="hero" id="heroCard">
+          <p class="eyebrow" id="greeting">Good evening</p>
+          <h1>Play something<br />that hits.</h1>
+          <p class="hero-copy">
+            Your library, grouped into playlists. Search, shuffle, and keep
+            the bar running.
+          </p>
+          <button class="play-cta" id="heroPlay">Play library</button>
+        </div>
+        <h2 class="section-title">Made for you</h2>
+        <div id="albumGrid" class="album-grid"></div>
+      </section>
+
+      <section id="libraryView" class="view hidden">
+        <div class="library-head">
+          <div>
+            <p class="eyebrow" id="playlistKicker">Playlist</p>
+            <h2 id="playlistTitle">All songs</h2>
+            <p class="muted" id="playlistMeta"></p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button id="deletePlaylistBtn" class="icon-btn delete-pl-btn hidden" title="Delete playlist"
+              aria-label="Delete playlist">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor"
+                  d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+              </svg>
+            </button>
+            <button class="play-cta" id="playlistPlay">Play</button>
+          </div>
+        </div>
+        <div class="song-table">
+          <div class="song-head">
+            <span>#</span>
+            <span>Title</span>
+            <span style="text-align: right;">Time</span>
+            <span></span>
+          </div>
+          <div id="songList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="player">
+    <div class="now">
+      <img id="nowCover" src="./covers/Sorath.jpg" alt="" />
+      <div>
+        <strong id="masterSongName">Sorath</strong>
+        <span id="nowPlaylist">All songs</span>
       </div>
+      <button id="likeBtn" class="heart-btn" title="Save to Liked Songs" aria-label="Save to Liked Songs">
+        <svg viewBox="0 0 24 24">
+          <path fill="currentColor"
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c2.54 0 4.91 1.28 6.5 3.22C16.59 4.28 18.96 3 21.5 3 24.58 3 27 5.42 27 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+        </svg>
+      </button>
+    </div>
 
-      <div class="volumeControl">
-        <button id="volumeIcon" class="icon-btn" aria-label="Mute">
+    <div class="transport">
+      <div class="controls">
+        <button id="shuffleBtn" class="icon-btn" title="Shuffle" aria-label="Shuffle">
           <svg viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M4 9v6h4l5 4V5L8 9zm11.5 3a3.5 3.5 0 0 0-1.8-3.06v6.12A3.5 3.5 0 0 0 15.5 12"
-            />
+            <path fill="currentColor"
+              d="M14.8 7.2h2.4l-2.2-2.2 1.4-1.4L20.6 8l-4.2 4.4-1.4-1.4 2.2-2.2h-2.1c-1.3 0-2.1.5-2.8 1.4l-.8 1L10 9.6c1.1-1.4 2.4-2.4 4.8-2.4m-4.6 6.1c.7.9 1.5 1.5 2.8 1.5h2.1l-2.2-2.2 1.4-1.4L18.5 16l-4.2 4.4-1.4-1.4 2.2-2.2h-2.4c-2.1 0-3.4-1-4.5-2.4l.8-1.1zm-6.4-6.5h3.2l1.6 2.1-1.5 1.1L5.4 7.2H3.8zm1.6 9.8-1.6-2.1 1.5-1.1 1.7 2.2H3.8v1h3.2z" />
           </svg>
         </button>
-        <input
-          type="range"
-          id="volumeBar"
-          min="0"
-          max="100"
-          value="80"
-          aria-label="Volume"
-        />
-      </div>
-    </footer>
-
-    <div
-      id="playlistModal"
-      class="modal hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modalTitle"
-    >
-      <form id="playlistForm" class="modal-card">
-        <button
-          type="button"
-          id="closePlaylistModal"
-          class="modal-close"
-          aria-label="Close"
-        >
-          ×
+        <button id="previous" class="icon-btn" aria-label="Previous">
+          <svg viewBox="0 0 24 24">
+            <path fill="currentColor" d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+          </svg>
         </button>
-        <p class="eyebrow">New playlist</p>
-        <h2 id="modalTitle">Create playlist</h2>
-        <label>
-          Name
-          <input
-            id="playlistName"
-            type="text"
-            maxlength="40"
-            placeholder="My playlist"
-            required
-          />
-        </label>
-        <label>
-          Description
-          <input
-            id="playlistDesc"
-            type="text"
-            maxlength="80"
-            placeholder="Add a short description"
-          />
-        </label>
-        <button type="submit" class="play-cta">Create playlist</button>
-      </form>
+        <button id="masterPlay" class="play-btn" aria-label="Play">
+          <svg viewBox="0 0 24 24">
+            <path fill="currentColor" d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+        <button id="next" class="icon-btn" aria-label="Next">
+          <svg viewBox="0 0 24 24">
+            <path fill="currentColor" d="M6 18l8.5-6L6 6zm10 0V6h2v12z" />
+          </svg>
+        </button>
+        <button id="repeatBtn" class="icon-btn" title="Repeat" aria-label="Repeat">
+          <svg viewBox="0 0 24 24">
+            <path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z" />
+          </svg>
+        </button>
+      </div>
+      <div class="seek">
+        <span id="currentTime">0:00</span>
+        <input type="range" id="myProgressBar" min="0" max="100" value="0" aria-label="Seek" />
+        <span id="totalDuration">0:00</span>
+      </div>
     </div>
 
-    <div
-      id="playlistMenu"
-      class="playlist-menu hidden"
-      aria-label="Add to playlist"
-    ></div>
+    <div class="volumeControl">
+      <button id="volumeIcon" class="icon-btn" aria-label="Mute">
+        <svg viewBox="0 0 24 24">
+          <path fill="currentColor" d="M4 9v6h4l5 4V5L8 9zm11.5 3a3.5 3.5 0 0 0-1.8-3.06v6.12A3.5 3.5 0 0 0 15.5 12" />
+        </svg>
+      </button>
+      <input type="range" id="volumeBar" min="0" max="100" value="80" aria-label="Volume" />
+    </div>
+  </footer>
 
-    <script src="script.js"></script>
-  </body>
+  <div id="playlistModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form id="playlistForm" class="modal-card">
+      <button type="button" id="closePlaylistModal" class="modal-close" aria-label="Close">
+        ×
+      </button>
+      <p class="eyebrow">New playlist</p>
+      <h2 id="modalTitle">Create playlist</h2>
+      <label>
+        Name
+        <input id="playlistName" type="text" maxlength="40" placeholder="My playlist" required />
+      </label>
+      <label>
+        Description
+        <input id="playlistDesc" type="text" maxlength="80" placeholder="Add a short description" />
+      </label>
+      <button type="submit" class="play-cta">Create playlist</button>
+    </form>
+  </div>
+
+  <div id="playlistMenu" class="playlist-menu hidden" aria-label="Add to playlist"></div>
+
+  <script src="script.js"></script>
+</body>
+
 </html>
