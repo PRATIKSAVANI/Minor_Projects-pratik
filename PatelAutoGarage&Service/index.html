@@ -3,9 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
 
-    <title>PatelAutoGarage&Service - Garage Management System</title>
+    <title>PatelAutoGarage&Service</title>
 
     <meta name="description"
         content="PatelAutoGarage&Service daily records, billing, vehicle service, day history and multi-day garage management.">
@@ -17,19 +18,35 @@
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="dns-prefetch" href="https://apis.google.com">
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=5.2">
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=5.3">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=5.3">
+    <link rel="shortcut icon" href="favicon.ico?v=5.3">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=5.3">
+    <link rel="icon" type="image/png" sizes="192x192" href="logo-192.png?v=5.3">
+
+    <link rel="stylesheet" href="style.css?v=5.3">
 </head>
 
 <body class="app-locked">
     <!-- APP AUTH LOADING OVERLAY (Zero-Flicker single source of truth) -->
-    <div id="authLoadingOverlay" style="position:fixed; inset:0; z-index:99999; background:rgba(15,23,42,0.96); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; color:#fff; backdrop-filter:blur(8px);">
-        <div style="width:48px; height:48px; border:4px solid rgba(255,255,255,0.15); border-top-color:#38bdf8; border-radius:50%; animation:authSpin 0.8s linear infinite;"></div>
-        <div style="font-weight:600; font-size:15px; color:#e2e8f0; font-family:'Inter', sans-serif;" id="authLoadingText">Verifying garage account...</div>
+    <div id="authLoadingOverlay"
+        style="position:fixed; inset:0; z-index:99999; background:rgba(15,23,42,0.96); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; color:#fff; backdrop-filter:blur(8px);">
+        <div
+            style="width:48px; height:48px; border:4px solid rgba(255,255,255,0.15); border-top-color:#38bdf8; border-radius:50%; animation:authSpin 0.8s linear infinite;">
+        </div>
+        <div style="font-weight:600; font-size:15px; color:#e2e8f0; font-family:'Inter', sans-serif;"
+            id="authLoadingText">Verifying garage account...</div>
     </div>
     <style>
-    @keyframes authSpin { to { transform: rotate(360deg); } }
+        @keyframes authSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 
     <noscript>
@@ -44,7 +61,8 @@
         <div class="login-card">
             <div class="login-brand">
                 <div class="brand-icon brand-icon-clickable" id="loginBrandIcon" title="Click to Change Logo / Photo">
-                    <img id="loginBrandImg" src="" alt="Garage Logo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
+                    <img id="loginBrandImg" src="" alt="Garage Logo"
+                        style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
                     <i class="fa-solid fa-screwdriver-wrench" id="loginBrandDefaultIcon"></i>
                     <div class="brand-icon-edit-badge" title="Change Photo"><i class="fa-solid fa-camera"></i></div>
                 </div>
@@ -59,12 +77,22 @@
 
             <!-- PROMINENT GOOGLE SIGN IN BUTTON -->
             <div class="google-auth-wrap">
-                <button type="button" id="googleSignInBtn" class="btn-google-login" title="Sign in with your Google account">
-                    <svg class="google-icon" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z" fill="#4285F4"/>
-                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-                        <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
-                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                <button type="button" id="googleSignInBtn" class="btn-google-login"
+                    title="Sign in with your Google account">
+                    <svg class="google-icon" width="18" height="18" viewBox="0 0 18 18"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"
+                            fill="#4285F4" />
+                        <path
+                            d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+                            fill="#34A853" />
+                        <path
+                            d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"
+                            fill="#FBBC05" />
+                        <path
+                            d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"
+                            fill="#EA4335" />
                     </svg>
                     <span>Continue with Google</span>
                 </button>
@@ -105,8 +133,8 @@
                         <i class="fa-solid fa-key"></i>
                         <input id="loginPassword" name="password" type="password" maxlength="64" minlength="4"
                             placeholder="Enter password" autocomplete="current-password" required>
-                        <button type="button" id="togglePasswordBtn" class="password-toggle"
-                            title="Show password" aria-label="Show password" aria-pressed="false">
+                        <button type="button" id="togglePasswordBtn" class="password-toggle" title="Show password"
+                            aria-label="Show password" aria-pressed="false">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                     </div>
@@ -120,10 +148,13 @@
                 </button>
 
                 <div class="login-footer-links" id="loginFooterLinks">
-                    <button type="button" id="toggleRegisterModeBtn" class="login-text-link" style="color:var(--primary); font-weight:700;">
-                        <i class="fa-solid fa-plus-circle"></i> <span id="toggleRegisterText">New Garage? Create Free Account</span>
+                    <button type="button" id="toggleRegisterModeBtn" class="login-text-link"
+                        style="color:var(--primary); font-weight:700;">
+                        <i class="fa-solid fa-plus-circle"></i> <span id="toggleRegisterText">New Garage? Create Free
+                            Account</span>
                     </button>
-                    <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; margin-top:4px;">
+                    <div
+                        style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; margin-top:4px;">
                         <button type="button" id="forgotPasswordBtn" class="login-text-link">
                             <i class="fa-solid fa-key"></i> Forgot Password?
                         </button>
@@ -143,15 +174,18 @@
         <header class="topbar">
             <div class="topbar-inner">
                 <div class="brand">
-                    <div class="brand-icon brand-icon-clickable" id="topbarBrandIcon" title="Click to Change Logo / Photo">
-                        <img id="topbarBrandImg" src="" alt="Garage Logo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
+                    <div class="brand-icon brand-icon-clickable" id="topbarBrandIcon"
+                        title="Click to Change Logo / Photo">
+                        <img id="topbarBrandImg" src="" alt="Garage Logo"
+                            style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;">
                         <i class="fa-solid fa-screwdriver-wrench" id="topbarBrandDefaultIcon"></i>
                         <div class="brand-icon-edit-badge" title="Change Photo"><i class="fa-solid fa-camera"></i></div>
                     </div>
                     <div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <h1 id="topbarGarageName">Patel Auto Garage & Service</h1>
-                            <button type="button" id="topbarEditGarageNameBtn" class="btn-icon-inline" title="Edit Garage Name">
+                            <button type="button" id="topbarEditGarageNameBtn" class="btn-icon-inline"
+                                title="Edit Garage Name">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
                         </div>
@@ -165,21 +199,11 @@
                         <span id="todayLabel">Today</span>
                     </div>
 
-                    <button type="button" id="garageProfileBtn" class="btn btn-light" title="Garage Name, Owner & Info Settings">
+                    <button type="button" id="garageProfileBtn" class="btn btn-light"
+                        title="Garage Name, Owner & Info Settings">
                         <i class="fa-solid fa-store"></i>
                         <span>Garage Profile</span>
                     </button>
-
-                    <div class="user-chip" id="topbarUserChip" title="Click to view/edit Garage Profile">
-                        <div class="user-chip-avatar" id="topbarUserAvatarBox">
-                            <img id="topbarUserImg" src="" alt="Profile" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
-                            <i class="fa-solid fa-circle-user" id="topbarUserDefaultIcon"></i>
-                        </div>
-                        <div class="user-chip-meta">
-                            <strong id="topbarMemberName">Owner</strong>
-                            <small id="topbarMemberRole">Admin</small>
-                        </div>
-                    </div>
 
                     <button type="button" id="themeToggleBtn" class="btn btn-light" title="Toggle dark/light theme">
                         <i class="fa-solid fa-moon"></i>
@@ -187,7 +211,8 @@
                     </button>
 
                     <div class="dropdown">
-                        <button type="button" id="backupMenuBtn" class="btn btn-light" title="Data Backup &amp; Restore">
+                        <button type="button" id="backupMenuBtn" class="btn btn-light"
+                            title="Data Backup &amp; Restore">
                             <i class="fa-solid fa-database"></i>
                             <span>Backup &amp; Export</span>
                             <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
@@ -219,6 +244,18 @@
                         <i class="fa-solid fa-right-from-bracket"></i>
                         <span>Logout</span>
                     </button>
+
+                    <div class="user-chip" id="topbarUserChip" title="Click to view/edit Garage Profile">
+                        <div class="user-chip-avatar" id="topbarUserAvatarBox">
+                            <img id="topbarUserImg" src="" alt="Profile"
+                                style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                            <i class="fa-solid fa-circle-user" id="topbarUserDefaultIcon"></i>
+                        </div>
+                        <div class="user-chip-meta">
+                            <strong id="topbarMemberName">Owner</strong>
+                            <small id="topbarMemberRole">Admin</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -234,7 +271,8 @@
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <h2 id="heroOwnerName">GARAGE OWNER</h2>
-                        <button type="button" id="heroEditOwnerBtn" class="btn-icon-inline-hero" title="Edit Owner Name">
+                        <button type="button" id="heroEditOwnerBtn" class="btn-icon-inline-hero"
+                            title="Edit Owner Name">
                             <i class="fa-solid fa-pen"></i>
                         </button>
                     </div>
@@ -297,7 +335,8 @@
 
                             <div class="date-picker-wrap">
                                 <i class="fa-regular fa-calendar"></i>
-                                <input type="date" id="activeDatePicker" class="active-date-picker" title="Select Working Date">
+                                <input type="date" id="activeDatePicker" class="active-date-picker"
+                                    title="Select Working Date">
                             </div>
 
                             <button type="button" id="nextDayBtn" class="btn btn-nav" title="Go to Next Day">
@@ -305,7 +344,8 @@
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
 
-                            <button type="button" id="jumpTodayBtn" class="btn btn-nav btn-nav-today" title="Jump to Today">
+                            <button type="button" id="jumpTodayBtn" class="btn btn-nav btn-nav-today"
+                                title="Jump to Today">
                                 <i class="fa-solid fa-clock-rotate-left"></i>
                                 Today
                             </button>
@@ -335,7 +375,8 @@
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
 
-                            <button type="button" id="jumpThisWeekBtn" class="btn btn-nav btn-nav-today" title="Jump to This Week">
+                            <button type="button" id="jumpThisWeekBtn" class="btn btn-nav btn-nav-today"
+                                title="Jump to This Week">
                                 <i class="fa-solid fa-clock-rotate-left"></i>
                                 This Week
                             </button>
@@ -384,7 +425,8 @@
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
 
-                            <button type="button" id="jumpThisMonthBtn" class="btn btn-nav btn-nav-today" title="Jump to Current Month">
+                            <button type="button" id="jumpThisMonthBtn" class="btn btn-nav btn-nav-today"
+                                title="Jump to Current Month">
                                 <i class="fa-solid fa-clock-rotate-left"></i>
                                 This Month
                             </button>
@@ -419,7 +461,8 @@
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
 
-                            <button type="button" id="jumpThisYearBtn" class="btn btn-nav btn-nav-today" title="Jump to Current Year">
+                            <button type="button" id="jumpThisYearBtn" class="btn btn-nav btn-nav-today"
+                                title="Jump to Current Year">
                                 <i class="fa-solid fa-clock-rotate-left"></i>
                                 Current Year
                             </button>
@@ -477,7 +520,8 @@
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <div>
                         <strong>Historical Date Mode: <span id="historicalDateLabel">19 Sep 2026</span></strong>
-                        <span>Any new job cards or expenses you add below will be saved specifically for this past date in the shared database.</span>
+                        <span>Any new job cards or expenses you add below will be saved specifically for this past date
+                            in the shared database.</span>
                     </div>
                 </div>
                 <button type="button" id="bannerJumpTodayBtn" class="btn btn-banner-jump">
@@ -492,7 +536,8 @@
                         <span class="section-label" id="dashboardScopeLabel">DAILY PERFORMANCE</span>
                         <h3 id="dashboardStatsHeading">Summary for Today</h3>
                     </div>
-                    <div class="alltime-mini-badge" title="Total pending balance from all customers across entire history">
+                    <div class="alltime-mini-badge"
+                        title="Total pending balance from all customers across entire history">
                         <i class="fa-solid fa-vault"></i>
                         <span>All-Time Market Pending: <strong id="statAllTimePending">₹0</strong></span>
                     </div>
@@ -626,7 +671,8 @@
                         <label for="custName">Customer Name</label>
                         <div class="input-wrap">
                             <i class="fa-solid fa-user"></i>
-                            <input id="custName" type="text" maxlength="60" placeholder="Enter customer name" autocomplete="off">
+                            <input id="custName" type="text" maxlength="60" placeholder="Enter customer name"
+                                autocomplete="off">
                         </div>
                     </div>
 
@@ -643,7 +689,8 @@
                         <label for="vehicleNo">Vehicle Number</label>
                         <div class="input-wrap">
                             <i class="fa-solid fa-id-card"></i>
-                            <input id="vehicleNo" type="text" maxlength="15" placeholder="GJ01AB1234" autocomplete="off">
+                            <input id="vehicleNo" type="text" maxlength="15" placeholder="GJ01AB1234"
+                                autocomplete="off">
                         </div>
                     </div>
 
@@ -651,13 +698,15 @@
                         <label for="vehicleModel">Vehicle Model</label>
                         <div class="input-wrap">
                             <i class="fa-solid fa-car-side"></i>
-                            <input id="vehicleModel" type="text" maxlength="40" placeholder="e.g. Swift, Activa, Splendor" autocomplete="off">
+                            <input id="vehicleModel" type="text" maxlength="40"
+                                placeholder="e.g. Swift, Activa, Splendor" autocomplete="off">
                         </div>
                     </div>
                 </div>
 
                 <div class="form-requirements">
-                    <small class="help-text"><i class="fa-solid fa-info-circle"></i> At least one identifier is required (Name, Phone, Vehicle Number, or Model)</small>
+                    <small class="help-text"><i class="fa-solid fa-info-circle"></i> At least one identifier is required
+                        (Name, Phone, Vehicle Number, or Model)</small>
                 </div>
 
                 <!-- SERVICE & PARTS TABLE -->
@@ -676,7 +725,8 @@
                     <div class="item-input-grid">
                         <div class="form-group">
                             <label for="partName">Description</label>
-                            <input id="partName" type="text" maxlength="80" placeholder="e.g. Engine Oil, Brake Shoe, Labour Charge">
+                            <input id="partName" type="text" maxlength="80"
+                                placeholder="e.g. Engine Oil, Brake Shoe, Labour Charge">
                         </div>
 
                         <div class="form-group">
@@ -721,7 +771,8 @@
                     <div class="billing-summary-card">
                         <div class="billing-summary-header">
                             <div class="summary-metric">
-                                <span class="summary-metric-label"><i class="fa-solid fa-screwdriver-wrench"></i> Items Added</span>
+                                <span class="summary-metric-label"><i class="fa-solid fa-screwdriver-wrench"></i> Items
+                                    Added</span>
                                 <strong id="summaryItemCount" class="summary-metric-value">0</strong>
                             </div>
                             <div class="summary-metric">
@@ -749,8 +800,10 @@
                                 <div class="discount-input-container">
                                     <div class="price-input discount-input-wrapper">
                                         <span>₹</span>
-                                        <input id="discountAmount" type="number" min="0" max="999999" step="any" placeholder="0" value="0" autocomplete="off">
-                                        <button type="button" id="clearDiscountBtn" class="clear-discount-btn" title="Clear Discount" style="display: none;">
+                                        <input id="discountAmount" type="number" min="0" max="999999" step="any"
+                                            placeholder="0" value="0" autocomplete="off">
+                                        <button type="button" id="clearDiscountBtn" class="clear-discount-btn"
+                                            title="Clear Discount" style="display: none;">
                                             <i class="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
@@ -819,7 +872,8 @@
                             <span>₹</span>
                             <input id="amountReceived" type="number" min="0" max="999999" step="0.01" placeholder="0">
                         </div>
-                        <small class="help-text">Leave empty to auto-fill: full amount for Cash/UPI, ₹0 for Pending.</small>
+                        <small class="help-text">Leave empty to auto-fill: full amount for Cash/UPI, ₹0 for
+                            Pending.</small>
                     </div>
                     <div class="balance-card">
                         <span>Balance Due</span>
@@ -848,7 +902,8 @@
                             <i class="fa-solid fa-wallet"></i>
                             Daily Garage Expenses
                         </h2>
-                        <p>Track spare parts purchases, shop utilities, labour or tea expenses for <strong id="expenseDateLabel">Today</strong>.</p>
+                        <p>Track spare parts purchases, shop utilities, labour or tea expenses for <strong
+                                id="expenseDateLabel">Today</strong>.</p>
                     </div>
                     <div class="expense-total-badge">
                         <span>Day Expenses:</span>
@@ -860,7 +915,8 @@
                     <form id="expenseForm" class="expense-input-grid" onsubmit="return false;">
                         <div class="form-group">
                             <label for="expenseDesc">Expense Description</label>
-                            <input type="text" id="expenseDesc" placeholder="e.g. Engine Oil bulk stock, Shop electricity, Chai/Tea" maxlength="80">
+                            <input type="text" id="expenseDesc"
+                                placeholder="e.g. Engine Oil bulk stock, Shop electricity, Chai/Tea" maxlength="80">
                         </div>
 
                         <div class="form-group">
@@ -878,7 +934,8 @@
                             <label for="expenseAmount">Amount (₹)</label>
                             <div class="price-input">
                                 <span>₹</span>
-                                <input type="number" id="expenseAmount" min="1" max="999999" step="0.01" placeholder="0">
+                                <input type="number" id="expenseAmount" min="1" max="999999" step="0.01"
+                                    placeholder="0">
                             </div>
                         </div>
 
@@ -1096,7 +1153,8 @@
                                 </label>
                                 <div class="price-input modal-discount-input">
                                     <span>₹</span>
-                                    <input id="editDiscountAmount" type="number" min="0" max="999999" step="any" placeholder="0" value="0">
+                                    <input id="editDiscountAmount" type="number" min="0" max="999999" step="any"
+                                        placeholder="0" value="0">
                                 </div>
                             </div>
 
@@ -1167,7 +1225,8 @@
                             </div>
                             <div>
                                 <h4>Connect Brother's Device in 1 Click</h4>
-                                <p>Send this link to your brother via WhatsApp. When opened on his phone or laptop, it connects automatically to the same live database.</p>
+                                <p>Send this link to your brother via WhatsApp. When opened on his phone or laptop, it
+                                    connects automatically to the same live database.</p>
                             </div>
                         </div>
                         <button type="button" id="copyFamilyShareLinkBtn" class="btn btn-save">
@@ -1179,11 +1238,14 @@
                     <div class="family-passkey-card">
                         <div class="passkey-details">
                             <div>
-                                <label for="familyPasskeyInput"><strong>Garage Family Security Passkey (PIN)</strong></label>
-                                <p class="passkey-hint">Share this PIN with your brother or family members so they can join from their own phone or laptop.</p>
+                                <label for="familyPasskeyInput"><strong>Garage Family Security Passkey
+                                        (PIN)</strong></label>
+                                <p class="passkey-hint">Share this PIN with your brother or family members so they can
+                                    join from their own phone or laptop.</p>
                             </div>
                             <div class="passkey-display-group">
-                                <input type="text" id="familyPasskeyInput" class="passkey-code" maxlength="8" readonly value="123456">
+                                <input type="text" id="familyPasskeyInput" class="passkey-code" maxlength="8" readonly
+                                    value="123456">
                                 <button type="button" id="editFamilyPasskeyBtn" class="btn btn-light btn-sm">
                                     <i class="fa-solid fa-pen-to-square"></i> Change PIN
                                 </button>
@@ -1223,11 +1285,13 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="newMemberPassword">Password (min 6 chars)</label>
-                                    <input type="password" id="newMemberPassword" placeholder="Set member password" required>
+                                    <input type="password" id="newMemberPassword" placeholder="Set member password"
+                                        required>
                                 </div>
                             </div>
                             <div class="form-actions-inline">
-                                <button type="button" id="cancelAddMemberBtn" class="btn btn-light btn-sm">Cancel</button>
+                                <button type="button" id="cancelAddMemberBtn"
+                                    class="btn btn-light btn-sm">Cancel</button>
                                 <button type="submit" class="btn btn-save btn-sm">Save &amp; Authorize Member</button>
                             </div>
                         </form>
@@ -1275,23 +1339,29 @@
 
                 <div class="modal-body" style="padding: 20px 24px;">
                     <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
-                        Customize your garage name and owner details. These will appear across the dashboard, printable invoices, and WhatsApp bills.
+                        Customize your garage name and owner details. These will appear across the dashboard, printable
+                        invoices, and WhatsApp bills.
                     </p>
                     <form id="garageProfileForm" onsubmit="return false;">
                         <!-- Garage Logo / Profile Photo Upload -->
                         <div class="form-group">
                             <label><strong>Garage Logo / Profile Photo</strong></label>
                             <div style="display:flex; align-items:center; gap:14px; margin-top:8px;">
-                                <div id="profilePhotoPreviewWrap" style="width:64px; height:64px; border-radius:16px; border:2px dashed var(--border-color); display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; flex-shrink:0;">
-                                    <img id="profilePhotoPreviewImg" src="" alt="Profile Photo" style="display:none; width:100%; height:100%; object-fit:cover;">
-                                    <i id="profilePhotoPlaceholderIcon" class="fa-solid fa-camera" style="color:var(--text-muted); font-size:22px;"></i>
+                                <div id="profilePhotoPreviewWrap"
+                                    style="width:64px; height:64px; border-radius:16px; border:2px dashed var(--border-color); display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; flex-shrink:0;">
+                                    <img id="profilePhotoPreviewImg" src="" alt="Profile Photo"
+                                        style="display:none; width:100%; height:100%; object-fit:cover;">
+                                    <i id="profilePhotoPlaceholderIcon" class="fa-solid fa-camera"
+                                        style="color:var(--text-muted); font-size:22px;"></i>
                                 </div>
                                 <div style="flex:1;">
                                     <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;">
-                                    <button type="button" id="profilePhotoChooseBtn" class="btn btn-light" style="padding:6px 14px; font-size:13px; font-weight:600;">
+                                    <button type="button" id="profilePhotoChooseBtn" class="btn btn-light"
+                                        style="padding:6px 14px; font-size:13px; font-weight:600;">
                                         <i class="fa-solid fa-upload"></i> Upload Photo
                                     </button>
-                                    <button type="button" id="profilePhotoRemoveBtn" class="btn btn-light" style="padding:6px 12px; font-size:13px; display:none; color:var(--danger); margin-left:6px;">
+                                    <button type="button" id="profilePhotoRemoveBtn" class="btn btn-light"
+                                        style="padding:6px 12px; font-size:13px; display:none; color:var(--danger); margin-left:6px;">
                                         Remove
                                     </button>
                                     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
@@ -1349,7 +1419,8 @@
         <div class="invoice">
             <div class="invoice-header">
                 <div style="display:flex; align-items:center; gap:16px;">
-                    <img id="printGarageLogo" src="" alt="Logo" style="display:none; width:64px; height:64px; object-fit:contain; border-radius:10px;">
+                    <img id="printGarageLogo" src="" alt="Logo"
+                        style="display:none; width:64px; height:64px; object-fit:contain; border-radius:10px;">
                     <div>
                         <h1 id="printGarageName">PatelAutoGarage&Service</h1>
                         <p id="printGarageTagline">Professional Vehicle Service, Maintenance &amp; Repair</p>
@@ -1433,7 +1504,8 @@
                             <h4 id="cloudHeroTitle">Persistent Shared Database</h4>
                         </div>
                         <p id="cloudHeroDesc">
-                            All job cards, expenses, payments, and multi-day history are synchronized in real time across all devices (your computer, brother's device, phones).
+                            All job cards, expenses, payments, and multi-day history are synchronized in real time
+                            across all devices (your computer, brother's device, phones).
                         </p>
                         <div class="cloud-metrics-row">
                             <div><span>Synced Records:</span> <strong id="cloudRecordsCount">0</strong></div>
@@ -1448,7 +1520,8 @@
                     <div class="cloud-action-item">
                         <div>
                             <strong>Real-Time Synchronization</strong>
-                            <small>Live listeners are active. When any device adds or updates a record, all other devices receive it automatically.</small>
+                            <small>Live listeners are active. When any device adds or updates a record, all other
+                                devices receive it automatically.</small>
                         </div>
                         <button type="button" id="cloudForceSyncBtn" class="btn btn-primary">
                             <i class="fa-solid fa-rotate"></i> Sync Cloud Now
@@ -1458,7 +1531,8 @@
                     <div class="cloud-action-item">
                         <div>
                             <strong>Upload Local Device Records to Cloud</strong>
-                            <small>If you or your brother previously added records while offline or before cloud sync, click here to upload them so both devices have everything.</small>
+                            <small>If you or your brother previously added records while offline or before cloud sync,
+                                click here to upload them so both devices have everything.</small>
                         </div>
                         <button type="button" id="cloudMigrateBtn" class="btn btn-save">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Upload Local Data to Cloud
@@ -1468,7 +1542,8 @@
                     <div class="cloud-action-item">
                         <div>
                             <strong>1-Tap Setup Link (WhatsApp / Mobile Share)</strong>
-                            <small>Generate a 1-tap link to instantly configure your phone or brother's laptop without typing any credentials.</small>
+                            <small>Generate a 1-tap link to instantly configure your phone or brother's laptop without
+                                typing any credentials.</small>
                         </div>
                         <button type="button" id="copyCloudShareLinkBtn" class="btn btn-light">
                             <i class="fa-solid fa-share-nodes"></i> Copy 1-Tap Link
@@ -1477,21 +1552,28 @@
                 </div>
 
                 <!-- One-Time Migration Section (Copies old global data into users/{MY_UID}) -->
-                <div id="migrationSection" class="cloud-card" style="border: 2px dashed #f59e0b; background: rgba(245, 158, 11, 0.08); margin-top: 16px; padding: 18px; border-radius: 12px;">
+                <div id="migrationSection" class="cloud-card"
+                    style="border: 2px dashed #f59e0b; background: rgba(245, 158, 11, 0.08); margin-top: 16px; padding: 18px; border-radius: 12px;">
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
                         <i class="fa-solid fa-file-export" style="color:#f59e0b; font-size:22px;"></i>
                         <div>
                             <strong style="color:#b45309; font-size:15px;">One-Time Data Migration Tool</strong>
-                            <p style="font-size:12px; color:var(--text-muted, #94a3b8); margin:2px 0 0;">Copy all old global garage records &amp; expenses into your private account (users/{YOUR_UID})</p>
+                            <p style="font-size:12px; color:var(--text-muted, #94a3b8); margin:2px 0 0;">Copy all old
+                                global garage records &amp; expenses into your private account (users/{YOUR_UID})</p>
                         </div>
                     </div>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px;">
-                        <input type="text" id="migrationTargetUidInput" placeholder="Target User UID (auto-filled with your UID)" style="flex:1; min-width:240px; padding:10px 14px; border-radius:6px; border:1px solid #cbd5e1; font-family:monospace; font-size:13px; background:var(--bg-card, #fff); color:var(--text, #1e293b);">
-                        <button type="button" id="runMigrationBtn" class="btn" style="background:#f59e0b; color:#fff; font-weight:700; padding:10px 18px; border:none; border-radius:6px; cursor:pointer; font-size:13px;">
+                        <input type="text" id="migrationTargetUidInput"
+                            placeholder="Target User UID (auto-filled with your UID)"
+                            style="flex:1; min-width:240px; padding:10px 14px; border-radius:6px; border:1px solid #cbd5e1; font-family:monospace; font-size:13px; background:var(--bg-card, #fff); color:var(--text, #1e293b);">
+                        <button type="button" id="runMigrationBtn" class="btn"
+                            style="background:#f59e0b; color:#fff; font-weight:700; padding:10px 18px; border:none; border-radius:6px; cursor:pointer; font-size:13px;">
                             <i class="fa-solid fa-play"></i> Start Safe Migration
                         </button>
                     </div>
-                    <div id="migrationStatus" style="font-size:12px; margin-top:12px; font-family:monospace; color:var(--text-secondary, #64748b); white-space:pre-wrap; display:none; background:rgba(0,0,0,0.04); padding:10px; border-radius:6px;"></div>
+                    <div id="migrationStatus"
+                        style="font-size:12px; margin-top:12px; font-family:monospace; color:var(--text-secondary, #64748b); white-space:pre-wrap; display:none; background:rgba(0,0,0,0.04); padding:10px; border-radius:6px;">
+                    </div>
                 </div>
 
                 <!-- Firebase Configuration Settings -->
@@ -1506,7 +1588,8 @@
 
                     <div id="cloudConfigBody" class="accordion-body" hidden>
                         <p class="config-intro">
-                            Enter your Google Firebase project credentials below, or paste the snippet from Firebase Console. Multi-device real-time sync with anonymous authentication is enabled.
+                            Enter your Google Firebase project credentials below, or paste the snippet from Firebase
+                            Console. Multi-device real-time sync with anonymous authentication is enabled.
                         </p>
 
                         <!-- 1-Click Paste Config Snippet -->
@@ -1515,7 +1598,8 @@
                                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 <strong>Quick 1-Click Paste Config Snippet</strong>
                             </div>
-                            <p class="snippet-hint">Copy the <code>const firebaseConfig = { ... }</code> from Firebase Console and paste below:</p>
+                            <p class="snippet-hint">Copy the <code>const firebaseConfig = { ... }</code> from Firebase
+                                Console and paste below:</p>
                             <textarea id="cfgSnippetInput" class="snippet-textarea" rows="3" placeholder='const firebaseConfig = {
   apiKey: "AIzaSy...",
   authDomain: "patel-auto-garage.firebaseapp.com",
@@ -1588,11 +1672,13 @@
 
     <!-- FORGOT / RECOVER PASSWORD MODAL -->
     <div id="forgotPasswordModal" class="modal" hidden>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle" style="max-width: 440px;">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle"
+            style="max-width: 440px;">
             <div class="modal-header">
                 <div>
                     <span class="section-label">ACCOUNT SECURITY</span>
-                    <h3 id="forgotPasswordTitle"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Set New Password</h3>
+                    <h3 id="forgotPasswordTitle"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Set New
+                        Password</h3>
                 </div>
                 <button type="button" id="forgotPasswordCloseBtn" class="modal-close" aria-label="Close modal">
                     <i class="fa-solid fa-xmark"></i>
@@ -1607,7 +1693,8 @@
                         <label for="forgotUser">Email or Username</label>
                         <div class="input-wrap">
                             <i class="fa-solid fa-envelope"></i>
-                            <input id="forgotUser" type="text" maxlength="60" placeholder="e.g. name@gmail.com or username" autocomplete="username" required>
+                            <input id="forgotUser" type="text" maxlength="60"
+                                placeholder="e.g. name@gmail.com or username" autocomplete="username" required>
                         </div>
                     </div>
                     <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:10px;">
@@ -1623,11 +1710,13 @@
 
     <!-- CHANGE PASSWORD MODAL -->
     <div id="passwordModal" class="modal" hidden>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle" style="max-width: 440px;">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle"
+            style="max-width: 440px;">
             <div class="modal-header">
                 <div>
                     <span class="section-label">ACCOUNT SECURITY</span>
-                    <h3 id="passwordTitle"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Set / Change Password</h3>
+                    <h3 id="passwordTitle"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Set / Change
+                        Password</h3>
                 </div>
                 <button type="button" id="passwordCloseBtn" class="modal-close" aria-label="Close modal">
                     <i class="fa-solid fa-xmark"></i>
@@ -1641,17 +1730,20 @@
                     <label for="newPassword">New Password (Min 6 characters)</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-lock"></i>
-                        <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password" placeholder="Enter password (min 6 characters)" required>
+                        <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password"
+                            placeholder="Enter password (min 6 characters)" required>
                     </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 14px;">
                     <label for="newPasswordConfirm">Confirm New Password</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-lock"></i>
-                        <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password" placeholder="Re-enter your new password" required>
+                        <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6"
+                            autocomplete="new-password" placeholder="Re-enter your new password" required>
                     </div>
                 </div>
-                <p id="passwordError" class="login-error" style="color:#ef4444; font-size:13px; margin: 8px 0;" hidden></p>
+                <p id="passwordError" class="login-error" style="color:#ef4444; font-size:13px; margin: 8px 0;" hidden>
+                </p>
                 <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
                     <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
                     <button type="button" id="passwordSave" class="btn btn-save">
@@ -1664,7 +1756,8 @@
 
     <!-- QUICK EDIT NAME MODAL (Works reliably on all mobile devices & desktop) -->
     <div id="quickEditModal" class="modal" hidden>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quickEditModalTitle" style="max-width: 440px;">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quickEditModalTitle"
+            style="max-width: 440px;">
             <div class="modal-header">
                 <div>
                     <span class="section-label" id="quickEditSectionLabel">UPDATE DETAILS</span>
@@ -1680,10 +1773,12 @@
                         <label for="quickEditInput" id="quickEditInputLabel">Name</label>
                         <div class="input-wrap">
                             <i class="fa-solid fa-pen-to-square" id="quickEditIcon"></i>
-                            <input id="quickEditInput" type="text" maxlength="60" placeholder="Enter name" autocomplete="off">
+                            <input id="quickEditInput" type="text" maxlength="60" placeholder="Enter name"
+                                autocomplete="off">
                         </div>
                     </div>
-                    <div class="modal-actions" style="margin-top: 20px; display:flex; justify-content:flex-end; gap:10px;">
+                    <div class="modal-actions"
+                        style="margin-top: 20px; display:flex; justify-content:flex-end; gap:10px;">
                         <button type="button" id="quickEditCancelBtn" class="btn btn-light">Cancel</button>
                         <button type="submit" id="quickEditSaveBtn" class="btn btn-save">
                             <i class="fa-solid fa-check"></i> Save Changes
@@ -1704,8 +1799,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js?v=5.2"></script>
-    <script src="script.js?v=5.2"></script>
+    <script src="firebase-config.js?v=5.3"></script>
+    <script src="script.js?v=5.3"></script>
 </body>
 
 </html>
