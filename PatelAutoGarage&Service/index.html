@@ -19,7 +19,7 @@
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=5.1">
+    <link rel="stylesheet" href="style.css?v=5.2">
 </head>
 
 <body class="app-locked">
@@ -170,8 +170,11 @@
                         <span>Garage Profile</span>
                     </button>
 
-                    <div class="user-chip" id="topbarUserChip" title="Signed in family member">
-                        <i class="fa-solid fa-circle-user"></i>
+                    <div class="user-chip" id="topbarUserChip" title="Click to view/edit Garage Profile">
+                        <div class="user-chip-avatar" id="topbarUserAvatarBox">
+                            <img id="topbarUserImg" src="" alt="Profile" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                            <i class="fa-solid fa-circle-user" id="topbarUserDefaultIcon"></i>
+                        </div>
                         <div class="user-chip-meta">
                             <strong id="topbarMemberName">Owner</strong>
                             <small id="topbarMemberRole">Admin</small>
@@ -1701,8 +1704,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js?v=5.1"></script>
-    <script src="script.js?v=5.1"></script>
+    <script src="firebase-config.js?v=5.2"></script>
+    <script src="script.js?v=5.2"></script>
 </body>
 
 </html>

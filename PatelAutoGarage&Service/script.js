@@ -165,11 +165,7 @@ function updateGarageBrandingUI() {
   // 4. Hero Section
   const heroOwner = document.getElementById("heroOwnerName");
   if (heroOwner) {
-    let heroName = displayOwnerName;
-    if (heroName.toUpperCase() === "HARSH SAVANI" && currentAuthUser?.email?.toLowerCase().includes("pratik")) {
-      heroName = "Pratik Savani";
-    }
-    heroOwner.textContent = heroName.toUpperCase();
+    heroOwner.textContent = displayOwnerName.toUpperCase();
   }
   const heroTagline = document.getElementById("heroGarageTagline");
   if (heroTagline) heroTagline.textContent = info.tagline || "Service with Purpose.";
@@ -202,17 +198,32 @@ function updateGarageBrandingUI() {
   const topbarRole = document.getElementById("topbarMemberRole");
   const userChip = document.getElementById("topbarUserChip");
   if (topbarMember) {
-    let displayName = activeMember ? (activeMember.fullName || activeMember.username) : (info.ownerName || "Pratik Savani");
-    if (displayName.toUpperCase() === "HARSH SAVANI" && currentAuthUser?.email?.toLowerCase().includes("pratik")) {
-      displayName = "Pratik Savani";
-    }
+    let displayName = (info.ownerName && info.ownerName.trim()) 
+      ? info.ownerName.trim() 
+      : (activeMember ? (activeMember.fullName || activeMember.username) : (currentAuthUser?.displayName || "Garage Owner"));
     topbarMember.textContent = displayName;
   }
   if (topbarRole) {
     topbarRole.textContent = currentAuthUser?.email || (activeMember ? activeMember.role : "Owner");
   }
   if (userChip && currentAuthUser) {
-    userChip.title = `Signed in as: ${currentAuthUser.email || currentAuthUser.uid}`;
+    userChip.title = `Signed in as: ${currentAuthUser.email || currentAuthUser.uid} (Click to edit Garage Profile)`;
+  }
+
+  // User Chip Avatar Photo
+  const userImg = document.getElementById("topbarUserImg");
+  const userIcon = document.getElementById("topbarUserDefaultIcon");
+  const userPhoto = info.photo || currentAuthUser?.photoURL || "";
+  if (userImg && userIcon) {
+    if (userPhoto) {
+      userImg.src = userPhoto;
+      userImg.style.display = "block";
+      userIcon.style.display = "none";
+    } else {
+      userImg.src = "";
+      userImg.style.display = "none";
+      userIcon.style.display = "block";
+    }
   }
 }
 
@@ -2537,7 +2548,7 @@ async function saveGarageProfile() {
     phone,
     tagline: tagline || "Professional Vehicle Service, Maintenance & Repair",
     address,
-    photo: (tempProfilePhoto !== undefined && tempProfilePhoto !== "") ? tempProfilePhoto : (currentInfo.photo || ""),
+    photo: (tempProfilePhoto !== undefined) ? tempProfilePhoto : (currentInfo.photo || ""),
     isCustom: true,
   };
 
@@ -2584,6 +2595,11 @@ function setupGarageProfileListeners() {
   const profileBtn = document.getElementById("garageProfileBtn");
   if (profileBtn) {
     profileBtn.addEventListener("click", openGarageProfileModal);
+  }
+
+  const userChip = document.getElementById("topbarUserChip");
+  if (userChip) {
+    userChip.addEventListener("click", openGarageProfileModal);
   }
 
   const closeBtn = document.getElementById("garageProfileCloseBtn");

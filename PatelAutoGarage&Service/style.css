@@ -401,19 +401,20 @@ button {
 }
 
 .topbar-inner {
-    max-width: 1280px;
-    margin: auto;
-    padding: 14px 20px;
+    max-width: 100%;
+    margin: 0;
+    padding: 8px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
 }
 
 .brand {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
 }
 
 .brand-icon {
@@ -427,13 +428,15 @@ button {
     color: white;
     font-size: 20px;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .brand h1 {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
     letter-spacing: -0.3px;
     line-height: 1.2;
+    white-space: nowrap;
 }
 
 .brand span {
@@ -442,27 +445,52 @@ button {
     color: #94a3b8;
     font-size: 11px;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .topbar-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 7px;
+    flex-wrap: nowrap;
     justify-content: flex-end;
+}
+
+.topbar-actions .btn {
+    padding: 6.5px 11px;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .today-chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 10px;
+    gap: 6px;
+    padding: 5.5px 9px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    font-size: 12px;
-    font-weight: 700;
-    color: #f1f5f9;
+    font-size: 11.5px;
+    color: #e2e8f0;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+@media (max-width: 1200px) {
+    .topbar-actions {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .topbar-actions::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 .today-chip i {
@@ -3606,16 +3634,51 @@ tbody tr:hover {
 .user-chip {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     background: var(--surface-elevated);
     border: 1.5px solid var(--border);
-    padding: 6px 14px;
+    padding: 3px 10px;
     border-radius: 999px;
     box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.user-chip:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.user-chip-avatar {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(37, 99, 235, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+}
+
+.user-chip-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
+.user-chip-avatar i {
+    font-size: 1.25rem;
+    color: var(--primary);
 }
 
 .user-chip i {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     color: var(--primary);
 }
 
@@ -3626,17 +3689,22 @@ tbody tr:hover {
 }
 
 .user-chip-meta strong {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 800;
     color: var(--text);
+    white-space: nowrap;
 }
 
 .user-chip-meta small {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     color: var(--primary);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* FAMILY MANAGEMENT MODAL */
