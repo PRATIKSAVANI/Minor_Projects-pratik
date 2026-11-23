@@ -1525,10 +1525,35 @@ async function saveNewPassword() {
   try {
     const authUser = firebase.auth().currentUser;
     if (authUser) {
-      await authUser.updatePassword(newPassword);
-      closePasswordModal();
-      showToast("✅ Password updated successfully in Firebase Auth!");
-      return;
+      if (authUser.email) {
+        const cred = firebase.auth.EmailAuthProvider.credential(authUser.email, newPassword);
+        try {
+          await authUser.linkWithCredential(cred);
+          closePasswordModal();
+          showToast("✅ Password created and linked to your account successfully!");
+          return;
+        } catch (linkErr) {
+          if (linkErr.code === "auth/provider-already-linked") {
+            await authUser.updatePassword(newPassword);
+            closePasswordModal();
+            showToast("✅ Password updated successfully!");
+            return;
+          }
+          if (linkErr.code === "auth/requires-recent-login") {
+            showToast("Security notice: Please sign out and sign in again before setting a password.", "error");
+            return;
+          }
+          await authUser.updatePassword(newPassword);
+          closePasswordModal();
+          showToast("✅ Password updated successfully!");
+          return;
+        }
+      } else {
+        await authUser.updatePassword(newPassword);
+        closePasswordModal();
+        showToast("✅ Password updated successfully!");
+        return;
+      }
     }
   } catch (authErr) {
     if (authErr.code === "auth/requires-recent-login") {
