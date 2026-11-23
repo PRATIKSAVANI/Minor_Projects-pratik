@@ -442,20 +442,21 @@ async function handleAuthStateChange(user) {
 function checkMigrationSectionVisibility(user) {
   const section = document.getElementById("migrationSection");
   const uidInput = document.getElementById("migrationTargetUidInput");
+  const banner = document.getElementById("migrationAlertBanner");
   if (!section) return;
 
-  const userEmail = (user?.email || "").toLowerCase();
-  const isAdmin = (typeof MIGRATION_ADMIN_EMAIL !== "undefined" && MIGRATION_ADMIN_EMAIL && userEmail === MIGRATION_ADMIN_EMAIL.toLowerCase()) ||
-                  (typeof MIGRATION_TARGET_UID !== "undefined" && MIGRATION_TARGET_UID && MIGRATION_TARGET_UID !== "PASTE_YOUR_UID_HERE" && user?.uid === MIGRATION_TARGET_UID) ||
-                  (!MIGRATION_ADMIN_EMAIL && MIGRATION_TARGET_UID === "PASTE_YOUR_UID_HERE");
-
-  if (isAdmin) {
+  if (user?.uid) {
     section.style.display = "block";
-    if (uidInput && user?.uid) {
+    if (uidInput) {
       uidInput.value = user.uid;
+    }
+    if (banner) {
+      const recordsCount = Array.isArray(garageData) ? garageData.length : 0;
+      banner.style.display = recordsCount === 0 ? "flex" : "none";
     }
   } else {
     section.style.display = "none";
+    if (banner) banner.style.display = "none";
   }
 }
 
@@ -2215,6 +2216,8 @@ async function runOneTimeMigration(targetUid) {
       statusEl.textContent = summary;
     }
     console.log(summary);
+    const migBanner = document.getElementById("migrationAlertBanner");
+    if (migBanner) migBanner.style.display = "none";
     showToast(`🎉 Migrated ${recordsCount} records & ${expensesCount} expenses!`, "success");
     alert(summary);
 
@@ -2767,6 +2770,23 @@ function setupCloudListeners() {
   const syncBtn = document.getElementById("cloudSyncBtn");
   if (syncBtn) {
     syncBtn.addEventListener("click", openCloudModal);
+  }
+
+  // Topbar and Banner Migration Open Buttons
+  const topbarMigBtn = document.getElementById("topbarMigrateBtn");
+  if (topbarMigBtn) {
+    topbarMigBtn.addEventListener("click", () => {
+      openCloudModal();
+      document.getElementById("migrationSection")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }
+
+  const bannerMigBtn = document.getElementById("openMigrationModalBtn");
+  if (bannerMigBtn) {
+    bannerMigBtn.addEventListener("click", () => {
+      openCloudModal();
+      document.getElementById("migrationSection")?.scrollIntoView({ behavior: "smooth" });
+    });
   }
 
   // Login Screen Cloud Buttons

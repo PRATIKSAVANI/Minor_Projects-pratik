@@ -241,6 +241,10 @@ async function initializeCloudDatabase(customConfig = null) {
     let authInstance = null;
     if (typeof firebase.auth === "function") {
       authInstance = firebase.auth();
+      // If an old cached anonymous session exists, clear it immediately
+      if (authInstance.currentUser && authInstance.currentUser.isAnonymous) {
+        authInstance.signOut().catch(() => {});
+      }
     }
 
     isFirestoreInitialized = true;
