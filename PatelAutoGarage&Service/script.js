@@ -3,19 +3,31 @@
    Shared Cloud Firestore Database, Multi-Scope History & Billing
 ========================================================= */
 
+// Global authentication and multi-tenant session state
+let currentAuthUser = null;
+let pendingRegistrationProfile = null;
+
 const STORAGE_KEYS = {
-  records: "patelAutoGarageData",
-  expenses: "patelAutoGarageExpenses",
-  owner: "patelAutoGarageOwner",
-  familyMembers: "patelAutoGarageFamilyMembers",
-  familyPasskey: "patelAutoGaragePasskey",
-  activeMember: "patelAutoGarageActiveMember",
-  loginSession: "patelAutoGarageLoginSession",
-  loginLock: "patelAutoGarageLoginLock",
-  theme: "patelAutoGarageTheme",
-  pendingDeletions: "patelAutoGaragePendingDeletions",
-  garageInfo: "patelAutoGarageInfo",
+  records: "records",
+  expenses: "expenses",
+  owner: "owner",
+  familyMembers: "familyMembers",
+  familyPasskey: "passkey",
+  activeMember: "activeMember",
+  loginSession: "loginSession",
+  loginLock: "loginLock",
+  theme: "theme",
+  pendingDeletions: "pendingDeletions",
+  garageInfo: "info",
 };
+
+/**
+ * Returns a UID-scoped storage key to ensure 100% tenant data isolation on this device
+ */
+function getScopedStorageKey(key, uid = currentAuthUser?.uid) {
+  if (!uid) return `patel_anon_${key}`;
+  return `patel_${uid}_${key}`;
+}
 
 const DEFAULT_GARAGE_INFO = {
   garageName: "Patel Auto Garage & Service",
@@ -27,38 +39,32 @@ const DEFAULT_GARAGE_INFO = {
 };
 
 function getGarageInfo() {
-  const stored = readJSON(STORAGE_KEYS.garageInfo, null);
+  const uid = currentAuthUser?.uid;
+  if (!uid) {
+    return { ...DEFAULT_GARAGE_INFO };
+  }
+
+  const stored = readJSON(getScopedStorageKey("garageInfo", uid), null);
   if (stored && stored.garageName && stored.garageName.trim() && stored.garageName !== "Add Your Garage Name") {
     return { ...DEFAULT_GARAGE_INFO, ...stored };
-  }
-
-  const owner = readJSON(STORAGE_KEYS.owner, null);
-  if (owner && owner.garageName && owner.garageName.trim() && owner.garageName !== "Add Your Garage Name") {
-    return {
-      ...DEFAULT_GARAGE_INFO,
-      garageName: owner.garageName,
-      ownerName: owner.fullName || DEFAULT_GARAGE_INFO.ownerName,
-      photo: owner.photo || "",
-      isCustom: true,
-    };
-  }
-
-  if (stored && typeof stored === "object") {
-    const validStoredName = (stored.garageName && stored.garageName.trim() && stored.garageName !== "Add Your Garage Name")
-      ? stored.garageName.trim()
-      : DEFAULT_GARAGE_INFO.garageName;
-    return {
-      ...DEFAULT_GARAGE_INFO,
-      ...stored,
-      garageName: validStoredName,
-    };
   }
 
   return { ...DEFAULT_GARAGE_INFO };
 }
 
 function saveGarageInfoLocally(info) {
-  localStorage.setItem(STORAGE_KEYS.garageInfo, JSON.stringify(info));
+  const uid = currentAuthUser?.uid;
+  if (!uid) return;
+  localStorage.setItem(getScopedStorageKey("garageInfo", uid), JSON.stringify(info));
+}
+
+function showAuthLoadingOverlay(show, message = "Loading...") {
+  const overlay = document.getElementById("authLoadingOverlay");
+  const text = document.getElementById("authLoadingText");
+  if (text && message) text.textContent = message;
+  if (overlay) {
+    overlay.style.display = show ? "flex" : "none";
+  }
 }
 
 function processImageFile(file, maxWidth = 300, maxHeight = 300) {
@@ -190,21 +196,55 @@ function updateGarageBrandingUI() {
 }
 
 function getActiveGarageId() {
-  return "patel_auto_garage";
+  return currentAuthUser?.uid || "unauthenticated";
 }
 
-function getFirestoreCollections() {
+/**
+ * Returns Firestore collection paths strictly isolated by UID:
+ * users/{uid}/jobCards, users/{uid}/expenses, users/{uid}/settings, users/{uid}/family
+ */
+function getFirestoreCollections(uid = currentAuthUser?.uid) {
+  if (uid) {
+    return {
+      records: `users/${uid}/jobCards`,
+      jobCards: `users/${uid}/jobCards`,
+      expenses: `users/${uid}/expenses`,
+      meta: `users/${uid}/settings`,
+      settings: `users/${uid}/settings`,
+      family: `users/${uid}/family`,
+    };
+  }
   return {
-    records: "patel_records",
-    expenses: "patel_expenses",
-    meta: "patel_meta",
-    family: "patel_family",
+    records: "users/unauthenticated/jobCards",
+    jobCards: "users/unauthenticated/jobCards",
+    expenses: "users/unauthenticated/expenses",
+    meta: "users/unauthenticated/settings",
+    settings: "users/unauthenticated/settings",
+    family: "users/unauthenticated/family",
   };
 }
 
 const FIRESTORE_COLLECTIONS = new Proxy({}, {
   get: (_, prop) => getFirestoreCollections()[prop],
 });
+
+/**
+ * Helper to get subcollection under users/{uid}/...
+ */
+function getUserSubcollection(name, uid = currentAuthUser?.uid) {
+  if (!cloudDb || !uid) return null;
+  return cloudDb.collection("users").doc(uid).collection(name);
+}
+
+/**
+ * Helper to format username into a compliant email for Firebase Auth
+ */
+function formatAuthEmail(input) {
+  const val = (input || "").trim().toLowerCase();
+  if (val.includes("@")) return val;
+  const clean = val.replace(/[^a-z0-9._-]/g, "");
+  return `${clean}@patelgarage.app`;
+}
 
 const AUTH_SALT = "patel-auto-garage-v2";
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -270,28 +310,152 @@ async function initializeApp() {
     setupGarageProfileListeners();
     setupCloudListeners();
 
-    // 1. Instantly check if THIS device already has an authenticated session
-    // restoreLoginSession reads from localStorage and verifies crypto hash locally (takes ~2ms)
-    const hasSession = await restoreLoginSession();
-    if (hasSession) {
-      // User is logged in: open dashboard IMMEDIATELY (0ms wait, zero delay)
-      openDashboard();
+    // Show loading state until auth is resolved (Requirement 1)
+    showAuthLoadingOverlay(true, "Connecting to your garage account...");
 
-      // Connect cloud database and sync family in the background
-      initCloudSync()
-        .then(() => syncFamilyMembersFromCloud())
-        .catch((err) => console.warn("Background cloud sync notice:", err));
+    // Initialize Firebase
+    if (window.GarageCloud) {
+      const res = await window.GarageCloud.initialize();
+      if (res && res.success) {
+        cloudDb = window.GarageCloud.getDb();
+        const auth = window.GarageCloud.getAuth();
+        if (auth) {
+          // onAuthStateChanged is the SINGLE SOURCE OF TRUTH
+          auth.onAuthStateChanged(handleAuthStateChange);
+          return;
+        }
+      }
+    }
+
+    // Fallback if cloud SDK not loaded
+    showAuthLoadingOverlay(false);
+    showLoginScreen(false);
+  } catch (err) {
+    console.error("App startup initialization error:", err);
+    showAuthLoadingOverlay(false);
+    showLoginScreen(false);
+  }
+}
+
+/**
+ * Single source of truth for authentication state
+ */
+async function handleAuthStateChange(user) {
+  try {
+    if (!user) {
+      // User is confirmed logged out
+      currentAuthUser = null;
+      isAuthenticated = false;
+      dashboardReady = false;
+
+      stopDayWatcher();
+      unsubscribeCloudRealtimeListeners();
+      wipeDashboardState();
+
+      // Clear non-scoped legacy storage keys to prevent any cross-account leaks
+      ["patelAutoGarageData", "patelAutoGarageExpenses", "patelAutoGarageInfo", "patelAutoGarageOwner", "patelAutoGarageLoginSession"].forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        } catch (_) {}
+      });
+
+      updateGarageBrandingUI();
+      showAuthLoadingOverlay(false);
+      showLoginScreen(false);
       return;
     }
 
-    // 2. Unauthenticated visitor: display clean login screen IMMEDIATELY (0ms wait)
-    showLoginScreen(false);
+    // User is confirmed logged in
+    currentAuthUser = user;
+    isAuthenticated = true;
 
-    // Initialize cloud in the background so it's ready when user signs in
-    initCloudSync().catch((err) => console.warn("Background cloud init notice:", err));
+    showAuthLoadingOverlay(true, "Loading your garage dashboard...");
+
+    // 1. Fetch or create users/{uid} profile document
+    let profileData = null;
+    if (cloudDb) {
+      try {
+        const userDocRef = cloudDb.collection("users").doc(user.uid);
+        const userDocSnap = await userDocRef.get();
+        if (userDocSnap.exists) {
+          profileData = userDocSnap.data();
+        } else {
+          // Brand-new user: create profile doc in users/{uid}
+          // Starts with completely EMPTY dashboard (Requirement 1)
+          const newGarageName = pendingRegistrationProfile?.garageName || (user.displayName ? `${user.displayName}'s Garage` : "My Auto Garage");
+          const newOwnerName = pendingRegistrationProfile?.ownerName || user.displayName || "Garage Owner";
+
+          profileData = {
+            ownerId: user.uid,
+            email: user.email || "",
+            garageName: newGarageName,
+            ownerName: newOwnerName,
+            photo: user.photoURL || "",
+            phone: "",
+            tagline: "Professional Vehicle Service, Maintenance & Repair",
+            address: "",
+            createdAt: Date.now(),
+          };
+
+          await userDocRef.set(profileData);
+          await userDocRef.collection("settings").doc("garage_info").set(profileData, { merge: true });
+        }
+      } catch (err) {
+        console.warn("Notice checking user profile document:", err);
+      }
+    }
+
+    // 2. Set active garage info in UID-scoped local storage
+    const garageInfo = {
+      ...DEFAULT_GARAGE_INFO,
+      ...(profileData || {}),
+      garageName: profileData?.garageName || DEFAULT_GARAGE_INFO.garageName,
+      ownerName: profileData?.ownerName || DEFAULT_GARAGE_INFO.ownerName,
+      photo: profileData?.photo || "",
+    };
+    saveGarageInfoLocally(garageInfo);
+    updateGarageBrandingUI();
+
+    // 3. Load user-scoped local records (strictly isolated by uid)
+    loadData();
+
+    // 4. Attach real-time Firestore listeners strictly scoped to users/{uid}/...
+    setupCloudRealtimeListeners(user.uid);
+
+    // 5. Update migration button visibility for owner
+    checkMigrationSectionVisibility(user);
+
+    // 6. Open dashboard
+    openDashboard();
+
+    // 7. Hide loading overlay
+    showAuthLoadingOverlay(false);
+    pendingRegistrationProfile = null;
   } catch (err) {
-    console.error("App startup initialization error:", err);
-    showLoginScreen(false);
+    console.error("Auth state change error:", err);
+    showAuthLoadingOverlay(false);
+    showToast("Error loading garage account: " + err.message, "error");
+  }
+}
+
+function checkMigrationSectionVisibility(user) {
+  const section = document.getElementById("migrationSection");
+  const uidInput = document.getElementById("migrationTargetUidInput");
+  if (!section) return;
+
+  const userEmail = (user?.email || "").toLowerCase();
+  const isAdmin = (typeof MIGRATION_ADMIN_EMAIL !== "undefined" && MIGRATION_ADMIN_EMAIL && userEmail === MIGRATION_ADMIN_EMAIL.toLowerCase()) ||
+                  (typeof MIGRATION_TARGET_UID !== "undefined" && MIGRATION_TARGET_UID && MIGRATION_TARGET_UID !== "PASTE_YOUR_UID_HERE" && user?.uid === MIGRATION_TARGET_UID) ||
+                  (!MIGRATION_ADMIN_EMAIL && MIGRATION_TARGET_UID === "PASTE_YOUR_UID_HERE");
+
+  if (isAdmin) {
+    section.style.display = "block";
+    if (uidInput && user?.uid) {
+      uidInput.value = user.uid;
+    }
+  } else {
+    section.style.display = "none";
   }
 }
 
@@ -478,6 +642,7 @@ async function signInWithGoogle() {
 
   try {
     setLoginBusy(true);
+    showAuthLoadingOverlay(true, "Signing in with Google...");
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     const result = await firebase.auth().signInWithPopup(provider);
@@ -485,69 +650,11 @@ async function signInWithGoogle() {
     if (!user) {
       throw new Error("No user returned from Google.");
     }
-
-    const displayName = user.displayName || "Garage Owner";
-    const email = (user.email || "").toLowerCase();
-    const cleanUser = email ? email.split("@")[0].replace(/[^a-z0-9._-]/g, "") : `user_${user.uid.slice(0, 8)}`;
-    const photoURL = user.photoURL || "";
-
-    const garageId = "patel_auto_garage";
-
-    const currentInfo = getGarageInfo();
-    const garageName = (currentInfo.garageName && currentInfo.garageName.trim() && currentInfo.garageName !== "Add Your Garage Name")
-      ? currentInfo.garageName.trim()
-      : "Patel Auto Garage & Service";
-
-    const updatedInfo = {
-      ...currentInfo,
-      garageName,
-      photo: currentInfo.photo || photoURL || "",
-      isCustom: true,
-    };
-    saveGarageInfoLocally(updatedInfo);
-
-    const googleMember = {
-      username: cleanUser,
-      fullName: displayName,
-      email: email,
-      garageName: garageName,
-      garageId: garageId,
-      photo: updatedInfo.photo,
-      role: "Owner",
-      authProvider: "google",
-      googleUid: user.uid,
-      passwordHash: "",
-      createdAt: Date.now(),
-      status: "active",
-    };
-
-    garageFamilyMembers = garageFamilyMembers.filter((m) => m.username !== googleMember.username);
-    garageFamilyMembers.unshift(googleMember);
-    saveFamilyMembersLocally();
-    localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(googleMember));
-
-    // Instant UI transition into dashboard (zero blocking)
-    updateGarageBrandingUI();
-    await createLoginSession(googleMember, true);
-    showToast(`🎉 Welcome, ${displayName}!`);
-    openDashboard();
-    setLoginBusy(false);
-
-    // Sync to Firestore in the background
-    if (cloudDb) {
-      Promise.all([
-        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(googleMember.username).set(googleMember, { merge: true }),
-        cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-          garageName: garageName,
-          photo: updatedInfo.photo,
-          updatedAt: Date.now(),
-        }, { merge: true })
-      ]).catch((cloudErr) => {
-        console.warn("Background Google user cloud sync notice:", cloudErr);
-      });
-    }
+    // onAuthStateChanged will handle isolated profile creation and dashboard load
+    showToast(`🎉 Welcome, ${user.displayName || "Garage Owner"}!`);
   } catch (error) {
     console.error("Google Sign-In Error:", error);
+    showAuthLoadingOverlay(false);
     if (error.code === "auth/popup-closed-by-user") {
       setLoginError("Google sign-in popup was closed. Please try again.");
     } else if (error.code === "auth/network-request-failed") {
@@ -562,6 +669,20 @@ async function signInWithGoogle() {
     }
   } finally {
     setLoginBusy(false);
+  }
+}
+
+async function saveGarageSettings(infoUpdates) {
+  if (!currentAuthUser || !cloudDb) return;
+  const uid = currentAuthUser.uid;
+  try {
+    const toSave = { ...infoUpdates, ownerId: uid, updatedAt: Date.now() };
+    await Promise.all([
+      cloudDb.collection("users").doc(uid).collection("settings").doc("garage_info").set(toSave, { merge: true }),
+      cloudDb.collection("users").doc(uid).set(toSave, { merge: true }),
+    ]);
+  } catch (e) {
+    console.warn("Could not save settings to cloud:", e);
   }
 }
 
@@ -584,15 +705,8 @@ async function handleDirectLogoChange(event) {
     saveGarageInfoLocally(updatedInfo);
     updateGarageBrandingUI();
 
-    if (cloudDb) {
-      try {
-        await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-          photo: photoBase64,
-          updatedAt: Date.now(),
-        }, { merge: true });
-      } catch (cloudErr) {
-        console.warn("Could not sync logo to cloud:", cloudErr);
-      }
+    if (cloudDb && currentAuthUser) {
+      await saveGarageSettings(updatedInfo);
     }
     showToast("📸 Garage Logo / Photo updated successfully!", "success");
   } catch (err) {
@@ -691,21 +805,10 @@ async function handleQuickEditSave() {
         return m;
       });
       saveFamilyMembersLocally();
-
-      if (cloudDb) {
-        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(activeMember.username).set({
-          garageName: value,
-          updatedAt: Date.now(),
-        }, { merge: true }).catch((e) => console.warn("Cloud sync family garageName notice:", e));
-      }
     }
 
-    if (cloudDb) {
-      cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-        garageName: value,
-        isCustom: true,
-        updatedAt: Date.now(),
-      }, { merge: true }).catch((e) => console.warn("Cloud sync garageName notice:", e));
+    if (cloudDb && currentAuthUser) {
+      saveGarageSettings(updatedInfo);
     }
 
     // Direct immediate DOM updates
@@ -725,10 +828,10 @@ async function handleQuickEditSave() {
     const updatedInfo = { ...current, ownerName: value, isCustom: true, updatedAt: Date.now() };
     saveGarageInfoLocally(updatedInfo);
 
-    const owner = readJSON(STORAGE_KEYS.owner, null);
+    const owner = readJSON(getScopedStorageKey("owner"), null);
     if (owner) {
       owner.fullName = value;
-      localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(owner));
+      localStorage.setItem(getScopedStorageKey("owner"), JSON.stringify(owner));
     }
 
     if (activeMember) {
@@ -741,8 +844,8 @@ async function handleQuickEditSave() {
         role: activeMember.role || "Owner",
         garageName: activeMember.garageName || current.garageName,
       };
-      localStorage.setItem(STORAGE_KEYS.activeMember, JSON.stringify(activeObj));
-      sessionStorage.setItem(STORAGE_KEYS.activeMember, JSON.stringify(activeObj));
+      localStorage.setItem(getScopedStorageKey("activeMember"), JSON.stringify(activeObj));
+      sessionStorage.setItem(getScopedStorageKey("activeMember"), JSON.stringify(activeObj));
 
       garageFamilyMembers = garageFamilyMembers.map((m) => {
         if (m.username === activeMember.username) {
@@ -751,20 +854,10 @@ async function handleQuickEditSave() {
         return m;
       });
       saveFamilyMembersLocally();
-
-      if (cloudDb) {
-        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(activeMember.username).set({
-          fullName: value,
-          updatedAt: Date.now(),
-        }, { merge: true }).catch((e) => console.warn("Cloud sync family fullName notice:", e));
-      }
     }
 
-    if (cloudDb) {
-      cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-        ownerName: value,
-        updatedAt: Date.now(),
-      }, { merge: true }).catch((e) => console.warn("Cloud sync ownerName notice:", e));
+    if (cloudDb && currentAuthUser) {
+      saveGarageSettings(updatedInfo);
     }
 
     // Direct immediate DOM updates
@@ -793,62 +886,32 @@ function editOwnerNameDirect() {
 }
 
 function garageHasAccounts() {
-  if (Array.isArray(garageFamilyMembers) && garageFamilyMembers.length > 0) {
-    return true;
-  }
-  const cachedMembers = readJSON(STORAGE_KEYS.familyMembers, []);
-  if (Array.isArray(cachedMembers) && cachedMembers.length > 0) {
-    return true;
-  }
-  const owner = readJSON(STORAGE_KEYS.owner, null);
-  if (owner && owner.username && owner.passwordHash) {
-    return true;
-  }
-  return false;
+  return Boolean(currentAuthUser);
 }
 
 function getActiveMember() {
-  if (!isAuthenticated && !isSessionActive()) {
+  if (!currentAuthUser) {
     return null;
   }
-  if (currentActiveMember && currentActiveMember.username) {
-    return currentActiveMember;
-  }
-  const stored = readStorageJSON(sessionStorage, STORAGE_KEYS.activeMember, null) ||
-                 readStorageJSON(localStorage, STORAGE_KEYS.activeMember, null);
-  if (stored && stored.username) {
-    currentActiveMember = stored;
-    return stored;
-  }
-  const owner = readJSON(STORAGE_KEYS.owner, null);
-  if (owner && owner.username) {
-    return {
-      username: owner.username,
-      fullName: owner.fullName || "Owner",
-      role: "Owner",
-      garageName: owner.garageName || "",
-      garageId: owner.garageId || "",
-    };
-  }
-  return null;
+  const info = getGarageInfo();
+  const emailName = currentAuthUser.email ? currentAuthUser.email.split("@")[0] : currentAuthUser.uid.slice(0, 8);
+  return {
+    username: emailName,
+    fullName: info.ownerName || currentAuthUser.displayName || emailName,
+    email: currentAuthUser.email || "",
+    role: "Owner",
+    garageName: info.garageName || "Patel Auto Garage & Service",
+    photo: info.photo || currentAuthUser.photoURL || "",
+    uid: currentAuthUser.uid,
+  };
 }
 
 function getStoredSession() {
-  return (
-    readStorageJSON(sessionStorage, STORAGE_KEYS.loginSession, null) ||
-    readStorageJSON(localStorage, STORAGE_KEYS.loginSession, null)
-  );
+  return currentAuthUser ? { uid: currentAuthUser.uid, email: currentAuthUser.email } : null;
 }
 
 function isSessionActive() {
-  if (!isAuthenticated || !verifiedSessionToken) return false;
-  if (!garageHasAccounts()) return false;
-
-  const session = getStoredSession();
-  if (!session || !session.token) return false;
-  if (!timingSafeEqual(session.token, verifiedSessionToken)) return false;
-  if (session.expiresAt && Date.now() > session.expiresAt) return false;
-  return true;
+  return Boolean(isAuthenticated && currentAuthUser);
 }
 
 function requireAuth() {
@@ -967,22 +1030,14 @@ function setLoginBusy(busy) {
 }
 
 async function handleLoginSubmit(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
   if (loginBusy) return;
 
-  const lock = getLoginLock();
-  if (Date.now() < lock.until) {
-    const seconds = Math.ceil((lock.until - Date.now()) / 1000);
-    setLoginError(`Too many failed attempts. Try again in ${seconds} seconds.`);
-    return;
-  }
-
-  const username = (document.getElementById("loginUsername")?.value || "").trim().toLowerCase();
+  const usernameInput = (document.getElementById("loginUsername")?.value || "").trim();
   const password = document.getElementById("loginPassword")?.value || "";
-  const remember = true;
 
-  if (username.length < 3 || username.length > 30) {
-    setLoginError("Username must be between 3 and 30 characters.");
+  if (usernameInput.length < 3) {
+    setLoginError("Please enter your username or email address.");
     return;
   }
 
@@ -994,135 +1049,58 @@ async function handleLoginSubmit(event) {
   setLoginBusy(true);
 
   try {
-    // 1. REGISTER NEW GARAGE MODE
+    const auth = window.GarageCloud?.getAuth?.() || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth() : null);
+    if (!auth) {
+      throw new Error("Firebase Auth is loading. Please refresh or check connection.");
+    }
+
+    const email = formatAuthEmail(usernameInput);
+
     if (isRegisterMode) {
+      // 1. REGISTER NEW GARAGE MODE (Creates isolated tenant account)
       const garageNameInput = (document.getElementById("regGarageName")?.value || "").trim();
       const ownerNameInput = (document.getElementById("regOwnerName")?.value || "").trim();
 
       if (!garageNameInput || garageNameInput.length < 2) {
         setLoginError("Please enter your Garage Name (at least 2 letters).");
+        setLoginBusy(false);
         return;
       }
 
-      const cleanUser = username.replace(/[^a-z0-9._-]/g, "");
-      const garageId = "patel_auto_garage";
-
-      const passwordHash = await hashCredential(cleanUser, password);
-      const newGarageInfo = {
+      pendingRegistrationProfile = {
         garageName: garageNameInput,
         ownerName: ownerNameInput || "Garage Owner",
-        phone: "",
-        tagline: "Professional Vehicle Service, Maintenance & Repair",
-        address: "",
-        photo: "",
-      };
-      saveGarageInfoLocally(newGarageInfo);
-
-      const ownerMember = {
-        username: cleanUser,
-        fullName: ownerNameInput || "Garage Owner",
-        garageName: garageNameInput,
-        garageId: garageId,
-        photo: "",
-        role: "Owner",
-        passwordHash,
-        createdAt: Date.now(),
-        status: "active",
       };
 
-      garageFamilyMembers = [ownerMember];
-      saveFamilyMembersLocally();
-      localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(ownerMember));
-
-      // Instant UI transition into dashboard
-      updateGarageBrandingUI();
-      await createLoginSession(ownerMember, remember);
+      showAuthLoadingOverlay(true, `Setting up ${garageNameInput}...`);
+      await auth.createUserWithEmailAndPassword(email, password);
+      // onAuthStateChanged triggers and creates users/{uid} with empty data
       document.getElementById("loginForm")?.reset();
       isRegisterMode = false;
-      showToast(`🎉 Welcome to ${newGarageInfo.garageName}!`);
-      openDashboard();
-      setLoginBusy(false);
-
-      // Sync to Firestore in background
-      if (cloudDb) {
-        Promise.all([
-          cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(cleanUser).set(ownerMember),
-          cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-            ...newGarageInfo,
-            garageId: garageId,
-            ownerUsername: cleanUser,
-            updatedAt: Date.now(),
-          }, { merge: true })
-        ]).catch((e) => {
-          console.warn("Background new garage owner cloud sync notice:", e);
-        });
-      }
-      return;
+      showToast(`🎉 Account created! Welcome to ${garageNameInput}!`);
+    } else {
+      // 2. SIGN IN EXISTING GARAGE ACCOUNT
+      showAuthLoadingOverlay(true, "Signing in to your garage...");
+      await auth.signInWithEmailAndPassword(email, password);
+      // onAuthStateChanged triggers and loads users/{uid} data
+      document.getElementById("loginForm")?.reset();
     }
-
-    // 2. SIGN IN EXISTING USER
-    let member = findFamilyMember(username);
-    if (!member && cloudDb) {
-      try {
-        const doc = await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(username).get();
-        if (doc.exists) {
-          member = doc.data();
-          garageFamilyMembers.push(member);
-          saveFamilyMembersLocally();
-        }
-      } catch (e) {
-        console.warn("Could not fetch member from cloud:", e);
-      }
-    }
-
-    if (!member) {
-      const nextAttempts = lock.attempts + 1;
-      if (nextAttempts >= MAX_LOGIN_ATTEMPTS) {
-        setLoginLock(0, Date.now() + LOCK_MS);
-        setLoginError("Too many failed attempts. Login is locked for 1 minute.");
-        return;
-      }
-      setLoginLock(nextAttempts, 0);
-      setLoginError(`Username "${username}" not found. Click "New Garage? Create Free Account" below to register.`);
-      return;
-    }
-
-    const passwordOk = verifyMemberPassword(member, password);
-    if (!passwordOk) {
-      const nextAttempts = lock.attempts + 1;
-      if (nextAttempts >= MAX_LOGIN_ATTEMPTS) {
-        setLoginLock(0, Date.now() + LOCK_MS);
-        setLoginError("Too many failed attempts. Login is locked for 1 minute.");
-        return;
-      }
-      setLoginLock(nextAttempts, 0);
-      setLoginError("Incorrect password.");
-      const passInput = document.getElementById("loginPassword");
-      if (passInput) {
-        passInput.value = "";
-        passInput.focus();
-      }
-      return;
-    }
-
-    clearLoginLock();
-    if (member.garageName) {
-      const cur = getGarageInfo();
-      saveGarageInfoLocally({
-        ...cur,
-        garageName: member.garageName,
-        ownerName: member.fullName || cur.ownerName,
-        photo: member.photo || cur.photo || "",
-      });
-    }
-    updateGarageBrandingUI();
-    await createLoginSession(member, remember);
-    document.getElementById("loginForm")?.reset();
-    showToast(`Welcome back, ${member.fullName || member.username}!`);
-    openDashboard();
   } catch (error) {
-    console.error("Login error:", error);
-    setLoginError("Could not complete login. Please try again.");
+    console.error("Login / Registration error:", error);
+    showAuthLoadingOverlay(false);
+    if (error.code === "auth/email-already-in-use") {
+      setLoginError("This username or email is already registered. Please sign in instead.");
+    } else if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+      setLoginError("Incorrect username/email or password.");
+    } else if (error.code === "auth/weak-password") {
+      setLoginError("Password must be at least 6 characters.");
+    } else if (error.code === "auth/network-request-failed") {
+      setLoginError("Network connection error. Please verify your internet access.");
+    } else if (error.code === "auth/operation-not-allowed") {
+      setLoginError("Email/Password login is disabled in Firebase Console -> Authentication -> Sign-in method.");
+    } else {
+      setLoginError(error.message || "Could not complete login. Please try again.");
+    }
   } finally {
     setLoginBusy(false);
   }
@@ -1217,19 +1195,19 @@ function clearLoginSession() {
 }
 
 async function getActivePasskey() {
-  if (cloudDb) {
+  if (cloudDb && currentAuthUser) {
     try {
-      const doc = await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").get();
+      const doc = await cloudDb.collection("users").doc(currentAuthUser.uid).collection("settings").doc("garage_info").get();
       if (doc.exists && doc.data().familyPasskey) {
         garageFamilyPasskey = String(doc.data().familyPasskey);
-        localStorage.setItem(STORAGE_KEYS.familyPasskey, garageFamilyPasskey);
+        localStorage.setItem(getScopedStorageKey("familyPasskey"), garageFamilyPasskey);
         return garageFamilyPasskey;
       }
     } catch (e) {
       console.warn("Could not fetch passkey from cloud:", e);
     }
   }
-  const saved = localStorage.getItem(STORAGE_KEYS.familyPasskey);
+  const saved = localStorage.getItem(getScopedStorageKey("familyPasskey"));
   if (saved) return saved;
   return garageFamilyPasskey || "123456";
 }
@@ -1239,11 +1217,11 @@ function findFamilyMember(username) {
   const found = garageFamilyMembers.find((m) => String(m.username || "").toLowerCase() === clean);
   if (found) return found;
 
-  const cached = readJSON(STORAGE_KEYS.familyMembers, []);
+  const cached = readJSON(getScopedStorageKey("familyMembers"), []);
   const foundCached = cached.find((m) => String(m.username || "").toLowerCase() === clean);
   if (foundCached) return foundCached;
 
-  const owner = readJSON(STORAGE_KEYS.owner, null);
+  const owner = readJSON(getScopedStorageKey("owner"), null);
   if (owner && String(owner.username || "").toLowerCase() === clean) {
     return {
       username: owner.username,
@@ -1261,38 +1239,23 @@ function verifyMemberPassword(member, password) {
 }
 
 async function syncFamilyMembersFromCloud() {
-  if (!cloudDb) return;
+  if (!cloudDb || !currentAuthUser) return;
   try {
-    const snap = await cloudDb.collection(FIRESTORE_COLLECTIONS.family).get();
+    const snap = await cloudDb.collection("users").doc(currentAuthUser.uid).collection("family").get();
     const members = [];
     snap.forEach((doc) => members.push(doc.data()));
-
-    if (members.length === 0) {
-      const ownerDoc = await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").get();
-      if (ownerDoc.exists) {
-        const ownerData = ownerDoc.data();
-        members.push({
-          username: ownerData.username,
-          fullName: ownerData.fullName || "Owner",
-          role: "Owner",
-          passwordHash: ownerData.passwordHash,
-          createdAt: ownerData.createdAt || Date.now(),
-          status: "active",
-        });
-      }
-    }
 
     if (members.length > 0) {
       garageFamilyMembers = members;
       saveFamilyMembersLocally();
     }
 
-    const metaDoc = await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").get();
+    const metaDoc = await cloudDb.collection("users").doc(currentAuthUser.uid).collection("settings").doc("garage_info").get();
     if (metaDoc.exists) {
       const metaData = metaDoc.data();
       if (metaData.familyPasskey) {
         garageFamilyPasskey = String(metaData.familyPasskey);
-        localStorage.setItem(STORAGE_KEYS.familyPasskey, garageFamilyPasskey);
+        localStorage.setItem(getScopedStorageKey("familyPasskey"), garageFamilyPasskey);
       }
       if (metaData.garageName || metaData.ownerName) {
         const cur = getGarageInfo();
@@ -1330,14 +1293,35 @@ function logout() {
   askConfirm(
     "Log out?",
     "The dashboard will be locked. All historical data remains safely stored in the database.",
-  ).then((ok) => {
+  ).then(async (ok) => {
     if (!ok) return;
-    stopDayWatcher();
-    unsubscribeCloudRealtimeListeners();
-    clearLoginSession();
-    wipeDashboardState();
-    showLoginScreen(true);
-    showToast("Logged out successfully.");
+    try {
+      showAuthLoadingOverlay(true, "Signing out...");
+      stopDayWatcher();
+      unsubscribeCloudRealtimeListeners();
+
+      const auth = window.GarageCloud?.getAuth?.() || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth() : null);
+      if (auth) {
+        await auth.signOut();
+      }
+
+      wipeDashboardState();
+      isAuthenticated = false;
+      dashboardReady = false;
+      currentAuthUser = null;
+
+      try {
+        sessionStorage.clear();
+      } catch (_) {}
+
+      showAuthLoadingOverlay(false);
+      showLoginScreen(true);
+      showToast("Logged out successfully.");
+    } catch (err) {
+      console.warn("Logout error:", err);
+      showAuthLoadingOverlay(false);
+      showLoginScreen(true);
+    }
   });
 }
 
@@ -1421,17 +1405,6 @@ async function saveNewPassword() {
   const newPassword = document.getElementById("newPassword").value;
   const confirmPassword = document.getElementById("newPasswordConfirm").value;
 
-  if (!owner) {
-    showToast("Owner account not found.", "error");
-    return;
-  }
-
-  const currentPasswordOk = verifyOwnerPassword(owner, owner.username, currentPassword);
-  if (!currentPasswordOk) {
-    showToast("Current password is incorrect.", "error");
-    return;
-  }
-
   if (newPassword.length < 6) {
     showToast("New password must be at least 6 characters.", "error");
     return;
@@ -1442,28 +1415,22 @@ async function saveNewPassword() {
     return;
   }
 
-  const passwordHash = await hashCredential(owner.username, newPassword);
-  const updatedOwner = {
-    ...owner,
-    passwordHash,
-    updatedAt: Date.now(),
-  };
-
-  localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(updatedOwner));
-
-  // Sync to Cloud
-  if (cloudDb) {
-    try {
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").set(updatedOwner);
-      console.log("Updated password synced to Cloud Firestore.");
-    } catch (e) {
-      console.warn("Could not sync updated password to cloud:", e);
+  try {
+    const authUser = firebase.auth().currentUser;
+    if (authUser) {
+      await authUser.updatePassword(newPassword);
+      closePasswordModal();
+      showToast("✅ Password updated successfully in Firebase Auth!");
+      return;
     }
+  } catch (authErr) {
+    if (authErr.code === "auth/requires-recent-login") {
+      showToast("Security notice: Please sign out and sign in again before changing password.", "error");
+    } else {
+      showToast(authErr.message || "Failed to update password.", "error");
+    }
+    return;
   }
-
-  const storedSession = getStoredSession();
-  const remember = Boolean(storedSession && storedSession.expiresAt);
-  await createLoginSession(owner.username, passwordHash, remember);
   closePasswordModal();
   showToast("Password updated successfully.");
 }
@@ -1472,26 +1439,18 @@ function openForgotPasswordModal() {
   const modal = document.getElementById("forgotPasswordModal");
   if (!modal) return;
   const userInput = document.getElementById("forgotUser");
-  const newPassInput = document.getElementById("forgotNewPass");
-  const confirmPassInput = document.getElementById("forgotConfirmPass");
 
-  const owner = readJSON(STORAGE_KEYS.owner, null);
-  const activeUser = getActiveMember();
-  const rememberedUser = (activeUser && activeUser.username) || (owner && owner.username) || (document.getElementById("loginUsername")?.value || "").trim();
+  const rememberedUser = (currentAuthUser && (currentAuthUser.email || currentAuthUser.displayName)) || (document.getElementById("loginUsername")?.value || "").trim();
 
   if (userInput) userInput.value = rememberedUser;
-  if (newPassInput) newPassInput.value = "";
-  if (confirmPassInput) confirmPassInput.value = "";
 
   modal.hidden = false;
   modal.removeAttribute("aria-hidden");
   setTimeout(() => {
-    if (rememberedUser && newPassInput) {
-      if (newPassInput.focus) newPassInput.focus();
-    } else if (userInput) {
-      if (userInput.focus) userInput.focus();
+    if (userInput && userInput.focus) {
+      userInput.focus();
     }
-  }, 80);
+  }, 100);
 }
 
 function closeForgotPasswordModal() {
@@ -1505,83 +1464,37 @@ function closeForgotPasswordModal() {
 async function handleForgotPasswordSubmit(e) {
   if (e) e.preventDefault();
   const userInput = document.getElementById("forgotUser");
-  const newPassInput = document.getElementById("forgotNewPass");
-  const confirmPassInput = document.getElementById("forgotConfirmPass");
+  const raw = (userInput?.value || "").trim();
 
-  const username = (userInput?.value || "").trim().toLowerCase();
-  const newPassword = newPassInput?.value || "";
-  const confirmPassword = confirmPassInput?.value || "";
-
-  if (!username || username.length < 3) {
-    showToast("Please enter a valid username (min 3 characters).", "error");
+  if (!raw || raw.length < 3) {
+    showToast("Please enter a valid email or username.", "error");
     if (userInput && userInput.focus) userInput.focus();
     return;
   }
 
-  if (!newPassword || newPassword.length < 4) {
-    showToast("Password must be at least 4 characters.", "error");
-    if (newPassInput && newPassInput.focus) newPassInput.focus();
-    return;
-  }
-
-  if (newPassword !== confirmPassword) {
-    showToast("Passwords do not match. Please re-enter.", "error");
-    if (confirmPassInput && confirmPassInput.focus) confirmPassInput.focus();
-    return;
-  }
+  const email = formatAuthEmail(raw);
 
   try {
-    const passwordHash = await hashCredential(username, newPassword);
-
-    let owner = readJSON(STORAGE_KEYS.owner, null);
-    if (!owner) {
-      owner = {
-        username: username,
-        fullName: "Garage Owner",
-        role: "Owner",
-        garageName: getGarageInfo().garageName,
-        createdAt: Date.now(),
-        status: "active",
-      };
-    }
-    owner.username = username;
-    owner.passwordHash = passwordHash;
-    owner.updatedAt = Date.now();
-    localStorage.setItem(STORAGE_KEYS.owner, JSON.stringify(owner));
-
-    // Update member in family list
-    let memberFound = false;
-    garageFamilyMembers = garageFamilyMembers.map((m) => {
-      if (String(m.username || "").toLowerCase() === username) {
-        memberFound = true;
-        return { ...m, passwordHash, updatedAt: Date.now() };
-      }
-      return m;
-    });
-    if (!memberFound) {
-      garageFamilyMembers.unshift(owner);
-    }
-    saveFamilyMembersLocally();
-
-    // Sync to Cloud Firestore if connected
-    if (cloudDb) {
-      Promise.all([
-        cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").set(owner, { merge: true }),
-        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(username).set({
-          username: username,
-          passwordHash: passwordHash,
-          updatedAt: Date.now(),
-        }, { merge: true }),
-      ]).catch((err) => console.warn("Cloud sync password recovery notice:", err));
+    showToast("Sending password reset email...", "info");
+    const auth = window.GarageCloud?.getAuth?.() || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth() : null);
+    if (!auth) {
+      throw new Error("Firebase Auth is loading. Please try again.");
     }
 
+    await auth.sendPasswordResetEmail(email);
     closeForgotPasswordModal();
-    showToast("🎉 Password updated successfully! Logging you in...");
-    await createLoginSession(owner, true);
-    openDashboard();
+    if (email.endsWith("@patelgarage.app")) {
+      showToast(`Password reset link generated for "${raw}". Check your registered recovery email.`, "success");
+    } else {
+      showToast(`📧 Password reset link sent to ${email}! Please check your email inbox.`, "success");
+    }
   } catch (err) {
     console.error("Password reset error:", err);
-    showToast("Could not update password. Please try again.", "error");
+    if (err.code === "auth/user-not-found") {
+      showToast("No account found with this email/username.", "error");
+    } else {
+      showToast(err.message || "Could not send reset email.", "error");
+    }
   }
 }
 
@@ -1589,42 +1502,35 @@ function setupResetLogin() {
   const resetBtn = document.getElementById("resetLoginBtn");
   if (!resetBtn) return;
   resetBtn.addEventListener("click", () => {
-    const owner = readJSON(STORAGE_KEYS.owner, null);
-    const hasAccounts = (owner && owner.username) || (Array.isArray(garageFamilyMembers) && garageFamilyMembers.length > 0);
-
-    if (!hasAccounts) {
-      isRegisterMode = true;
-      updateLoginMode();
-      showToast("Create a new garage account below or sign in with Google.", "info");
-      return;
-    }
-
     askConfirm(
-      "Reset Login / Switch Account?",
-      "This will disconnect this device's login session so you can create a new account or switch user. Your garage records, day history, and bills will NOT be deleted. Proceed?",
+      "Reset Login & Clear Local Cache?",
+      "This will sign you out and completely reset all local login sessions and cached data on this device. Your garage records, day history, and bills in Firestore will NOT be deleted. Proceed?",
     ).then(async (ok) => {
       if (!ok) return;
-      localStorage.removeItem(STORAGE_KEYS.owner);
-      sessionStorage.removeItem(STORAGE_KEYS.loginSession);
-      localStorage.removeItem(STORAGE_KEYS.loginSession);
-      sessionStorage.removeItem(STORAGE_KEYS.loginLock);
-      sessionStorage.removeItem(STORAGE_KEYS.activeMember);
-      localStorage.removeItem(STORAGE_KEYS.activeMember);
 
-      if (cloudDb && owner && owner.username) {
-        try {
-          await Promise.all([
-            cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("owner").delete(),
-            cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(owner.username).delete(),
-          ]);
-        } catch (e) {
-          console.warn("Could not delete owner from cloud:", e);
+      try {
+        const auth = window.GarageCloud?.getAuth?.() || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth() : null);
+        if (auth) {
+          await auth.signOut();
         }
-      }
+      } catch (_) {}
 
-      isRegisterMode = true;
+      // Clear all local storage and session storage
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (_) {}
+
+      wipeDashboardState();
+      unsubscribeCloudRealtimeListeners();
+      currentAuthUser = null;
+      isAuthenticated = false;
+      dashboardReady = false;
+
+      isRegisterMode = false;
       updateLoginMode();
-      showToast("Login session has been reset. You can now create a new login or sign in with Google.");
+      showLoginScreen(true);
+      showToast("Login session and device cache cleared successfully.", "info");
     });
   });
 }
@@ -1806,47 +1712,38 @@ async function initCloudSync() {
   }
 }
 
-function setupCloudRealtimeListeners() {
-  if (!cloudDb) return;
+// =========================================================
+// ONE-TIME DATA MIGRATION CONFIGURATION
+// Paste your Firebase User UID below after finding it from:
+// Firebase Console -> Authentication -> Users -> copy User UID
+// =========================================================
+const MIGRATION_TARGET_UID = "PASTE_YOUR_UID_HERE";
+const MIGRATION_ADMIN_EMAIL = ""; // e.g. "you@gmail.com" (Optional)
 
-  // 1. Records real-time listener
-  if (cloudRecordsUnsubscribe) cloudRecordsUnsubscribe();
-  cloudRecordsUnsubscribe = cloudDb
-    .collection(FIRESTORE_COLLECTIONS.records)
+function setupCloudRealtimeListeners(targetUid = currentAuthUser?.uid) {
+  const uid = targetUid || currentAuthUser?.uid;
+  if (!cloudDb || !uid) return;
+
+  unsubscribeCloudRealtimeListeners();
+
+  const userRef = cloudDb.collection("users").doc(uid);
+
+  // 1. Records real-time listener (isolated tenant subcollection: users/{uid}/jobCards)
+  cloudRecordsUnsubscribe = userRef
+    .collection("jobCards")
     .onSnapshot(
-      async (snapshot) => {
+      (snapshot) => {
         let hasChanges = false;
         const cloudRecords = [];
         snapshot.forEach((doc) => {
           cloudRecords.push(doc.data());
         });
 
-        // 1. If cloud is empty and local data exists on initial load, auto-migrate everything to cloud
-        if (isInitialCloudLoad && cloudRecords.length === 0 && garageData.length > 0) {
-          console.log("Local records detected while cloud is empty. Auto-migrating to cloud...");
-          await migrateLocalDataToCloud();
-          isInitialCloudLoad = false;
-          return;
-        }
-
-        // 2. If cloud has records, but local ALSO has records that were not uploaded yet, upload them
-        if (isInitialCloudLoad && garageData.length > 0) {
-          const cloudIdSet = new Set(cloudRecords.map((r) => String(r.id)));
-          const unuploaded = garageData.filter((r) => !cloudIdSet.has(String(r.id)));
-          if (unuploaded.length > 0) {
-            console.log(`Auto-migrating ${unuploaded.length} local records missing from cloud...`);
-            for (const r of unuploaded) {
-              await saveRecordToCloud(r);
-            }
-          }
-        }
-
-        // 3. Form authoritative record map from cloud snapshot
+        // Authoritative record map
         const recordMap = new Map();
         cloudRecords.forEach((r) => recordMap.set(String(r.id), r));
 
-        // 4. PREVENT ZOMBIE RECORDS: Only retain local records that are explicitly pending offline upload!
-        // Any record previously synced that is missing from cloud snapshot was DELETED by another device.
+        // Retain only local records that are pending offline upload
         garageData.forEach((r) => {
           if (r._pendingSync && !recordMap.has(String(r.id))) {
             recordMap.set(String(r.id), r);
@@ -1879,44 +1776,30 @@ function setupCloudRealtimeListeners() {
             updateDashboard();
             refreshRecordsView();
             renderDayHistory();
-            if (!isInitialCloudLoad) {
-              showToast("🔄 Synced latest records from shared cloud database!");
-            }
           }
         }
         isInitialCloudLoad = false;
       },
       (error) => {
-        console.warn("Cloud records listener error:", error);
+        console.warn("Tenant records listener notice:", error);
         updateCloudStatusUI("offline", "Cloud Offline");
       },
     );
 
-  // 2. Expenses real-time listener
-  if (cloudExpensesUnsubscribe) cloudExpensesUnsubscribe();
-  cloudExpensesUnsubscribe = cloudDb
-    .collection(FIRESTORE_COLLECTIONS.expenses)
+  // 2. Expenses real-time listener (isolated tenant subcollection: users/{uid}/expenses)
+  cloudExpensesUnsubscribe = userRef
+    .collection("expenses")
     .onSnapshot(
-      async (snapshot) => {
+      (snapshot) => {
         let hasExpChanges = false;
         const cloudExpenses = [];
         snapshot.forEach((doc) => {
           cloudExpenses.push(doc.data());
         });
 
-        // Initial load: if local has un-uploaded expenses, upload them
-        if (isInitialCloudLoad && garageExpenses.length > 0) {
-          const cloudExpIdSet = new Set(cloudExpenses.map((e) => String(e.id)));
-          const unuploadedExp = garageExpenses.filter((e) => !cloudExpIdSet.has(String(e.id)));
-          for (const e of unuploadedExp) {
-            await saveExpenseToCloud(e);
-          }
-        }
-
         const expMap = new Map();
         cloudExpenses.forEach((e) => expMap.set(String(e.id), e));
 
-        // PREVENT ZOMBIE EXPENSES: Only retain local expenses that are explicitly pending offline upload
         garageExpenses.forEach((e) => {
           if (e._pendingSync && !expMap.has(String(e.id))) {
             expMap.set(String(e.id), e);
@@ -1945,68 +1828,39 @@ function setupCloudRealtimeListeners() {
         }
       },
       (error) => {
-        console.warn("Cloud expenses listener error:", error);
+        console.warn("Tenant expenses listener notice:", error);
       },
     );
 
-  // 3. Family members real-time listener
-  if (cloudFamilyUnsubscribe) cloudFamilyUnsubscribe();
-  cloudFamilyUnsubscribe = cloudDb
-    .collection(FIRESTORE_COLLECTIONS.family)
-    .onSnapshot(
-      (snapshot) => {
-        const members = [];
-        snapshot.forEach((doc) => members.push(doc.data()));
-        if (members.length > 0) {
-          garageFamilyMembers = members;
-          saveFamilyMembersLocally();
-          renderFamilyMembersTable();
-          updateActiveMemberUI();
-        }
-      },
-      (error) => {
-        console.warn("Cloud family listener error:", error);
-      }
-    );
-
-  // 4. Meta / Garage Info real-time listener (for live passkey changes & garage branding)
-  if (cloudMetaUnsubscribe) cloudMetaUnsubscribe();
-  cloudMetaUnsubscribe = cloudDb
-    .collection(FIRESTORE_COLLECTIONS.meta)
+  // 3. Settings / Profile real-time listener (users/{uid}/settings/garage_info)
+  cloudMetaUnsubscribe = userRef
+    .collection("settings")
     .doc("garage_info")
     .onSnapshot(
       (doc) => {
         if (doc.exists) {
           const data = doc.data();
-          if (data.familyPasskey) {
-            garageFamilyPasskey = String(data.familyPasskey);
-            localStorage.setItem(STORAGE_KEYS.familyPasskey, garageFamilyPasskey);
-            const pinInput = document.getElementById("familyPasskeyInput");
-            if (pinInput) pinInput.value = garageFamilyPasskey;
-          }
-          if (data.garageName || data.ownerName || data.photo) {
-            const current = getGarageInfo();
-            const validCloudName = (data.garageName && data.garageName.trim() && data.garageName !== "Add Your Garage Name")
-              ? data.garageName.trim()
-              : current.garageName;
-            const updated = {
-              ...current,
-              garageName: validCloudName,
-              ownerName: data.ownerName || current.ownerName,
-              phone: data.phone !== undefined ? data.phone : current.phone,
-              tagline: data.tagline !== undefined ? data.tagline : current.tagline,
-              address: data.address !== undefined ? data.address : current.address,
-              photo: data.photo || current.photo || "",
-              isCustom: true,
-            };
-            saveGarageInfoLocally(updated);
-            updateGarageBrandingUI();
-          }
+          const current = getGarageInfo();
+          const validName = (data.garageName && data.garageName.trim() && data.garageName !== "Add Your Garage Name")
+            ? data.garageName.trim()
+            : current.garageName;
+          const updated = {
+            ...current,
+            garageName: validName,
+            ownerName: data.ownerName || current.ownerName,
+            phone: data.phone !== undefined ? data.phone : current.phone,
+            tagline: data.tagline !== undefined ? data.tagline : current.tagline,
+            address: data.address !== undefined ? data.address : current.address,
+            photo: data.photo || current.photo || "",
+            isCustom: true,
+          };
+          saveGarageInfoLocally(updated);
+          updateGarageBrandingUI();
         }
       },
       (error) => {
-        console.warn("Cloud meta listener error:", error);
-      }
+        console.warn("Tenant settings listener notice:", error);
+      },
     );
 }
 
@@ -2031,7 +1885,7 @@ function unsubscribeCloudRealtimeListeners() {
 
 async function saveRecordToCloud(record) {
   if (!record || !record.id) return;
-  if (!cloudDb) {
+  if (!cloudDb || !currentAuthUser) {
     record._pendingSync = true;
     saveRecordsLocally();
     return;
@@ -2042,11 +1896,18 @@ async function saveRecordToCloud(record) {
     if (!record.createdBy) record.createdBy = tag;
     record.lastUpdatedBy = tag;
     record.updatedAt = Date.now();
+    record.ownerId = currentAuthUser.uid; // Multi-tenant ownerId
 
     const toUpload = { ...record };
     delete toUpload._pendingSync;
 
-    await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(record.id)).set(toUpload);
+    await cloudDb
+      .collection("users")
+      .doc(currentAuthUser.uid)
+      .collection("jobCards")
+      .doc(String(record.id))
+      .set(toUpload);
+
     record._pendingSync = false;
     saveRecordsLocally();
     lastCloudSyncTime = Date.now();
@@ -2060,23 +1921,28 @@ async function saveRecordToCloud(record) {
 
 async function deleteRecordFromCloud(recordId) {
   if (!recordId) return;
-  if (!cloudDb) {
-    queuePendingDeletion(FIRESTORE_COLLECTIONS.records, recordId);
+  if (!cloudDb || !currentAuthUser) {
+    queuePendingDeletion("jobCards", recordId);
     return;
   }
   try {
-    await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(recordId)).delete();
+    await cloudDb
+      .collection("users")
+      .doc(currentAuthUser.uid)
+      .collection("jobCards")
+      .doc(String(recordId))
+      .delete();
     lastCloudSyncTime = Date.now();
     updateCloudSyncStats();
   } catch (err) {
     console.warn("Cloud delete record failed (queued for retry):", err);
-    queuePendingDeletion(FIRESTORE_COLLECTIONS.records, recordId);
+    queuePendingDeletion("jobCards", recordId);
   }
 }
 
 async function saveExpenseToCloud(expense) {
   if (!expense || !expense.id) return;
-  if (!cloudDb) {
+  if (!cloudDb || !currentAuthUser) {
     expense._pendingSync = true;
     saveExpensesLocally();
     return;
@@ -2086,11 +1952,18 @@ async function saveExpenseToCloud(expense) {
     const tag = activeMember ? `${activeMember.fullName || activeMember.username} (${activeMember.role || 'Member'})` : 'Garage Staff';
     if (!expense.recordedBy) expense.recordedBy = tag;
     expense.updatedAt = Date.now();
+    expense.ownerId = currentAuthUser.uid; // Multi-tenant ownerId
 
     const toUpload = { ...expense };
     delete toUpload._pendingSync;
 
-    await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expense.id)).set(toUpload);
+    await cloudDb
+      .collection("users")
+      .doc(currentAuthUser.uid)
+      .collection("expenses")
+      .doc(String(expense.id))
+      .set(toUpload);
+
     expense._pendingSync = false;
     saveExpensesLocally();
     lastCloudSyncTime = Date.now();
@@ -2104,49 +1977,59 @@ async function saveExpenseToCloud(expense) {
 
 async function deleteExpenseFromCloud(expenseId) {
   if (!expenseId) return;
-  if (!cloudDb) {
-    queuePendingDeletion(FIRESTORE_COLLECTIONS.expenses, expenseId);
+  if (!cloudDb || !currentAuthUser) {
+    queuePendingDeletion("expenses", expenseId);
     return;
   }
   try {
-    await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expenseId)).delete();
+    await cloudDb
+      .collection("users")
+      .doc(currentAuthUser.uid)
+      .collection("expenses")
+      .doc(String(expenseId))
+      .delete();
     lastCloudSyncTime = Date.now();
     updateCloudSyncStats();
   } catch (err) {
     console.warn("Cloud delete expense failed (queued for retry):", err);
-    queuePendingDeletion(FIRESTORE_COLLECTIONS.expenses, expenseId);
+    queuePendingDeletion("expenses", expenseId);
   }
 }
 
 function queuePendingDeletion(collectionName, itemId) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.pendingDeletions);
+    const raw = localStorage.getItem(getScopedStorageKey("pendingDeletions"));
     const list = raw ? JSON.parse(raw) : [];
     list.push({ collection: collectionName, id: String(itemId), timestamp: Date.now() });
-    localStorage.setItem(STORAGE_KEYS.pendingDeletions, JSON.stringify(list));
+    localStorage.setItem(getScopedStorageKey("pendingDeletions"), JSON.stringify(list));
   } catch (e) {
     console.warn("Failed queuing pending deletion:", e);
   }
 }
 
 async function flushPendingSyncQueue() {
-  if (!cloudDb) return;
+  if (!cloudDb || !currentAuthUser) return;
 
   // 1. Process pending deletions
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.pendingDeletions);
+    const raw = localStorage.getItem(getScopedStorageKey("pendingDeletions"));
     if (raw) {
       const list = JSON.parse(raw);
       if (Array.isArray(list) && list.length > 0) {
         const remaining = [];
         for (const item of list) {
           try {
-            await cloudDb.collection(item.collection).doc(String(item.id)).delete();
+            const subcoll = (item.collection === "patel_expenses" || item.collection === "expenses") ? "expenses" : "jobCards";
+            await cloudDb.collection("users").doc(currentAuthUser.uid).collection(subcoll).doc(String(item.id)).delete();
           } catch (delErr) {
             remaining.push(item);
           }
         }
-        localStorage.setItem(STORAGE_KEYS.pendingDeletions, JSON.stringify(remaining));
+        if (remaining.length > 0) {
+          localStorage.setItem(getScopedStorageKey("pendingDeletions"), JSON.stringify(remaining));
+        } else {
+          localStorage.removeItem(getScopedStorageKey("pendingDeletions"));
+        }
       }
     }
   } catch (e) {
@@ -2158,9 +2041,9 @@ async function flushPendingSyncQueue() {
   for (const r of garageData) {
     if (r._pendingSync) {
       try {
-        const toUpload = { ...r };
+        const toUpload = { ...r, ownerId: currentAuthUser.uid };
         delete toUpload._pendingSync;
-        await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(r.id)).set(toUpload);
+        await cloudDb.collection("users").doc(currentAuthUser.uid).collection("jobCards").doc(String(r.id)).set(toUpload);
         r._pendingSync = false;
         savedRecords = true;
       } catch (e) {
@@ -2175,9 +2058,9 @@ async function flushPendingSyncQueue() {
   for (const exp of garageExpenses) {
     if (exp._pendingSync) {
       try {
-        const toUpload = { ...exp };
+        const toUpload = { ...exp, ownerId: currentAuthUser.uid };
         delete toUpload._pendingSync;
-        await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(exp.id)).set(toUpload);
+        await cloudDb.collection("users").doc(currentAuthUser.uid).collection("expenses").doc(String(exp.id)).set(toUpload);
         exp._pendingSync = false;
         savedExpenses = true;
       } catch (e) {
@@ -2188,68 +2071,162 @@ async function flushPendingSyncQueue() {
   if (savedExpenses) saveExpensesLocally();
 }
 
-async function migrateLocalDataToCloud() {
+/**
+ * ONE-TIME SAFE MIGRATION FUNCTION
+ * Copies existing global-collection data (patel_records, patel_expenses, patel_meta)
+ * into users/{targetUid}/... with ownerId added. Batched writes (max 400 per batch).
+ * Does NOT delete the original data.
+ */
+async function runOneTimeMigration(targetUid) {
   if (!cloudDb) {
-    showToast("Cloud database is not connected. Connect first.", "error");
+    showToast("Cloud database not connected. Please connect first.", "error");
     return;
   }
 
-  showToast("Uploading local records to shared cloud database...", "info");
-  const migrateBtn = document.getElementById("cloudMigrateBtn");
-  if (migrateBtn) migrateBtn.disabled = true;
+  const uid = (
+    targetUid ||
+    document.getElementById("migrationTargetUidInput")?.value ||
+    (typeof MIGRATION_TARGET_UID !== "undefined" && MIGRATION_TARGET_UID !== "PASTE_YOUR_UID_HERE" ? MIGRATION_TARGET_UID : "") ||
+    currentAuthUser?.uid ||
+    ""
+  ).trim();
+
+  if (!uid) {
+    showToast("Please provide your target User UID.", "error");
+    return;
+  }
+
+  const statusEl = document.getElementById("migrationStatus");
+  if (statusEl) {
+    statusEl.style.display = "block";
+    statusEl.textContent = `⏳ Starting migration to users/${uid}...\nPlease wait.`;
+  }
+
+  console.log(`Starting one-time migration to users/${uid}...`);
+  let recordsCount = 0;
+  let expensesCount = 0;
+  let settingsCount = 0;
 
   try {
-    let uploadedRecords = 0;
-    let uploadedExpenses = 0;
+    const userDocRef = cloudDb.collection("users").doc(uid);
 
-    for (const record of garageData) {
-      const toUpload = { ...record };
-      delete toUpload._pendingSync;
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.records).doc(String(record.id)).set(toUpload);
-      record._pendingSync = false;
-      uploadedRecords++;
+    // 1. Migrate Records from patel_records or jobCards
+    let recSnap = null;
+    try {
+      recSnap = await cloudDb.collection("patel_records").get();
+    } catch (e) {
+      console.warn("Could not read patel_records:", e);
     }
 
-    for (const expense of garageExpenses) {
-      const toUpload = { ...expense };
-      delete toUpload._pendingSync;
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).doc(String(expense.id)).set(toUpload);
-      expense._pendingSync = false;
-      uploadedExpenses++;
+    if (!recSnap || recSnap.empty) {
+      try {
+        recSnap = await cloudDb.collection("jobCards").get();
+      } catch (_) {}
     }
 
-    // Migrate family members and master owner
-    const owner = getActiveMember();
-    if (owner) {
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(owner.username).set({
-        ...owner,
-        status: "active",
-        createdAt: Date.now(),
-      });
-      const currentGarageInfo = getGarageInfo();
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-        garageName: currentGarageInfo.garageName,
-        ownerName: currentGarageInfo.ownerName,
-        phone: currentGarageInfo.phone,
-        tagline: currentGarageInfo.tagline,
-        address: currentGarageInfo.address,
-        familyPasskey: garageFamilyPasskey || "123456",
-        ownerUsername: owner.username,
-        updatedAt: Date.now(),
-      }, { merge: true });
+    if (recSnap && !recSnap.empty) {
+      const docs = recSnap.docs;
+      const BATCH_SIZE = 400; // Requirement: max 400 per batch
+      for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+        const batch = cloudDb.batch();
+        const slice = docs.slice(i, i + BATCH_SIZE);
+        slice.forEach((d) => {
+          const data = d.data();
+          data.ownerId = uid;
+          const targetRef = userDocRef.collection("jobCards").doc(d.id);
+          batch.set(targetRef, data, { merge: true });
+          recordsCount++;
+        });
+        await batch.commit();
+        console.log(`Migrated batch of ${slice.length} records...`);
+      }
+      console.log(`Successfully migrated ${recordsCount} records to users/${uid}/jobCards`);
     }
 
-    saveRecordsLocally();
-    saveExpensesLocally();
-    lastCloudSyncTime = Date.now();
-    updateCloudSyncStats();
-    updateCloudStatusUI("online", "Cloud Synced");
-    showToast(`✅ Uploaded ${uploadedRecords} records & ${uploadedExpenses} expenses to cloud database!`);
+    // 2. Migrate Expenses from patel_expenses or expenses
+    let expSnap = null;
+    try {
+      expSnap = await cloudDb.collection("patel_expenses").get();
+    } catch (e) {
+      console.warn("Could not read patel_expenses:", e);
+    }
+
+    if (!expSnap || expSnap.empty) {
+      try {
+        expSnap = await cloudDb.collection("expenses").get();
+      } catch (_) {}
+    }
+
+    if (expSnap && !expSnap.empty) {
+      const docs = expSnap.docs;
+      const BATCH_SIZE = 400;
+      for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+        const batch = cloudDb.batch();
+        const slice = docs.slice(i, i + BATCH_SIZE);
+        slice.forEach((d) => {
+          const data = d.data();
+          data.ownerId = uid;
+          const targetRef = userDocRef.collection("expenses").doc(d.id);
+          batch.set(targetRef, data, { merge: true });
+          expensesCount++;
+        });
+        await batch.commit();
+        console.log(`Migrated batch of ${slice.length} expenses...`);
+      }
+      console.log(`Successfully migrated ${expensesCount} expenses to users/${uid}/expenses`);
+    }
+
+    // 3. Migrate Settings / Meta from patel_meta/garage_info
+    try {
+      const metaDoc = await cloudDb.collection("patel_meta").doc("garage_info").get();
+      if (metaDoc.exists) {
+        const metaData = metaDoc.data();
+        metaData.ownerId = uid;
+        await userDocRef.collection("settings").doc("garage_info").set(metaData, { merge: true });
+        await userDocRef.set({
+          ownerId: uid,
+          garageName: metaData.garageName || "Patel Auto Garage & Service",
+          ownerName: metaData.ownerName || "Garage Owner",
+          photo: metaData.photo || "",
+          phone: metaData.phone || "",
+          tagline: metaData.tagline || "",
+          address: metaData.address || "",
+          updatedAt: Date.now(),
+        }, { merge: true });
+        settingsCount = 1;
+        console.log(`Successfully migrated settings to users/${uid}/settings/garage_info`);
+      }
+    } catch (metaErr) {
+      console.warn("Notice reading patel_meta:", metaErr);
+    }
+
+    const summary = `🎉 Data Migration Completed Successfully!\n` +
+      `----------------------------------------\n` +
+      `• Job Cards copied: ${recordsCount}\n` +
+      `• Expenses copied: ${expensesCount}\n` +
+      `• Settings copied: ${settingsCount}\n` +
+      `• Destination: users/${uid}/...\n` +
+      `• Original global data: PRESERVED\n` +
+      `----------------------------------------\n` +
+      `You can now safely publish the final Firestore Security Rules!`;
+
+    if (statusEl) {
+      statusEl.style.display = "block";
+      statusEl.textContent = summary;
+    }
+    console.log(summary);
+    showToast(`🎉 Migrated ${recordsCount} records & ${expensesCount} expenses!`, "success");
+    alert(summary);
+
+    if (currentAuthUser && currentAuthUser.uid === uid) {
+      setupCloudRealtimeListeners(uid);
+    }
   } catch (err) {
-    console.error("Migration failed:", err);
-    showToast("Cloud upload encountered an error. Check settings.", "error");
-  } finally {
-    if (migrateBtn) migrateBtn.disabled = false;
+    console.error("Migration error:", err);
+    const errMsg = `❌ Migration Failed: ${err.message}`;
+    if (statusEl) statusEl.textContent = errMsg;
+    showToast(errMsg, "error");
+    alert(errMsg);
   }
 }
 
@@ -2415,21 +2392,8 @@ async function saveGarageProfile() {
     });
     saveFamilyMembersLocally();
 
-    if (cloudDb) {
-      Promise.all([
-        cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set({
-          ...updatedInfo,
-          updatedAt: Date.now(),
-        }, { merge: true }),
-        cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(activeMember.username).set({
-          garageName,
-          fullName: ownerName || activeMember.fullName,
-          photo: updatedInfo.photo,
-          updatedAt: Date.now(),
-        }, { merge: true }),
-      ]).catch((err) => {
-        console.warn("Could not sync garage profile to cloud:", err);
-      });
+    if (cloudDb && currentAuthUser) {
+      saveGarageSettings(updatedInfo);
     }
   }
 
@@ -2522,13 +2486,13 @@ function setupFamilyListeners() {
       const input = document.getElementById("familyPasskeyInput");
       if (input) input.value = cleanPin;
 
-      if (cloudDb) {
+      if (cloudDb && currentAuthUser) {
         try {
-          await cloudDb.collection(FIRESTORE_COLLECTIONS.meta).doc("garage_info").set(
+          await cloudDb.collection("users").doc(currentAuthUser.uid).collection("settings").doc("garage_info").set(
             { familyPasskey: cleanPin, updatedAt: Date.now() },
             { merge: true }
           );
-          showToast("✅ Family Passkey updated & synced to all devices!");
+          showToast("✅ Passkey updated!");
         } catch (e) {
           console.warn("Could not sync passkey to cloud:", e);
         }
@@ -2594,9 +2558,12 @@ function setupFamilyListeners() {
       garageFamilyMembers.push(newMember);
       saveFamilyMembersLocally();
 
-      if (cloudDb) {
+      if (cloudDb && currentAuthUser) {
         try {
-          await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(username).set(newMember);
+          await cloudDb.collection("users").doc(currentAuthUser.uid).collection("family").doc(username).set({
+            ...newMember,
+            ownerId: currentAuthUser.uid,
+          });
           showToast(`✅ Added ${newMember.fullName} (${newMember.role})!`);
         } catch (err) {
           console.error("Failed to add member to cloud:", err);
@@ -2674,9 +2641,9 @@ window.removeFamilyMember = async function(username) {
   garageFamilyMembers = garageFamilyMembers.filter((m) => String(m.username || "").toLowerCase() !== clean);
   saveFamilyMembersLocally();
 
-  if (cloudDb) {
+  if (cloudDb && currentAuthUser) {
     try {
-      await cloudDb.collection(FIRESTORE_COLLECTIONS.family).doc(clean).delete();
+      await cloudDb.collection("users").doc(currentAuthUser.uid).collection("family").doc(clean).delete();
       showToast(`Removed @${clean} from cloud database.`);
     } catch (e) {
       console.warn("Could not delete member from cloud:", e);
@@ -2686,23 +2653,24 @@ window.removeFamilyMember = async function(username) {
 };
 
 async function forceCloudSync() {
-  if (!cloudDb) {
+  if (!cloudDb || !currentAuthUser) {
     const ok = await initCloudSync();
-    if (!ok) {
+    if (!ok || !currentAuthUser) {
       showToast("Cannot connect to cloud database. Please verify configuration.", "error");
       return;
     }
   }
 
-  showToast("Syncing with shared cloud database...", "info");
+  showToast("Syncing with cloud database...", "info");
   try {
     await flushPendingSyncQueue();
 
-    const recSnap = await cloudDb.collection(FIRESTORE_COLLECTIONS.records).get();
+    const userRef = cloudDb.collection("users").doc(currentAuthUser.uid);
+    const recSnap = await userRef.collection("jobCards").get();
     const cloudRecords = [];
     recSnap.forEach((doc) => cloudRecords.push(doc.data()));
 
-    const expSnap = await cloudDb.collection(FIRESTORE_COLLECTIONS.expenses).get();
+    const expSnap = await userRef.collection("expenses").get();
     const cloudExpenses = [];
     expSnap.forEach((doc) => cloudExpenses.push(doc.data()));
 
@@ -2816,7 +2784,22 @@ function setupCloudListeners() {
   if (forceBtn) forceBtn.addEventListener("click", forceCloudSync);
 
   const migrateBtn = document.getElementById("cloudMigrateBtn");
-  if (migrateBtn) migrateBtn.addEventListener("click", migrateLocalDataToCloud);
+  if (migrateBtn) migrateBtn.addEventListener("click", () => runOneTimeMigration());
+
+  const runMigBtn = document.getElementById("runMigrationBtn");
+  if (runMigBtn) {
+    runMigBtn.addEventListener("click", () => {
+      const targetInput = document.getElementById("migrationTargetUidInput");
+      const targetUid = (targetInput?.value || "").trim() || currentAuthUser?.uid;
+      if (!targetUid) {
+        showToast("Please enter your target user UID.", "error");
+        return;
+      }
+      if (confirm(`Start copying all old global data into account users/${targetUid}? This will NOT delete any original data.`)) {
+        runOneTimeMigration(targetUid);
+      }
+    });
+  }
 
   // 1-Tap setup link for phone / WhatsApp sharing
   const copyCloudLinkBtn = document.getElementById("copyCloudShareLinkBtn");
@@ -2977,21 +2960,26 @@ function populateCloudConfigForm() {
 // =========================================
 
 function loadData() {
-  if (!requireAuth()) {
+  const uid = currentAuthUser?.uid;
+  if (!uid) {
     garageData = [];
     garageExpenses = [];
     return;
   }
-  garageData = normalizeRecords(readJSON(STORAGE_KEYS.records, []));
-  garageExpenses = normalizeExpenses(readJSON(STORAGE_KEYS.expenses, []));
+  garageData = normalizeRecords(readJSON(getScopedStorageKey("records", uid), []));
+  garageExpenses = normalizeExpenses(readJSON(getScopedStorageKey("expenses", uid), []));
 }
 
 function saveRecordsLocally() {
-  localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(garageData));
+  const uid = currentAuthUser?.uid;
+  if (!uid) return;
+  localStorage.setItem(getScopedStorageKey("records", uid), JSON.stringify(garageData));
 }
 
 function saveExpensesLocally() {
-  localStorage.setItem(STORAGE_KEYS.expenses, JSON.stringify(garageExpenses));
+  const uid = currentAuthUser?.uid;
+  if (!uid) return;
+  localStorage.setItem(getScopedStorageKey("expenses", uid), JSON.stringify(garageExpenses));
 }
 
 function readJSON(key, fallback) {
@@ -3757,7 +3745,9 @@ function renderRecords(data) {
   if (data.length === 0) {
     empty.style.display = "block";
     const scopeInfo = getScopeDisplayInfo();
-    if (filterScope === "date") {
+    if (garageData.length === 0) {
+      emptySub.textContent = "No job cards yet — Create your first one above!";
+    } else if (filterScope === "date") {
       emptySub.textContent = `No vehicle service records found for ${scopeInfo.subLabel}. Create a new job card above!`;
     } else {
       emptySub.textContent = "No job cards match your search filters.";

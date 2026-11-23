@@ -235,25 +235,17 @@ async function initializeCloudDatabase(customConfig = null) {
       }
     }
 
-    // Anonymous Firebase Authentication (Requirement 7 & 8)
-    // Allows Firestore security rules with 'allow read, write: if request.auth != null'
+    // Multi-tenant isolated authentication:
+    // We DO NOT use signInAnonymously() because each garage must authenticate with
+    // their own Google or Email/Password account, mapping directly to users/{uid}.
+    let authInstance = null;
     if (typeof firebase.auth === "function") {
-      try {
-        const auth = firebase.auth();
-        if (!auth.currentUser) {
-          const authResult = await auth.signInAnonymously();
-          console.log("Firebase anonymous authentication succeeded (UID:", authResult.user ? authResult.user.uid : "anon", ")");
-        } else {
-          console.log("Firebase auth session active (UID:", auth.currentUser.uid, ")");
-        }
-      } catch (authErr) {
-        console.warn("Firebase Anonymous Auth warning (enable Anonymous Sign-In in Firebase Console):", authErr);
-      }
+      authInstance = firebase.auth();
     }
 
     isFirestoreInitialized = true;
     isFirestoreOnline = true;
-    return { success: true, db: firestoreDb };
+    return { success: true, db: firestoreDb, auth: authInstance };
   } catch (err) {
     console.error("Error initializing Firebase Firestore:", err);
     isFirestoreOnline = false;
@@ -283,6 +275,7 @@ function getFirestoreInstance() {
 window.GarageCloud = {
   initialize: initializeCloudDatabase,
   getDb: getFirestoreInstance,
+  getAuth: () => (firebaseApp && typeof firebase.auth === "function" ? firebase.auth() : null),
   isActive: isCloudActive,
   isConfigured: () => isValidFirebaseConfig(getActiveFirebaseConfig()),
   getConfig: getActiveFirebaseConfig,

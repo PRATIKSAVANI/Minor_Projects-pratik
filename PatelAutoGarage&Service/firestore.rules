@@ -1,11 +1,47 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Patel Auto Garage & Service - Authenticated Cloud Security Rules
-    // Protects garage records, expenses, family logins, and metadata.
-    // Anonymous Firebase Auth is enabled in the client app to authenticate every connected garage device.
+
+    // ===============================================================
+    // Assumed Data Model & Multi-Tenant Architecture
+    // ===============================================================
+    // Application: Patel Auto Garage & Service
+    //
+    // Multi-tenant isolation is enforced at the root `/users/{userId}` hierarchy.
+    // Each tenant (garage) owns its entire document and subcollection tree:
+    //   - /users/{userId}
+    //   - /users/{userId}/records/{recordId}
+    //   - /users/{userId}/expenses/{expenseId}
+    //   - /users/{userId}/family/{memberId}
+    //   - /users/{userId}/meta/{metaDocId}
+    //
+    // Security Invariants:
+    // 1. Strict Tenant Isolation: Only the authenticated user matching `userId`
+    //    can read or write their documents and subcollections.
+    // 2. Default Deny: All documents and collections outside `/users/{userId}/...`
+    //    are strictly forbidden from read and write operations.
+    // ===============================================================
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Garage Multi-Tenant Scoped Subcollection Tree
+    // Enforces complete isolation: each garage user only has access to their own data tree.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default Deny Root Rule
+    // Explicitly deny read and write access to all other paths in the database.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

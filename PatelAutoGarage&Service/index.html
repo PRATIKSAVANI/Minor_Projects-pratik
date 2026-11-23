@@ -23,6 +23,15 @@
 </head>
 
 <body class="app-locked">
+    <!-- APP AUTH LOADING OVERLAY (Zero-Flicker single source of truth) -->
+    <div id="authLoadingOverlay" style="position:fixed; inset:0; z-index:99999; background:rgba(15,23,42,0.96); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; color:#fff; backdrop-filter:blur(8px);">
+        <div style="width:48px; height:48px; border:4px solid rgba(255,255,255,0.15); border-top-color:#38bdf8; border-radius:50%; animation:authSpin 0.8s linear infinite;"></div>
+        <div style="font-weight:600; font-size:15px; color:#e2e8f0; font-family:'Inter', sans-serif;" id="authLoadingText">Verifying garage account...</div>
+    </div>
+    <style>
+    @keyframes authSpin { to { transform: rotate(360deg); } }
+    </style>
+
     <noscript>
         <div class="noscript-banner">
             JavaScript is required to sign in and use PatelAutoGarage&Service.
@@ -89,11 +98,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="loginUsername">Username</label>
+                    <label for="loginUsername">Username or Email</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-user-lock"></i>
-                        <input id="loginUsername" name="username" type="text" maxlength="30" minlength="3"
-                            placeholder="Enter username" autocomplete="username" required>
+                        <input id="loginUsername" name="username" type="text" maxlength="60" minlength="3"
+                            placeholder="Enter username or email" autocomplete="username" required>
                     </div>
                 </div>
 
@@ -1552,6 +1561,24 @@
                                 <i class="fa-solid fa-floppy-disk"></i> Save &amp; Connect Cloud
                             </button>
                         </div>
+
+                        <!-- One-Time Migration Section (Copies old global data into users/{MY_UID}) -->
+                        <div id="migrationSection" class="cloud-card" style="display:none; border: 2px dashed #f59e0b; background: rgba(245, 158, 11, 0.06); margin-top: 16px; padding: 16px; border-radius: 12px;">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                                <i class="fa-solid fa-file-export" style="color:#f59e0b; font-size:20px;"></i>
+                                <div>
+                                    <strong style="color:#f59e0b; font-size:14px;">One-Time Data Migration Tool</strong>
+                                    <p style="font-size:12px; color:var(--text-muted, #94a3b8); margin:0;">Copy all old global garage records &amp; expenses into your private account (users/{YOUR_UID})</p>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+                                <input type="text" id="migrationTargetUidInput" placeholder="Target User UID (auto-filled with your UID)" style="flex:1; min-width:240px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-family:monospace; font-size:12px; background:var(--bg-card, #fff); color:var(--text, #1e293b);">
+                                <button type="button" id="runMigrationBtn" class="btn" style="background:#f59e0b; color:#fff; font-weight:700; padding:8px 16px; border:none; border-radius:6px; cursor:pointer;">
+                                    <i class="fa-solid fa-play"></i> Start Safe Migration
+                                </button>
+                            </div>
+                            <div id="migrationStatus" style="font-size:12px; margin-top:10px; font-family:monospace; color:var(--text-secondary, #64748b); white-space:pre-wrap; display:none; background:rgba(0,0,0,0.04); padding:10px; border-radius:6px;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1588,34 +1615,20 @@
             </div>
             <div class="modal-body" style="padding: 16px 20px;">
                 <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
-                    Enter your username and choose a new password for your garage account.
+                    Enter your registered email address or username. A password reset link will be sent to your email.
                 </p>
                 <form id="forgotPasswordForm">
-                    <div class="form-group" style="margin-bottom: 14px;">
-                        <label for="forgotUser">Username</label>
-                        <div class="input-wrap">
-                            <i class="fa-solid fa-user"></i>
-                            <input id="forgotUser" type="text" maxlength="30" placeholder="Enter your username" autocomplete="username" required>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 14px;">
-                        <label for="forgotNewPass">New Password</label>
-                        <div class="input-wrap">
-                            <i class="fa-solid fa-lock"></i>
-                            <input id="forgotNewPass" type="password" minlength="4" maxlength="64" placeholder="Enter new password (min 4 chars)" autocomplete="new-password" required>
-                        </div>
-                    </div>
                     <div class="form-group" style="margin-bottom: 18px;">
-                        <label for="forgotConfirmPass">Confirm New Password</label>
+                        <label for="forgotUser">Email or Username</label>
                         <div class="input-wrap">
-                            <i class="fa-solid fa-shield-halved"></i>
-                            <input id="forgotConfirmPass" type="password" minlength="4" maxlength="64" placeholder="Re-enter new password" autocomplete="new-password" required>
+                            <i class="fa-solid fa-envelope"></i>
+                            <input id="forgotUser" type="text" maxlength="60" placeholder="e.g. name@gmail.com or username" autocomplete="username" required>
                         </div>
                     </div>
                     <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:10px;">
                         <button type="button" id="forgotPasswordCancelBtn" class="btn btn-light">Cancel</button>
                         <button type="submit" id="forgotPasswordSubmitBtn" class="btn btn-save">
-                            <i class="fa-solid fa-check"></i> Set New Password &amp; Sign In
+                            <i class="fa-solid fa-paper-plane"></i> Send Password Reset Link
                         </button>
                     </div>
                 </form>
