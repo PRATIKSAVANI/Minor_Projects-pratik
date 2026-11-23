@@ -139,8 +139,8 @@ function updateGarageBrandingUI() {
   const displayGarageName = (info.garageName && info.garageName.trim() && info.garageName !== "Add Your Garage Name") ? info.garageName.trim() : "Patel Auto Garage & Service";
   const displayOwnerName = (info.ownerName && info.ownerName.trim()) ? info.ownerName.trim() : "Garage Owner";
 
-  // 1. Browser Tab Title
-  document.title = `${displayGarageName} - Garage Management System`;
+  // 1. Browser Tab Title (Always fixed to PatelAutoGarage& Service)
+  document.title = "PatelAutoGarage& Service";
 
   // 2. Login screen title & logo
   const loginTitle = document.getElementById("loginGarageTitle");
@@ -971,7 +971,7 @@ async function handleQuickEditSave() {
     if (topbarName) topbarName.textContent = value;
     const printName = document.getElementById("printGarageName");
     if (printName) printName.textContent = value;
-    document.title = `${value} - Garage Management System`;
+    document.title = "PatelAutoGarage& Service";
 
     updateGarageBrandingUI();
     closeQuickEditModal();
