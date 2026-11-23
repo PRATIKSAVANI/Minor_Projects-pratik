@@ -327,6 +327,7 @@ async function initializeApp() {
         cloudDb = window.GarageCloud.getDb();
         const auth = window.GarageCloud.getAuth();
         if (auth) {
+          auth.getRedirectResult().catch(() => {});
           // onAuthStateChanged is the SINGLE SOURCE OF TRUTH
           auth.onAuthStateChanged(handleAuthStateChange);
           return;
@@ -737,7 +738,17 @@ async function signInWithGoogle() {
     showAuthLoadingOverlay(true, "Signing in with Google...");
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    const result = await firebase.auth().signInWithPopup(provider);
+    let result = null;
+    try {
+      result = await firebase.auth().signInWithPopup(provider);
+    } catch (popupErr) {
+      if (popupErr.code === "auth/popup-blocked" || popupErr.code === "auth/cancelled-popup-request") {
+        console.log("Popup blocked, falling back to redirect...");
+        await firebase.auth().signInWithRedirect(provider);
+        return;
+      }
+      throw popupErr;
+    }
     const user = result.user;
     if (!user) {
       throw new Error("No user returned from Google.");
@@ -1183,7 +1194,7 @@ async function handleLoginSubmit(event) {
     if (error.code === "auth/email-already-in-use") {
       setLoginError("This username or email is already registered. Please sign in instead.");
     } else if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
-      setLoginError("Incorrect username/email or password.");
+      setLoginError("Account not found or password incorrect. If you haven't registered yet, please click 'New Garage? Create Free Account' below.");
     } else if (error.code === "auth/weak-password") {
       setLoginError("Password must be at least 6 characters.");
     } else if (error.code === "auth/network-request-failed") {
