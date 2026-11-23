@@ -3,6 +3,28 @@
    Shared Cloud Firestore Database, Multi-Scope History & Billing
 ========================================================= */
 
+// Force browser tab to immediately paint the official garage favicon bypassing browser cache
+(function forceBrowserFavicon() {
+  try {
+    const faviconSvg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ2FyYWdlQmx1ZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMzYjgyZjYiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjMjU2M2ViIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxZDRlZDgiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJnbG9zcyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAuMTgiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjAiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KCiAgPCEtLSBNb2Rlcm4gUm91bmRlZCBTcXVpcmNsZSBCYXNlIC0tPgogIDxyZWN0IHg9IjI0IiB5PSIyNCIgd2lkdGg9IjQ2NCIgaGVpZ2h0PSI0NjQiIHJ4PSIxMDgiIGZpbGw9InVybCgjZ2FyYWdlQmx1ZSkiIC8+CgogIDwhLS0gU3VidGxlIFRvcCBBbWJpZW50IEhpZ2hsaWdodCAtLT4KICA8cmVjdCB4PSIyNCIgeT0iMjQiIHdpZHRoPSI0NjQiIGhlaWdodD0iMjMyIiByeD0iMTA4IiBmaWxsPSJ1cmwoI2dsb3NzKSIgLz4KCiAgPCEtLSBDcmlzcCBXaGl0ZSBDcm9zc2VkIFNjcmV3ZHJpdmVyICYgV3JlbmNoIFRvb2xzIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEwOCwgMTA4KSBzY2FsZSgwLjU3ODEyNSkiIGZpbGw9IiNmZmZmZmYiPgogICAgPHBhdGggZD0iTTc4LjYgNUM2OS4xLTIuNCA1NS42LTEuNSA0NyA3TDcgNDdjLTguNSA4LjUtOS40IDIyLTIuMSAzMS42bDgwIDEwNGM0LjUgNS45IDExLjYgOS40IDE5IDkuNGg1NC4xbDEwOSAxMDljLTE0LjcgMjktMTAgNjUuNCAxNC4zIDg5LjZsMTEyIDExMmMxMi41IDEyLjUgMzIuOCAxMi41IDQ1LjMgMGw2NC02NGMxMi41LTEyLjUgMTIuNS0zMi44IDAtNDUuM2wtMTEyLTExMmMtMjQuMi0yNC4yLTYwLjYtMjktODkuNi0xNC4zbC0xMDktMTA5VjEwNGMwLTcuNS0zLjUtMTQuNS05LjQtMTlMNzguNiA1ek0xOS45IDM5Ni4xQzcuMiA0MDguOCAwIDQyNi4xIDAgNDQ0LjFDMCA0ODEuNiAzMC40IDUxMiA2Ny45IDUxMmMxOCAwIDM1LjMtNy4yIDQ4LTE5LjlMMjMzLjcgMzc0LjNjLTcuOC0yMC45LTktNDMuNi0zLjYtNjUuMWwtNjEuNy02MS43TDE5LjkgMzk2LjF6TTUxMiAxNDRjMC0xMC41LTEuMS0yMC43LTMuMi0zMC41Yy0yLjQtMTEuMi0xNi4xLTE0LjEtMjQuMi02bC02My45IDYzLjljLTMgMy03LjEgNC43LTExLjMgNC43SDM1MmMtOC44IDAtMTYtNy4yLTE2LTE2VjEwMi42YzAtNC4yIDEuNy04LjMgNC43LTExLjNsNjMuOS02My45YzguMS04LjEgNS4yLTIxLjgtNi0yNC4yQzM4OC43IDUuMSAzNzguNSA0IDM2OCA0QzI4OC41IDQgMjI0IDY4LjUgMjI0IDE0OGMwIDIzLjcgNS44IDQ2IDE2IDY1LjlsMTY4LjEgMTY4LjFjMTkuOSAxMC4yIDQyLjIgMTYgNjUuOSAxNmM3OS41IDAgMTQ0LTY0LjUgMTQ0LTE0NHoiIC8+CiAgPC9nPgo8L3N2Zz4K";
+    
+    // Remove any existing favicon links
+    document.querySelectorAll("link[rel*='icon']").forEach(el => el.remove());
+
+    const svgLink = document.createElement("link");
+    svgLink.rel = "icon";
+    svgLink.type = "image/svg+xml";
+    svgLink.href = faviconSvg;
+    document.head.appendChild(svgLink);
+
+    const shortcutLink = document.createElement("link");
+    shortcutLink.rel = "shortcut icon";
+    shortcutLink.type = "image/svg+xml";
+    shortcutLink.href = faviconSvg;
+    document.head.appendChild(shortcutLink);
+  } catch (_) {}
+})();
+
 // Global authentication and multi-tenant session state
 let currentAuthUser = null;
 let pendingRegistrationProfile = null;
