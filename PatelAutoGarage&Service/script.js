@@ -134,7 +134,7 @@ function updateGarageBrandingUI() {
       loginBrandIcon.style.display = "none";
       if (loginBrandBox) loginBrandBox.style.background = "#ffffff";
     } else {
-      loginBrandImg.src = "logo-192.png";
+      loginBrandImg.src = "favicon.svg";
       loginBrandImg.style.display = "block";
       loginBrandIcon.style.display = "none";
       if (loginBrandBox) loginBrandBox.style.background = "transparent";
@@ -157,7 +157,7 @@ function updateGarageBrandingUI() {
       topbarBrandIcon.style.display = "none";
       if (topbarBrandBox) topbarBrandBox.style.background = "#ffffff";
     } else {
-      topbarBrandImg.src = "logo-192.png";
+      topbarBrandImg.src = "favicon.svg";
       topbarBrandImg.style.display = "block";
       topbarBrandIcon.style.display = "none";
       if (topbarBrandBox) topbarBrandBox.style.background = "transparent";
