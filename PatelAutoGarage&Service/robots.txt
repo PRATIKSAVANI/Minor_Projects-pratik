@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://patel-auto-garage-service.vercel.app/sitemap.xml
