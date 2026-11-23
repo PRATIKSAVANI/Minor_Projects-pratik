@@ -194,11 +194,15 @@ function updateGarageBrandingUI() {
   // 6. Topbar User Chip
   const topbarMember = document.getElementById("topbarMemberName");
   const topbarRole = document.getElementById("topbarMemberRole");
+  const userChip = document.getElementById("topbarUserChip");
   if (topbarMember) {
     topbarMember.textContent = activeMember ? (activeMember.fullName || activeMember.username) : (info.ownerName || "Owner");
   }
   if (topbarRole) {
-    topbarRole.textContent = activeMember ? activeMember.role : "Owner";
+    topbarRole.textContent = currentAuthUser?.email || (activeMember ? activeMember.role : "Owner");
+  }
+  if (userChip && currentAuthUser) {
+    userChip.title = `Signed in as: ${currentAuthUser.email || currentAuthUser.uid}`;
   }
 }
 
