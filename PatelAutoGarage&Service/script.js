@@ -31,7 +31,7 @@ function getScopedStorageKey(key, uid = currentAuthUser?.uid) {
 
 const DEFAULT_GARAGE_INFO = {
   garageName: "Patel Auto Garage & Service",
-  ownerName: "Harsh Savani",
+  ownerName: "Garage Owner",
   phone: "",
   tagline: "Professional Vehicle Service, Maintenance & Repair",
   address: "",
@@ -40,13 +40,16 @@ const DEFAULT_GARAGE_INFO = {
 
 function getGarageInfo() {
   const uid = currentAuthUser?.uid;
-  if (!uid) {
-    return { ...DEFAULT_GARAGE_INFO };
+  if (uid) {
+    const stored = readJSON(getScopedStorageKey("garageInfo", uid), null);
+    if (stored && stored.garageName && stored.garageName.trim() && stored.garageName !== "Add Your Garage Name") {
+      return { ...DEFAULT_GARAGE_INFO, ...stored };
+    }
   }
 
-  const stored = readJSON(getScopedStorageKey("garageInfo", uid), null);
-  if (stored && stored.garageName && stored.garageName.trim() && stored.garageName !== "Add Your Garage Name") {
-    return { ...DEFAULT_GARAGE_INFO, ...stored };
+  const unscoped = readJSON("patelAutoGarageInfo", null) || readJSON("patel_unscoped_garage_info", null);
+  if (unscoped && unscoped.garageName && unscoped.garageName.trim() && unscoped.garageName !== "Add Your Garage Name") {
+    return { ...DEFAULT_GARAGE_INFO, ...unscoped };
   }
 
   return { ...DEFAULT_GARAGE_INFO };
@@ -54,8 +57,11 @@ function getGarageInfo() {
 
 function saveGarageInfoLocally(info) {
   const uid = currentAuthUser?.uid;
-  if (!uid) return;
-  localStorage.setItem(getScopedStorageKey("garageInfo", uid), JSON.stringify(info));
+  if (uid) {
+    localStorage.setItem(getScopedStorageKey("garageInfo", uid), JSON.stringify(info));
+  }
+  localStorage.setItem("patelAutoGarageInfo", JSON.stringify(info));
+  localStorage.setItem("patel_unscoped_garage_info", JSON.stringify(info));
 }
 
 function showAuthLoadingOverlay(show, message = "Loading...") {
@@ -109,6 +115,7 @@ function updateGarageBrandingUI() {
   const info = getGarageInfo();
   const activeMember = getActiveMember();
   const displayGarageName = (info.garageName && info.garageName.trim() && info.garageName !== "Add Your Garage Name") ? info.garageName.trim() : "Patel Auto Garage & Service";
+  const displayOwnerName = (info.ownerName && info.ownerName.trim()) ? info.ownerName.trim() : "Garage Owner";
 
   // 1. Browser Tab Title
   document.title = `${displayGarageName} - Garage Management System`;
@@ -157,7 +164,7 @@ function updateGarageBrandingUI() {
 
   // 4. Hero Section
   const heroOwner = document.getElementById("heroOwnerName");
-  if (heroOwner) heroOwner.textContent = displayGarageName.toUpperCase();
+  if (heroOwner) heroOwner.textContent = displayOwnerName.toUpperCase();
   const heroTagline = document.getElementById("heroGarageTagline");
   if (heroTagline) heroTagline.textContent = info.tagline || "Service with Purpose.";
 
@@ -340,6 +347,85 @@ async function initializeApp() {
 /**
  * Single source of truth for authentication state
  */
+async function autoMigrateExistingDataIntoAccount(uid) {
+  if (!uid || !cloudDb) return;
+  try {
+    const userDocRef = cloudDb.collection("users").doc(uid);
+
+    // Check if user already has records in their private subcollection
+    const existingSnap = await userDocRef.collection("jobCards").limit(1).get().catch(() => null);
+    if (existingSnap && !existingSnap.empty) {
+      return; // Already has records, no need to migrate
+    }
+
+    // Read global patel_records or jobCards
+    let globalSnap = await cloudDb.collection("patel_records").get().catch(() => null);
+    if (!globalSnap || globalSnap.empty) {
+      globalSnap = await cloudDb.collection("jobCards").get().catch(() => null);
+    }
+
+    if (globalSnap && !globalSnap.empty) {
+      console.log(`Auto-migrating ${globalSnap.docs.length} records into users/${uid}/jobCards...`);
+      const BATCH_SIZE = 400;
+      const docs = globalSnap.docs;
+      for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+        const batch = cloudDb.batch();
+        const slice = docs.slice(i, i + BATCH_SIZE);
+        slice.forEach((d) => {
+          const data = d.data();
+          data.ownerId = uid;
+          batch.set(userDocRef.collection("jobCards").doc(d.id), data, { merge: true });
+        });
+        await batch.commit();
+      }
+
+      // Also migrate expenses
+      let expSnap = await cloudDb.collection("patel_expenses").get().catch(() => null);
+      if (!expSnap || expSnap.empty) {
+        expSnap = await cloudDb.collection("expenses").get().catch(() => null);
+      }
+      if (expSnap && !expSnap.empty) {
+        const expDocs = expSnap.docs;
+        for (let i = 0; i < expDocs.length; i += BATCH_SIZE) {
+          const batch = cloudDb.batch();
+          const slice = expDocs.slice(i, i + BATCH_SIZE);
+          slice.forEach((d) => {
+            const data = d.data();
+            data.ownerId = uid;
+            batch.set(userDocRef.collection("expenses").doc(d.id), data, { merge: true });
+          });
+          await batch.commit();
+        }
+      }
+
+      // Also migrate settings from patel_meta
+      try {
+        const metaDoc = await cloudDb.collection("patel_meta").doc("garage_info").get();
+        if (metaDoc.exists) {
+          const metaData = metaDoc.data();
+          metaData.ownerId = uid;
+          await userDocRef.collection("settings").doc("garage_info").set(metaData, { merge: true });
+          await userDocRef.set({
+            ownerId: uid,
+            garageName: metaData.garageName || "Patel Auto Garage & Service",
+            ownerName: metaData.ownerName || "Garage Owner",
+            photo: metaData.photo || "",
+            phone: metaData.phone || "",
+            tagline: metaData.tagline || "",
+            address: metaData.address || "",
+            updatedAt: Date.now(),
+          }, { merge: true });
+          saveGarageInfoLocally(metaData);
+        }
+      } catch (_) {}
+
+      showToast(`🎉 Welcome! Loaded ${docs.length} garage records into your account.`, "success");
+    }
+  } catch (err) {
+    console.warn("Auto-migration notice:", err);
+  }
+}
+
 async function handleAuthStateChange(user) {
   try {
     if (!user) {
@@ -417,10 +503,15 @@ async function handleAuthStateChange(user) {
     saveGarageInfoLocally(garageInfo);
     updateGarageBrandingUI();
 
-    // 3. Load user-scoped local records (strictly isolated by uid)
+    // 3. Auto-load existing records into private tenant on first login (zero-click migration)
+    if (!isRegisterMode) {
+      await autoMigrateExistingDataIntoAccount(user.uid);
+    }
+
+    // 4. Load user-scoped local records (strictly isolated by uid)
     loadData();
 
-    // 4. Attach real-time Firestore listeners strictly scoped to users/{uid}/...
+    // 5. Attach real-time Firestore listeners strictly scoped to users/{uid}/...
     setupCloudRealtimeListeners(user.uid);
 
     // 5. Update migration button visibility for owner
