@@ -164,7 +164,13 @@ function updateGarageBrandingUI() {
 
   // 4. Hero Section
   const heroOwner = document.getElementById("heroOwnerName");
-  if (heroOwner) heroOwner.textContent = displayOwnerName.toUpperCase();
+  if (heroOwner) {
+    let heroName = displayOwnerName;
+    if (heroName.toUpperCase() === "HARSH SAVANI" && currentAuthUser?.email?.toLowerCase().includes("pratik")) {
+      heroName = "Pratik Savani";
+    }
+    heroOwner.textContent = heroName.toUpperCase();
+  }
   const heroTagline = document.getElementById("heroGarageTagline");
   if (heroTagline) heroTagline.textContent = info.tagline || "Service with Purpose.";
 
@@ -196,7 +202,11 @@ function updateGarageBrandingUI() {
   const topbarRole = document.getElementById("topbarMemberRole");
   const userChip = document.getElementById("topbarUserChip");
   if (topbarMember) {
-    topbarMember.textContent = activeMember ? (activeMember.fullName || activeMember.username) : (info.ownerName || "Owner");
+    let displayName = activeMember ? (activeMember.fullName || activeMember.username) : (info.ownerName || "Pratik Savani");
+    if (displayName.toUpperCase() === "HARSH SAVANI" && currentAuthUser?.email?.toLowerCase().includes("pratik")) {
+      displayName = "Pratik Savani";
+    }
+    topbarMember.textContent = displayName;
   }
   if (topbarRole) {
     topbarRole.textContent = currentAuthUser?.email || (activeMember ? activeMember.role : "Owner");
@@ -597,6 +607,7 @@ function setupAuthListeners() {
   document.getElementById("logoutBtn").addEventListener("click", logout);
   document.getElementById("changePasswordBtn").addEventListener("click", openPasswordModal);
   document.getElementById("passwordCancel").addEventListener("click", closePasswordModal);
+  document.getElementById("passwordCloseBtn")?.addEventListener("click", closePasswordModal);
   document.getElementById("passwordSave").addEventListener("click", saveNewPassword);
   document.getElementById("passwordModal").addEventListener("click", (event) => {
     if (event.target.id === "passwordModal") closePasswordModal();
@@ -1492,79 +1503,110 @@ function openDashboard() {
   renderFamilyMembersTable();
 }
 
+function setPasswordModalError(msg) {
+  const errEl = document.getElementById("passwordError");
+  if (errEl) {
+    errEl.textContent = msg;
+    errEl.hidden = !msg;
+  }
+}
+
 function openPasswordModal() {
   if (!requireAuth()) return;
-  document.getElementById("currentPassword").value = "";
-  document.getElementById("newPassword").value = "";
-  document.getElementById("newPasswordConfirm").value = "";
-  document.getElementById("passwordModal").hidden = false;
+  setPasswordModalError("");
+  const newPass = document.getElementById("newPassword");
+  const confirmPass = document.getElementById("newPasswordConfirm");
+  if (newPass) newPass.value = "";
+  if (confirmPass) confirmPass.value = "";
+  const modal = document.getElementById("passwordModal");
+  if (modal) modal.hidden = false;
+  setTimeout(() => newPass?.focus(), 80);
 }
 
 function closePasswordModal() {
-  document.getElementById("passwordModal").hidden = true;
+  const modal = document.getElementById("passwordModal");
+  if (modal) modal.hidden = true;
+  setPasswordModalError("");
 }
 
 async function saveNewPassword() {
   if (!requireAuth()) return;
+  setPasswordModalError("");
 
-  const owner = getOwnerAccount();
-  const currentPassword = document.getElementById("currentPassword").value;
-  const newPassword = document.getElementById("newPassword").value;
-  const confirmPassword = document.getElementById("newPasswordConfirm").value;
+  const newPassword = (document.getElementById("newPassword")?.value || "").trim();
+  const confirmPassword = (document.getElementById("newPasswordConfirm")?.value || "").trim();
 
-  if (newPassword.length < 6) {
-    showToast("New password must be at least 6 characters.", "error");
+  if (!newPassword || newPassword.length < 6) {
+    const msg = "Password must be at least 6 characters long (ઓછામાં ઓછા ૬ અક્ષરનો પાસવર્ડ લખો).";
+    setPasswordModalError(msg);
+    showToast("Password must be at least 6 characters.", "error");
+    document.getElementById("newPassword")?.focus();
     return;
   }
 
   if (newPassword !== confirmPassword) {
+    const msg = "Passwords do not match. Please re-enter (બંને પાસવર્ડ સરખા હોવા જોઈએ).";
+    setPasswordModalError(msg);
     showToast("New passwords do not match.", "error");
+    document.getElementById("newPasswordConfirm")?.focus();
     return;
   }
 
+  const saveBtn = document.getElementById("passwordSave");
+  const saveText = document.getElementById("passwordSaveText");
+  if (saveBtn) saveBtn.disabled = true;
+  if (saveText) saveText.textContent = "Updating...";
+
   try {
     const authUser = firebase.auth().currentUser;
-    if (authUser) {
-      if (authUser.email) {
-        const cred = firebase.auth.EmailAuthProvider.credential(authUser.email, newPassword);
+    if (!authUser) {
+      throw new Error("No active login session found. Please sign in again.");
+    }
+
+    const email = authUser.email || (currentAuthUser?.email ? currentAuthUser.email : null);
+    if (!email) {
+      throw new Error("Could not find registered email address for this user.");
+    }
+
+    // Link Email/Password credential so user can log in with username/email & password
+    const cred = firebase.auth.EmailAuthProvider.credential(email, newPassword);
+    try {
+      await authUser.linkWithCredential(cred);
+    } catch (linkErr) {
+      if (linkErr.code === "auth/provider-already-linked" || linkErr.code === "auth/email-already-in-use") {
+        await authUser.updatePassword(newPassword);
+      } else if (linkErr.code === "auth/requires-recent-login") {
         try {
-          await authUser.linkWithCredential(cred);
-          closePasswordModal();
-          showToast("✅ Password created and linked to your account successfully!");
-          return;
-        } catch (linkErr) {
-          if (linkErr.code === "auth/provider-already-linked") {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await authUser.reauthenticateWithPopup(provider);
+          await authUser.linkWithCredential(cred).catch(async () => {
             await authUser.updatePassword(newPassword);
-            closePasswordModal();
-            showToast("✅ Password updated successfully!");
-            return;
-          }
-          if (linkErr.code === "auth/requires-recent-login") {
-            showToast("Security notice: Please sign out and sign in again before setting a password.", "error");
-            return;
-          }
-          await authUser.updatePassword(newPassword);
-          closePasswordModal();
-          showToast("✅ Password updated successfully!");
-          return;
+          });
+        } catch (_) {
+          throw new Error("Security check: Please log out and sign in with Google again, then set your password.");
         }
       } else {
         await authUser.updatePassword(newPassword);
-        closePasswordModal();
-        showToast("✅ Password updated successfully!");
-        return;
       }
     }
-  } catch (authErr) {
-    if (authErr.code === "auth/requires-recent-login") {
-      showToast("Security notice: Please sign out and sign in again before changing password.", "error");
-    } else {
-      showToast(authErr.message || "Failed to update password.", "error");
+
+    closePasswordModal();
+    showToast("🎉 Password updated successfully! You can now log in with your email & password.", "success");
+    alert(`🎉 Password set successfully!\n\nEmail: ${email}\nPassword: ${newPassword}\n\nYou can now log in anytime with Google OR by typing this email and password!`);
+  } catch (err) {
+    console.error("Password update error:", err);
+    let msg = err.message || "Failed to update password.";
+    if (err.code === "auth/weak-password") {
+      msg = "Password is too weak. Please use at least 6 characters.";
+    } else if (err.code === "auth/requires-recent-login") {
+      msg = "Security timeout: Please log out and sign in with Google again, then set password.";
     }
-    return;
+    setPasswordModalError(msg);
+    showToast(msg, "error");
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+    if (saveText) saveText.textContent = "Update Password";
   }
-  closePasswordModal();
-  showToast("Password updated successfully.");
 }
 
 function openForgotPasswordModal() {

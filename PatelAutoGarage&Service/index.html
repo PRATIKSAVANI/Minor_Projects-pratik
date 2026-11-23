@@ -19,7 +19,7 @@
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=5.0">
+    <link rel="stylesheet" href="style.css?v=5.1">
 </head>
 
 <body class="app-locked">
@@ -55,13 +55,6 @@
                     </button>
                 </div>
                 <p id="loginSubtitle">Sign in to open the garage dashboard</p>
-                <div class="login-badge-row">
-                    <button type="button" class="badge-shared-cloud btn-cloud-badge" id="loginCloudBtn" title="Shared Firebase Cloud Sync is Active">
-                        <span class="cloud-status-dot is-online" id="loginCloudDot"></span>
-                        <i class="fa-solid fa-cloud"></i>
-                        <span id="loginCloudLabel">Cloud Synced</span>
-                    </button>
-                </div>
             </div>
 
             <!-- PROMINENT GOOGLE SIGN IN BUTTON -->
@@ -171,17 +164,6 @@
                         <i class="fa-solid fa-calendar-day"></i>
                         <span id="todayLabel">Today</span>
                     </div>
-
-                    <button type="button" id="cloudSyncBtn" class="btn btn-cloud-status" title="Cloud Database & Realtime Sync Status">
-                        <span class="cloud-status-dot is-offline" id="cloudStatusDot"></span>
-                        <i class="fa-solid fa-cloud"></i>
-                        <span id="cloudStatusLabel">Cloud Database</span>
-                    </button>
-
-                    <button type="button" id="manageFamilyBtn" class="btn btn-light" title="Authorized Family Members &amp; Share Link">
-                        <i class="fa-solid fa-users"></i>
-                        <span>Family (<span id="topbarFamilyCount">1</span>)</span>
-                    </button>
 
                     <button type="button" id="garageProfileBtn" class="btn btn-light" title="Garage Name, Owner & Info Settings">
                         <i class="fa-solid fa-store"></i>
@@ -1638,24 +1620,41 @@
 
     <!-- CHANGE PASSWORD MODAL -->
     <div id="passwordModal" class="modal" hidden>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
-            <h3 id="passwordTitle">Change Password</h3>
-            <p>Update the password used to open this dashboard.</p>
-            <div class="form-group">
-                <label for="currentPassword">Current Password</label>
-                <input id="currentPassword" type="password" maxlength="64" autocomplete="current-password">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle" style="max-width: 440px;">
+            <div class="modal-header">
+                <div>
+                    <span class="section-label">ACCOUNT SECURITY</span>
+                    <h3 id="passwordTitle"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Set / Change Password</h3>
+                </div>
+                <button type="button" id="passwordCloseBtn" class="modal-close" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <div class="form-group">
-                <label for="newPassword">New Password</label>
-                <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password">
-            </div>
-            <div class="form-group">
-                <label for="newPasswordConfirm">Confirm New Password</label>
-                <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password">
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
-                <button type="button" id="passwordSave" class="btn btn-save">Update Password</button>
+            <div class="modal-body" style="padding: 16px 20px;">
+                <p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">
+                    Set a password for your account to sign in with your email or username anytime.
+                </p>
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="newPassword">New Password (Min 6 characters)</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock"></i>
+                        <input id="newPassword" type="password" maxlength="64" minlength="6" autocomplete="new-password" placeholder="Enter password (min 6 characters)" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="newPasswordConfirm">Confirm New Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock"></i>
+                        <input id="newPasswordConfirm" type="password" maxlength="64" minlength="6" autocomplete="new-password" placeholder="Re-enter your new password" required>
+                    </div>
+                </div>
+                <p id="passwordError" class="login-error" style="color:#ef4444; font-size:13px; margin: 8px 0;" hidden></p>
+                <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+                    <button type="button" id="passwordCancel" class="btn btn-light">Cancel</button>
+                    <button type="button" id="passwordSave" class="btn btn-save">
+                        <i class="fa-solid fa-check"></i> <span id="passwordSaveText">Update Password</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1702,8 +1701,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js?v=5.0"></script>
-    <script src="script.js?v=5.0"></script>
+    <script src="firebase-config.js?v=5.1"></script>
+    <script src="script.js?v=5.1"></script>
 </body>
 
 </html>
