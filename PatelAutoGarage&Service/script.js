@@ -2029,7 +2029,7 @@ function setupCloudRealtimeListeners(targetUid = currentAuthUser?.uid) {
 
         if (hasExpChanges || isInitialCloudLoad) {
           saveExpensesLocally();
-          if (dashboardReady && isAuthenticated) {
+          if (dashboardReady && isAuthenticated) { 
             updateDashboard();
             renderExpensesList();
             renderDayHistory();
